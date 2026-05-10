@@ -1,0 +1,86 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Scoped styles for BOGO admin */
+.bogo-admin {
+  @apply bogo-font-sans bogo-text-gray-900 bogo-bg-gray-50 bogo-min-h-screen;
+  margin-left: -20px;
+  margin-top: -20px;
+  margin-right: -20px;
+  width: calc(100% + 40px);
+}
+
+/* Reset WordPress admin styles */
+.bogo-admin * {
+  box-sizing: border-box;
+}
+
+.bogo-admin a {
+  @apply bogo-text-primary-600 hover:bogo-text-primary-700 bogo-no-underline;
+}
+
+.bogo-admin button {
+  @apply bogo-cursor-pointer;
+}
+
+/* Custom components */
+.bogo-admin .bogo-card {
+  @apply bogo-bg-white bogo-rounded-lg bogo-shadow-sm bogo-border bogo-border-gray-200;
+}
+
+.bogo-admin .bogo-btn {
+  @apply bogo-inline-flex bogo-items-center bogo-justify-center bogo-px-4 bogo-py-2 bogo-text-sm bogo-font-medium bogo-rounded-md bogo-transition-colors;
+}
+
+.bogo-admin .bogo-btn-primary {
+  @apply bogo-bg-primary-600 bogo-text-white hover:bogo-bg-primary-700 focus:bogo-outline-none focus:bogo-ring-2 focus:bogo-ring-offset-2 focus:bogo-ring-primary-500;
+}
+
+.bogo-admin .bogo-btn-secondary {
+  @apply bogo-bg-white bogo-text-gray-700 bogo-border bogo-border-gray-300 hover:bogo-bg-gray-50 focus:bogo-outline-none focus:bogo-ring-2 focus:bogo-ring-offset-2 focus:bogo-ring-primary-500;
+}
+
+.bogo-admin .bogo-btn-danger {
+  @apply bogo-bg-danger-500 bogo-text-white hover:bogo-bg-danger-700 focus:bogo-outline-none focus:bogo-ring-2 focus:bogo-ring-offset-2 focus:bogo-ring-danger-500;
+}
+
+.bogo-admin .bogo-input {
+  @apply bogo-block bogo-w-full bogo-px-3 bogo-py-2 bogo-text-sm bogo-border bogo-border-gray-300 bogo-rounded-md bogo-shadow-sm focus:bogo-outline-none focus:bogo-ring-1 focus:bogo-ring-primary-500 focus:bogo-border-primary-500;
+}
+
+.bogo-admin .bogo-select {
+  @apply bogo-block bogo-w-full bogo-px-3 bogo-py-2 bogo-text-sm bogo-border bogo-border-gray-300 bogo-rounded-md bogo-shadow-sm focus:bogo-outline-none focus:bogo-ring-1 focus:bogo-ring-primary-500 focus:bogo-border-primary-500 bogo-bg-white;
+}
+
+.bogo-admin .bogo-label {
+  @apply bogo-block bogo-text-sm bogo-font-medium bogo-text-gray-700 bogo-mb-1;
+}
+
+.bogo-admin .bogo-table {
+  @apply bogo-min-w-full bogo-divide-y bogo-divide-gray-200;
+}
+
+.bogo-admin .bogo-table th {
+  @apply bogo-px-6 bogo-py-3 bogo-text-left bogo-text-xs bogo-font-medium bogo-text-gray-500 bogo-uppercase bogo-tracking-wider bogo-bg-gray-50;
+}
+
+.bogo-admin .bogo-table td {
+  @apply bogo-px-6 bogo-py-4 bogo-whitespace-nowrap bogo-text-sm bogo-text-gray-900;
+}
+
+.bogo-admin .bogo-badge {
+  @apply bogo-inline-flex bogo-items-center bogo-px-2.5 bogo-py-0.5 bogo-rounded-full bogo-text-xs bogo-font-medium;
+}
+
+.bogo-admin .bogo-badge-success {
+  @apply bogo-bg-success-50 bogo-text-success-700;
+}
+
+.bogo-admin .bogo-badge-warning {
+  @apply bogo-bg-warning-50 bogo-text-warning-700;
+}
+
+.bogo-admin .bogo-badge-danger {
+  @apply bogo-bg-danger-50 bogo-text-danger-700;
+}

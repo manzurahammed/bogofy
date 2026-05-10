@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<ruleset name="Buy One Get One Coding Standards">
+    <description>PHP Coding Standards for Buy One Get One plugin.</description>
+
+    <!-- What to scan -->
+    <file>./inc</file>
+    <file>./buy-one-get-one.php</file>
+    <file>./uninstall.php</file>
+
+    <!-- Exclude paths -->
+    <exclude-pattern>./vendor/*</exclude-pattern>
+    <exclude-pattern>./node_modules/*</exclude-pattern>
+    <exclude-pattern>./assets/*</exclude-pattern>
+    <exclude-pattern>./tests/*</exclude-pattern>
+
+    <!-- Show progress and sniff codes in all reports -->
+    <arg value="ps"/>
+    <arg name="colors"/>
+
+    <!-- WordPress Coding Standards -->
+    <rule ref="WordPress">
+        <exclude name="WordPress.Files.FileName.InvalidClassFileName"/>
+        <exclude name="WordPress.Files.FileName.NotHyphenatedLowercase"/>
+    </rule>
+
+    <!-- Allow short array syntax -->
+    <rule ref="Generic.Arrays.DisallowShortArraySyntax.Found">
+        <severity>0</severity>
+    </rule>
+
+    <!-- Text domain -->
+    <rule ref="WordPress.WP.I18n">
+        <properties>
+            <property name="text_domain" type="array">
+                <element value="buy-one-get-one"/>
+            </property>
+        </properties>
+    </rule>
+
+    <!-- Minimum PHP and WP versions -->
+    <config name="minimum_supported_wp_version" value="6.0"/>
+    <config name="testVersion" value="7.4-"/>
+</ruleset>
