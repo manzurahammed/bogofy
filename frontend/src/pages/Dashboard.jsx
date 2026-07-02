@@ -1,163 +1,192 @@
 import React from 'react';
 import { useStats } from '../hooks/useSettings';
+import { useRules } from '../hooks/useRules';
 import { PageLoader } from '../components/Shared/Loader';
+import AppShell from '../components/Layout/AppShell';
+import {
+  PlusIcon, ArrowIcon, GiftIcon, TagIcon, SettingsIcon, HelpIcon, EditIcon,
+} from '../components/Icons';
 
-const statCards = [
-  {
-    key: 'active_rules',
-    label: 'Active Rules',
-    icon: (
-      <svg className="bogo-w-6 bogo-h-6 bogo-text-success-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
-    color: 'success',
-  },
-  {
-    key: 'total_rules',
-    label: 'Total Rules',
-    icon: (
-      <svg className="bogo-w-6 bogo-h-6 bogo-text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" />
-      </svg>
-    ),
-    color: 'primary',
-  },
-  {
-    key: 'bogo_orders',
-    label: 'Orders with BOGO',
-    icon: (
-      <svg className="bogo-w-6 bogo-h-6 bogo-text-warning-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-      </svg>
-    ),
-    color: 'warning',
-  },
-  {
-    key: 'total_discount',
-    label: 'Total Discounts Given',
-    icon: (
-      <svg className="bogo-w-6 bogo-h-6 bogo-text-danger-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
-    color: 'danger',
-    format: 'currency',
-  },
+const goTo = (query) => { window.location.href = `admin.php?page=buy-one-get-one&${query}`; };
+
+function RuleFlowRow({ rule }) {
+  const isLive = rule.status === 'active';
+
+  return (
+    <div className="bogo-rule" style={{ gridTemplateColumns: '1fr auto' }}>
+      <div className="bogo-col">
+        <div className="bogo-rule__name">{rule.title}</div>
+        <div className="bogo-flow">
+          <span className="bogo-flow__node">
+            Buy {rule.buy_quantity}
+          </span>
+          <span className="bogo-flow__arrow">→</span>
+          <span className="bogo-flow__node bogo-flow__node--get">
+            <GiftIcon size={12} />
+            Get {rule.free_quantity}
+            {rule.discount_type === 'free' ? ' free' : ` at ${rule.discount_value}% off`}
+          </span>
+        </div>
+      </div>
+      <div className="bogo-row" style={{ gap: 8 }}>
+        <span className={`bogo-status ${isLive ? 'bogo-status--live' : 'bogo-status--inactive'}`}>
+          <span className="bogo-status__dot" />
+          {isLive ? 'Live' : 'Inactive'}
+        </span>
+        <button
+          className="bogo-button bogo-button--sm bogo-button--ghost"
+          title="Edit rule"
+          onClick={() => goTo(`tab=rules&action=edit&rule_id=${rule.id}`)}
+        >
+          <EditIcon size={13} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+const quickActions = [
+  { label: 'Create a new rule', desc: 'Set up a BOGO offer in 4 steps', Icon: PlusIcon, query: 'tab=rules&action=create' },
+  { label: 'Manage rules', desc: 'Edit, activate, or delete existing offers', Icon: TagIcon, query: 'tab=rules' },
+  { label: 'Display settings', desc: 'Badges, labels, and cart messages', Icon: SettingsIcon, query: 'tab=settings' },
+  { label: 'Help & docs', desc: 'Rule types and common questions', Icon: HelpIcon, query: 'tab=help' },
 ];
 
 function Dashboard() {
-  const { data: stats, isLoading, error } = useStats();
+  const { data: stats, isLoading: statsLoading } = useStats();
+  const { data: rules, isLoading: rulesLoading } = useRules({ page: 1, per_page: 3, status: 'active' });
 
-  if (isLoading) {
-    return <PageLoader />;
-  }
+  const isLoading = statsLoading || rulesLoading;
 
-  if (error) {
-    return (
-      <div className="bogo-text-center bogo-py-12">
-        <p className="bogo-text-danger-500">Failed to load stats. Please try again.</p>
-      </div>
-    );
-  }
+  if (isLoading) return (
+    <AppShell crumb={['Bogo', 'Dashboard']}>
+      <PageLoader />
+    </AppShell>
+  );
 
-  const formatValue = (key, value, format) => {
-    if (format === 'currency') {
-      return `$${value.toFixed(2)}`;
-    }
-    return value;
-  };
+  const kpis = [
+    { l: 'Active rules', v: stats?.active_rules ?? '—', d: `${stats?.total_rules ?? 0} total rules` },
+    { l: 'BOGO orders', v: stats?.bogo_orders ?? '—', d: 'Orders with BOGO applied' },
+    { l: 'Discount given', v: stats?.total_discount ? `$${Number(stats.total_discount).toFixed(0)}` : '—', d: 'Total discounts issued' },
+    { l: 'Total rules', v: stats?.total_rules ?? '—', d: `${stats?.active_rules ?? 0} currently active` },
+  ];
 
   return (
-    <div className="bogo-space-y-6">
-      {/* Stats Grid */}
-      <div className="bogo-grid bogo-grid-cols-1 md:bogo-grid-cols-2 lg:bogo-grid-cols-4 bogo-gap-6">
-        {statCards.map((card) => (
-          <div key={card.key} className="bogo-card bogo-p-6">
-            <div className="bogo-flex bogo-items-center bogo-justify-between">
-              <div>
-                <p className="bogo-text-sm bogo-font-medium bogo-text-gray-500">
-                  {card.label}
-                </p>
-                <p className="bogo-text-3xl bogo-font-bold bogo-text-gray-900 bogo-mt-1">
-                  {formatValue(card.key, stats?.[card.key] || 0, card.format)}
-                </p>
-              </div>
-              <div className="bogo-p-3 bogo-bg-gray-50 bogo-rounded-full">
-                {card.icon}
-              </div>
-            </div>
+    <AppShell
+      crumb={['Bogo', 'Dashboard']}
+      actions={
+        <button
+          className="bogo-button bogo-button--primary bogo-button--sm"
+          onClick={() => goTo('tab=rules&action=create')}
+        >
+          <PlusIcon size={14} /> New rule
+        </button>
+      }
+    >
+      <div className="bogo-page-header">
+        <div>
+          <div className="bogo-page-header__title">Dashboard</div>
+          <div className="bogo-page-header__desc">Overview of your BOGO offers and performance.</div>
+        </div>
+      </div>
+
+      {/* KPIs */}
+      <div className="bogo-kpi-grid">
+        {kpis.map((k, i) => (
+          <div key={i} className="bogo-kpi">
+            <div className="bogo-kpi__label">{k.l}</div>
+            <div className="bogo-kpi__value">{k.v}</div>
+            <div className="bogo-kpi__delta">{k.d}</div>
           </div>
         ))}
       </div>
 
-      {/* Quick Actions */}
-      <div className="bogo-card bogo-p-6">
-        <h3 className="bogo-text-lg bogo-font-semibold bogo-text-gray-900 bogo-mb-4">
-          Quick Actions
-        </h3>
-        <div className="bogo-flex bogo-flex-wrap bogo-gap-4">
-          <button
-            onClick={() => {
-              window.location.href = 'admin.php?page=buy-one-get-one&tab=rules&action=create';
-            }}
-            className="bogo-btn bogo-btn-primary"
-          >
-            <svg className="bogo-w-4 bogo-h-4 bogo-mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Create New Rule
-          </button>
-          <button
-            onClick={() => {
-              window.location.href = 'admin.php?page=buy-one-get-one&tab=rules';
-            }}
-            className="bogo-btn bogo-btn-secondary"
-          >
-            <svg className="bogo-w-4 bogo-h-4 bogo-mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-            </svg>
-            View All Rules
-          </button>
-          <button
-            onClick={() => {
-              window.location.href = 'admin.php?page=buy-one-get-one&tab=settings';
-            }}
-            className="bogo-btn bogo-btn-secondary"
-          >
-            <svg className="bogo-w-4 bogo-h-4 bogo-mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            Settings
-          </button>
+      {/* Quick actions + getting started */}
+      <div className="bogo-chart-grid" style={{ marginTop: 18 }}>
+        <div className="bogo-chart-card">
+          <div className="bogo-section-header__title" style={{ marginBottom: 14 }}>Quick actions</div>
+          <div className="bogo-col" style={{ gap: 8 }}>
+            {quickActions.map((a) => (
+              <button
+                key={a.label}
+                className="bogo-rule"
+                style={{ gridTemplateColumns: 'auto 1fr auto', cursor: 'pointer', padding: '12px 16px', textAlign: 'left', fontFamily: 'inherit' }}
+                onClick={() => goTo(a.query)}
+              >
+                <span className="bogo-pkg" style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--chip)', display: 'grid', placeItems: 'center', color: 'var(--ink-2)' }}>
+                  <a.Icon size={15} />
+                </span>
+                <span className="bogo-col">
+                  <span style={{ fontWeight: 500, fontSize: 13 }}>{a.label}</span>
+                  <span style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>{a.desc}</span>
+                </span>
+                <ArrowIcon size={14} stroke="var(--muted-2)" />
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="bogo-chart-card">
+          <div className="bogo-section-header__title" style={{ marginBottom: 14 }}>Getting started</div>
+          <div className="bogo-col" style={{ gap: 14 }}>
+            {[
+              { n: 'Create your first rule', d: 'Set up a BOGO deal in 4 simple steps', done: (stats?.total_rules ?? 0) > 0 },
+              { n: 'Activate a rule', d: 'Go live and start rewarding customers', done: (stats?.active_rules ?? 0) > 0 },
+              { n: 'Configure display settings', d: 'Customize badges and cart messages', done: false },
+            ].map((step, i) => (
+              <div key={i} className="bogo-row" style={{ gap: 12, alignItems: 'flex-start' }}>
+                <div style={{
+                  width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
+                  background: step.done ? 'var(--accent)' : 'var(--chip)',
+                  border: step.done ? 'none' : '1.5px solid var(--line-2)',
+                  display: 'grid', placeItems: 'center',
+                  color: step.done ? '#003a23' : 'var(--muted-2)', fontSize: 11, fontWeight: 700,
+                }}>
+                  {step.done ? '✓' : i + 1}
+                </div>
+                <div className="bogo-col">
+                  <div style={{ fontWeight: 500, fontSize: 13, textDecoration: step.done ? 'line-through' : 'none', color: step.done ? 'var(--muted)' : 'var(--ink)' }}>{step.n}</div>
+                  <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>{step.d}</div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Help Section */}
-      <div className="bogo-card bogo-p-6">
-        <h3 className="bogo-text-lg bogo-font-semibold bogo-text-gray-900 bogo-mb-4">
-          Getting Started
-        </h3>
-        <div className="bogo-prose bogo-text-sm bogo-text-gray-600">
-          <p>Welcome to Buy One Get One! Here are some tips to get started:</p>
-          <ul className="bogo-mt-2 bogo-space-y-2">
-            <li>
-              <strong>Create your first rule</strong> - Click &quot;Create New Rule&quot; to set up a BOGO deal.
-            </li>
-            <li>
-              <strong>Choose a rule type</strong> - Select from Buy X Get X, Buy X Get Y, or category-based rules.
-            </li>
-            <li>
-              <strong>Schedule your deals</strong> - Set start and end dates for time-limited promotions.
-            </li>
-            <li>
-              <strong>Configure settings</strong> - Customize labels and messages in the Settings page.
-            </li>
-          </ul>
+      {/* Live offers */}
+      <div className="bogo-section-header">
+        <div className="bogo-col">
+          <div className="bogo-section-header__title">Live offers</div>
+          <div className="bogo-section-header__meta">Currently active rules</div>
         </div>
+        <button
+          className="bogo-button bogo-button--sm"
+          onClick={() => goTo('tab=rules')}
+        >
+          View all rules <ArrowIcon size={13} />
+        </button>
       </div>
-    </div>
+
+      <div className="bogo-rule-list">
+        {rules && rules.length > 0 ? (
+          rules.map((rule) => <RuleFlowRow key={rule.id} rule={rule} />)
+        ) : (
+          <div className="bogo-panel" style={{ textAlign: 'center', padding: '32px 20px', color: 'var(--muted)' }}>
+            <GiftIcon size={32} stroke="var(--muted-2)" />
+            <div style={{ marginTop: 12, fontSize: 14, fontWeight: 500, color: 'var(--ink)' }}>No active rules yet</div>
+            <div style={{ fontSize: 13, marginTop: 4 }}>Create your first BOGO rule to get started.</div>
+            <button
+              className="bogo-button bogo-button--primary bogo-button--sm"
+              style={{ marginTop: 14 }}
+              onClick={() => goTo('tab=rules&action=create')}
+            >
+              <PlusIcon size={13} /> Create rule
+            </button>
+          </div>
+        )}
+      </div>
+    </AppShell>
   );
 }
 

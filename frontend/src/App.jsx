@@ -1,10 +1,11 @@
 import React from 'react';
-import AppShell from './components/Layout/AppShell';
 import Dashboard from './pages/Dashboard';
 import RulesPage from './pages/RulesPage';
 import CreateRulePage from './pages/CreateRulePage';
 import EditRulePage from './pages/EditRulePage';
 import SettingsPage from './pages/SettingsPage';
+import AnalyticsPage from './pages/AnalyticsPage';
+import HelpPage from './pages/HelpPage';
 import { NotificationProvider } from './hooks/useNotification';
 
 function App() {
@@ -27,6 +28,10 @@ function App() {
         return <RulesPage />;
       case 'settings':
         return <SettingsPage />;
+      case 'analytics':
+        return <AnalyticsPage />;
+      case 'help':
+        return <HelpPage />;
       case 'dashboard':
       default:
         return <Dashboard />;
@@ -35,9 +40,7 @@ function App() {
 
   return (
     <NotificationProvider>
-      <AppShell>
-        {renderContent()}
-      </AppShell>
+      {renderContent()}
     </NotificationProvider>
   );
 }

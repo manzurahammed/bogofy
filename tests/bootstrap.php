@@ -43,6 +43,8 @@ function bogo_tests_setup() {
 	if ( ! defined( 'BOGO_PLUGIN_BASENAME' ) ) {
 		define( 'BOGO_PLUGIN_BASENAME', 'buy-one-get-one/buy-one-get-one.php' );
 	}
+
+	bogo_tests_stub_wp_functions();
 }
 
 /**
@@ -52,9 +54,15 @@ function bogo_tests_teardown() {
 	Monkey\tearDown();
 }
 
-// Mock WordPress functions that are commonly used.
-Monkey\Functions\stubs(
-	array(
+/**
+ * Stub WordPress functions that are commonly used.
+ *
+ * Must run after Monkey\setUp() for every test, because
+ * Monkey\tearDown() clears all registered stubs.
+ */
+function bogo_tests_stub_wp_functions() {
+	Monkey\Functions\stubs(
+		array(
 		'__'                     => function ( $text, $domain = 'default' ) {
 			return $text;
 		},
@@ -100,5 +108,31 @@ Monkey\Functions\stubs(
 		'delete_option'          => function ( $option ) {
 			return true;
 		},
-	)
-);
+		)
+	);
+}
+
+// Minimal WP_Error stand-in for unit tests that run without WordPress.
+if ( ! class_exists( 'WP_Error' ) ) {
+	class WP_Error {
+		public $errors = array();
+
+		public function __construct( $code = '', $message = '', $data = '' ) {
+			if ( ! empty( $code ) ) {
+				$this->errors[ $code ][] = $message;
+			}
+		}
+
+		public function get_error_code() {
+			$codes = array_keys( $this->errors );
+			return $codes ? $codes[0] : '';
+		}
+
+		public function get_error_message( $code = '' ) {
+			if ( '' === $code ) {
+				$code = $this->get_error_code();
+			}
+			return isset( $this->errors[ $code ] ) ? $this->errors[ $code ][0] : '';
+		}
+	}
+}

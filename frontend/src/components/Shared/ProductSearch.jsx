@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import clsx from 'clsx';
 import { useProductSearch } from '../../hooks/useProducts';
 import { Loader } from './Loader';
 

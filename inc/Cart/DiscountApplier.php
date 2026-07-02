@@ -84,8 +84,14 @@ class DiscountApplier {
 			return;
 		}
 
-		// For Buy X Get X, the free item is the same as the buy item.
-		// Apply discount to cheapest eligible items.
+		// For Buy X Get X with specific products, add a free copy of the same product.
+		if ( Rule::APPLY_SPECIFIC_PRODUCTS === $rule->apply_to && ! empty( $rule->buy_product_ids ) ) {
+			$free_product_id = $rule->buy_product_ids[0];
+			$this->free_item_manager->add_free_item( $cart, $free_product_id, $free_quantity, $rule );
+			return;
+		}
+
+		// For all products / categories, apply discount to cheapest eligible items.
 		$this->apply_discount_to_cheapest( $cart, $rule, $eligible_items, $free_quantity );
 	}
 

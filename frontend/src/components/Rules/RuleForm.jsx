@@ -3,6 +3,23 @@ import PropTypes from 'prop-types';
 import clsx from 'clsx';
 import { ProductSearch } from '../Shared/ProductSearch';
 import { CategorySearch } from '../Shared/CategorySearch';
+import { get } from '../../services/api';
+
+/**
+ * Fetch real names for saved product/category IDs so the edit
+ * form shows titles instead of "Product #12" placeholders.
+ */
+async function hydrateItems(endpoint, ids, fallbackLabel) {
+  if (!ids?.length) return [];
+  try {
+    const items = await get(endpoint, { include: ids.join(',') });
+    return ids.map(
+      (id) => items.find((item) => item.id === id) || { id, name: `${fallbackLabel} #${id}` }
+    );
+  } catch {
+    return ids.map((id) => ({ id, name: `${fallbackLabel} #${id}` }));
+  }
+}
 
 const ruleTypes = [
   { value: 'buy_x_get_x', label: 'Buy X Get X Free', description: 'Buy N of same product, get M of same product free' },
@@ -36,7 +53,7 @@ const defaultFormData = {
   end_date: '',
 };
 
-export function RuleForm({ initialData = null, onSubmit, isLoading = false }) {
+export function RuleForm({ initialData = null, onSubmit, isLoading = false, formId }) {
   const [formData, setFormData] = useState(defaultFormData);
   const [selectedBuyProducts, setSelectedBuyProducts] = useState([]);
   const [selectedFreeProducts, setSelectedFreeProducts] = useState([]);
@@ -53,22 +70,10 @@ export function RuleForm({ initialData = null, onSubmit, isLoading = false }) {
         end_date: initialData.end_date ? initialData.end_date.slice(0, 16) : '',
       });
 
-      // Set selected products/categories based on IDs
-      if (initialData.buy_product_ids?.length) {
-        setSelectedBuyProducts(
-          initialData.buy_product_ids.map((id) => ({ id, name: `Product #${id}` }))
-        );
-      }
-      if (initialData.free_product_ids?.length) {
-        setSelectedFreeProducts(
-          initialData.free_product_ids.map((id) => ({ id, name: `Product #${id}` }))
-        );
-      }
-      if (initialData.category_ids?.length) {
-        setSelectedCategories(
-          initialData.category_ids.map((id) => ({ id, name: `Category #${id}` }))
-        );
-      }
+      // Resolve saved IDs to real product/category names.
+      hydrateItems('/products/search', initialData.buy_product_ids, 'Product').then(setSelectedBuyProducts);
+      hydrateItems('/products/search', initialData.free_product_ids, 'Product').then(setSelectedFreeProducts);
+      hydrateItems('/categories/search', initialData.category_ids, 'Category').then(setSelectedCategories);
     }
   }, [initialData]);
 
@@ -132,7 +137,7 @@ export function RuleForm({ initialData = null, onSubmit, isLoading = false }) {
   const showDiscountValue = formData.rule_type === 'buy_x_get_x_discounted';
 
   return (
-    <form onSubmit={handleSubmit} className="bogo-space-y-6">
+    <form id={formId} onSubmit={handleSubmit} className="bogo-space-y-6">
       {/* Basic Info */}
       <div className="bogo-card bogo-p-6">
         <h3 className="bogo-text-lg bogo-font-semibold bogo-text-gray-900 bogo-mb-4">
@@ -396,6 +401,7 @@ RuleForm.propTypes = {
   initialData: PropTypes.object,
   onSubmit: PropTypes.func.isRequired,
   isLoading: PropTypes.bool,
+  formId: PropTypes.string,
 };
 
 export default RuleForm;

@@ -67,9 +67,6 @@ class FreeItemManager {
 			$variation    = $product->get_variation_attributes();
 		}
 
-		// Temporarily remove our hook to prevent recursion.
-		remove_action( 'woocommerce_add_to_cart', array( $this, 'on_add_to_cart' ), 10 );
-
 		$cart_item_key = $cart->add_to_cart(
 			$product_id,
 			$quantity,
@@ -77,9 +74,6 @@ class FreeItemManager {
 			$variation,
 			$cart_item_data
 		);
-
-		// Re-add hook.
-		add_action( 'woocommerce_add_to_cart', array( $this, 'on_add_to_cart' ), 10, 6 );
 
 		if ( $cart_item_key ) {
 			$this->apply_free_price( $cart, $cart_item_key, $rule );
