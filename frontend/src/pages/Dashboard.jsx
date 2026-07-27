@@ -101,56 +101,27 @@ function Dashboard() {
         ))}
       </div>
 
-      {/* Quick actions + getting started */}
-      <div className="bogo-chart-grid" style={{ marginTop: 18 }}>
-        <div className="bogo-chart-card">
-          <div className="bogo-section-header__title" style={{ marginBottom: 14 }}>Quick actions</div>
-          <div className="bogo-col" style={{ gap: 8 }}>
-            {quickActions.map((a) => (
-              <button
-                key={a.label}
-                className="bogo-rule"
-                style={{ gridTemplateColumns: 'auto 1fr auto', cursor: 'pointer', padding: '12px 16px', textAlign: 'left', fontFamily: 'inherit' }}
-                onClick={() => goTo(a.query)}
-              >
-                <span className="bogo-pkg" style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--chip)', display: 'grid', placeItems: 'center', color: 'var(--ink-2)' }}>
-                  <a.Icon size={15} />
-                </span>
-                <span className="bogo-col">
-                  <span style={{ fontWeight: 500, fontSize: 13 }}>{a.label}</span>
-                  <span style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>{a.desc}</span>
-                </span>
-                <ArrowIcon size={14} stroke="var(--muted-2)" />
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="bogo-chart-card">
-          <div className="bogo-section-header__title" style={{ marginBottom: 14 }}>Getting started</div>
-          <div className="bogo-col" style={{ gap: 14 }}>
-            {[
-              { n: 'Create your first rule', d: 'Set up a BOGO deal in 4 simple steps', done: (stats?.total_rules ?? 0) > 0 },
-              { n: 'Activate a rule', d: 'Go live and start rewarding customers', done: (stats?.active_rules ?? 0) > 0 },
-              { n: 'Configure display settings', d: 'Customize badges and cart messages', done: false },
-            ].map((step, i) => (
-              <div key={i} className="bogo-row" style={{ gap: 12, alignItems: 'flex-start' }}>
-                <div style={{
-                  width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
-                  background: step.done ? 'var(--accent)' : 'var(--chip)',
-                  border: step.done ? 'none' : '1.5px solid var(--line-2)',
-                  display: 'grid', placeItems: 'center',
-                  color: step.done ? '#003a23' : 'var(--muted-2)', fontSize: 11, fontWeight: 700,
-                }}>
-                  {step.done ? '✓' : i + 1}
-                </div>
-                <div className="bogo-col">
-                  <div style={{ fontWeight: 500, fontSize: 13, textDecoration: step.done ? 'line-through' : 'none', color: step.done ? 'var(--muted)' : 'var(--ink)' }}>{step.n}</div>
-                  <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>{step.d}</div>
-                </div>
-              </div>
-            ))}
-          </div>
+      {/* Quick actions */}
+      <div className="bogo-chart-card" style={{ marginTop: 18 }}>
+        <div className="bogo-section-header__title" style={{ marginBottom: 14 }}>Quick actions</div>
+        <div className="bogo-col" style={{ gap: 8 }}>
+          {quickActions.map((a) => (
+            <button
+              key={a.label}
+              className="bogo-rule"
+              style={{ gridTemplateColumns: 'auto 1fr auto', cursor: 'pointer', padding: '12px 16px', textAlign: 'left', fontFamily: 'inherit' }}
+              onClick={() => goTo(a.query)}
+            >
+              <span className="bogo-pkg" style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--chip)', display: 'grid', placeItems: 'center', color: 'var(--ink-2)' }}>
+                <a.Icon size={15} />
+              </span>
+              <span className="bogo-col">
+                <span style={{ fontWeight: 500, fontSize: 13 }}>{a.label}</span>
+                <span style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>{a.desc}</span>
+              </span>
+              <ArrowIcon size={14} stroke="var(--muted-2)" />
+            </button>
+          ))}
         </div>
       </div>
 
