@@ -39,7 +39,11 @@ class DiscountApplier {
 	}
 
 	/**
-	 * Apply BOGO rule to cart.
+	 * Reconcile the free item lines for a rule (add / update / remove).
+	 *
+	 * Handles the rule types that grant an additional free item. The "discounted"
+	 * rule type does not add a line; it is priced during totals calculation via
+	 * {@see DiscountApplier::apply_discounted()}.
 	 *
 	 * @param \WC_Cart $cart           Cart object.
 	 * @param Rule     $rule           Rule object.
@@ -47,28 +51,25 @@ class DiscountApplier {
 	 *
 	 * @return void
 	 */
-	public function apply( $cart, Rule $rule, $eligible_items ) {
+	public function sync( $cart, Rule $rule, $eligible_items ) {
 		switch ( $rule->rule_type ) {
 			case Rule::TYPE_BUY_X_GET_X:
-				$this->apply_buy_x_get_x( $cart, $rule, $eligible_items );
+				$this->sync_buy_x_get_x( $cart, $rule, $eligible_items );
 				break;
 
 			case Rule::TYPE_BUY_X_GET_Y:
-				$this->apply_buy_x_get_y( $cart, $rule, $eligible_items );
-				break;
-
 			case Rule::TYPE_BUY_CAT_GET_FREE:
-				$this->apply_buy_cat_get_free( $cart, $rule, $eligible_items );
+				$this->sync_free_product( $cart, $rule, $eligible_items );
 				break;
 
 			case Rule::TYPE_BUY_X_GET_X_DISCOUNTED:
-				$this->apply_buy_x_get_x_discounted( $cart, $rule, $eligible_items );
+				// No free line to add; discount is applied during totals calculation.
 				break;
 		}
 	}
 
 	/**
-	 * Apply Buy X Get X Free rule.
+	 * Apply a "Buy X Get X Discounted" rule to existing eligible lines.
 	 *
 	 * @param \WC_Cart $cart           Cart object.
 	 * @param Rule     $rule           Rule object.
@@ -76,7 +77,26 @@ class DiscountApplier {
 	 *
 	 * @return void
 	 */
-	private function apply_buy_x_get_x( $cart, Rule $rule, $eligible_items ) {
+	public function apply_discounted( $cart, Rule $rule, $eligible_items ) {
+		$free_quantity = $this->eligibility_checker->calculate_free_quantity( $eligible_items, $rule );
+
+		if ( $free_quantity <= 0 ) {
+			return;
+		}
+
+		$this->apply_discount_to_cheapest( $cart, $rule, $eligible_items, $free_quantity );
+	}
+
+	/**
+	 * Reconcile the free item(s) for a Buy X Get X Free rule.
+	 *
+	 * @param \WC_Cart $cart           Cart object.
+	 * @param Rule     $rule           Rule object.
+	 * @param array    $eligible_items Eligible cart items.
+	 *
+	 * @return void
+	 */
+	private function sync_buy_x_get_x( $cart, Rule $rule, $eligible_items ) {
 		$free_quantity = $this->eligibility_checker->calculate_free_quantity( $eligible_items, $rule );
 
 		if ( $free_quantity <= 0 ) {
@@ -84,19 +104,71 @@ class DiscountApplier {
 			return;
 		}
 
-		// For Buy X Get X with specific products, add a free copy of the same product.
+		// For Buy X Get X with specific products, add a free copy of the configured product.
 		if ( Rule::APPLY_SPECIFIC_PRODUCTS === $rule->apply_to && ! empty( $rule->buy_product_ids ) ) {
-			$free_product_id = $rule->buy_product_ids[0];
+			$free_product_id = (int) $rule->buy_product_ids[0];
 			$this->free_item_manager->add_free_item( $cart, $free_product_id, $free_quantity, $rule );
 			return;
 		}
 
-		// For all products / categories, apply discount to cheapest eligible items.
-		$this->apply_discount_to_cheapest( $cart, $rule, $eligible_items, $free_quantity );
+		// For all products / categories, add free copies of the cheapest eligible products
+		// so the customer receives an additional free item rather than the purchased one becoming free.
+		$this->add_free_cheapest( $cart, $rule, $eligible_items, $free_quantity );
 	}
 
 	/**
-	 * Apply Buy X Get Y Free rule.
+	 * Add free copies of the cheapest eligible products.
+	 *
+	 * Used for "Buy X Get X Free" rules that apply to all products or categories,
+	 * where no specific free product is configured. A free duplicate of each eligible
+	 * product is added to the cart (cheapest first) until the free quantity is met.
+	 *
+	 * @param \WC_Cart $cart           Cart object.
+	 * @param Rule     $rule           Rule object.
+	 * @param array    $eligible_items Eligible cart items.
+	 * @param int      $free_quantity  Total number of free units to grant.
+	 *
+	 * @return void
+	 */
+	private function add_free_cheapest( $cart, Rule $rule, $eligible_items, $free_quantity ) {
+		// Sort items by price (cheapest first) so the cheapest products are given for free.
+		uasort(
+			$eligible_items,
+			function ( $a, $b ) {
+				return $a['data']->get_price() <=> $b['data']->get_price();
+			}
+		);
+
+		$remaining      = (int) $free_quantity;
+		$free_added_ids = array();
+
+		foreach ( $eligible_items as $cart_item ) {
+			if ( $remaining <= 0 ) {
+				break;
+			}
+
+			$product_id = $cart_item['variation_id'] ? $cart_item['variation_id'] : $cart_item['product_id'];
+
+			// Never grant more free units of a line than were purchased.
+			$free_qty = min( (int) $cart_item['quantity'], $remaining );
+
+			if ( $free_qty <= 0 ) {
+				continue;
+			}
+
+			$this->free_item_manager->add_free_item( $cart, $product_id, $free_qty, $rule );
+			$free_added_ids[] = (int) $product_id;
+			$remaining       -= $free_qty;
+		}
+
+		// Remove any previously-added free items for this rule that are no longer valid.
+		$this->free_item_manager->remove_rule_items_except( $cart, $rule->id, $free_added_ids );
+	}
+
+	/**
+	 * Reconcile the free item for a rule that grants a specific free product.
+	 *
+	 * Used by "Buy X Get Y Free" and "Buy from Category Get Free" rules.
 	 *
 	 * @param \WC_Cart $cart           Cart object.
 	 * @param Rule     $rule           Rule object.
@@ -104,7 +176,7 @@ class DiscountApplier {
 	 *
 	 * @return void
 	 */
-	private function apply_buy_x_get_y( $cart, Rule $rule, $eligible_items ) {
+	private function sync_free_product( $cart, Rule $rule, $eligible_items ) {
 		$free_quantity = $this->eligibility_checker->calculate_free_quantity( $eligible_items, $rule );
 
 		if ( $free_quantity <= 0 || empty( $rule->free_product_ids ) ) {
@@ -112,52 +184,12 @@ class DiscountApplier {
 			return;
 		}
 
-		// Add the specified free product.
-		$free_product_id = $rule->free_product_ids[0]; // Use first free product.
+		// Add the specified free product (first configured free product).
+		$free_product_id = (int) $rule->free_product_ids[0];
 		$this->free_item_manager->add_free_item( $cart, $free_product_id, $free_quantity, $rule );
-	}
 
-	/**
-	 * Apply Buy from Category Get Free rule.
-	 *
-	 * @param \WC_Cart $cart           Cart object.
-	 * @param Rule     $rule           Rule object.
-	 * @param array    $eligible_items Eligible cart items.
-	 *
-	 * @return void
-	 */
-	private function apply_buy_cat_get_free( $cart, Rule $rule, $eligible_items ) {
-		$free_quantity = $this->eligibility_checker->calculate_free_quantity( $eligible_items, $rule );
-
-		if ( $free_quantity <= 0 || empty( $rule->free_product_ids ) ) {
-			$this->free_item_manager->remove_rule_items( $cart, $rule->id );
-			return;
-		}
-
-		// Add the specified free product.
-		$free_product_id = $rule->free_product_ids[0];
-		$this->free_item_manager->add_free_item( $cart, $free_product_id, $free_quantity, $rule );
-	}
-
-	/**
-	 * Apply Buy X Get X Discounted rule.
-	 *
-	 * @param \WC_Cart $cart           Cart object.
-	 * @param Rule     $rule           Rule object.
-	 * @param array    $eligible_items Eligible cart items.
-	 *
-	 * @return void
-	 */
-	private function apply_buy_x_get_x_discounted( $cart, Rule $rule, $eligible_items ) {
-		$free_quantity = $this->eligibility_checker->calculate_free_quantity( $eligible_items, $rule );
-
-		if ( $free_quantity <= 0 ) {
-			$this->free_item_manager->remove_rule_items( $cart, $rule->id );
-			return;
-		}
-
-		// Apply percentage discount to cheapest items.
-		$this->apply_discount_to_cheapest( $cart, $rule, $eligible_items, $free_quantity );
+		// Drop any stale free lines for this rule (e.g. if the configured product changed).
+		$this->free_item_manager->remove_rule_items_except( $cart, $rule->id, array( $free_product_id ) );
 	}
 
 	/**
