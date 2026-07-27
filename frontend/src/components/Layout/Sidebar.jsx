@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  HomeIcon, TagIcon, WandIcon, ChartIcon,
+  HomeIcon, TagIcon, WandIcon,
   SettingsIcon, HelpIcon,
 } from '../Icons';
 
@@ -38,9 +38,6 @@ function Sidebar() {
       <SbItem label="Dashboard" Icon={HomeIcon} active={currentTab === 'dashboard'} onClick={() => navigate('dashboard')} />
       <SbItem label="BOGO Rules" Icon={TagIcon} active={currentTab === 'rules' && !isCreating} onClick={() => navigate('rules')} />
       <SbItem label="New rule" Icon={WandIcon} active={isCreating} onClick={() => navigate('rules', '&action=create')} />
-
-      <div className="bogo-sidebar__section">Insights</div>
-      <SbItem label="Analytics" Icon={ChartIcon} active={currentTab === 'analytics'} onClick={() => navigate('analytics')} />
 
       <div className="bogo-sidebar__section">System</div>
       <SbItem label="Settings" Icon={SettingsIcon} active={currentTab === 'settings'} onClick={() => navigate('settings')} />
