@@ -1,8 +1,8 @@
 === Buy One Get One ===
-Contributors: yourname
-Tags: woocommerce, bogo, buy one get one, discount, promotion, deals
+Contributors: manzurahammed
+Tags: woocommerce, bogo, buy one get one, discount, promotion
 Requires at least: 6.0
-Tested up to: 6.5
+Tested up to: 6.8
 Requires PHP: 7.4
 Stable tag: 1.0.0
 License: GPL-2.0-or-later

@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
-import { useRules, useDeleteRule, useUpdateRuleStatus, useBulkAction } from '../hooks/useRules';
+import { useRules, useDeleteRule, useUpdateRuleStatus } from '../hooks/useRules';
 import { useNotification } from '../hooks/useNotification';
 import { PageLoader } from '../components/Shared/Loader';
-import { Toggle } from '../components/Shared/Toggle';
 import { ConfirmModal } from '../components/Shared/Modal';
-import clsx from 'clsx';
+import AppShell from '../components/Layout/AppShell';
+import {
+  PlusIcon, GiftIcon, EditIcon, TrashIcon, SearchIcon,
+} from '../components/Icons';
+
+const PER_PAGE = 20;
 
 const ruleTypeLabels = {
   buy_x_get_x: 'Buy X Get X Free',
@@ -13,23 +17,87 @@ const ruleTypeLabels = {
   buy_x_get_x_discounted: 'Buy X Get X Discounted',
 };
 
+function RuleRow({ rule, onEdit, onDelete, onToggle }) {
+  const isActive = rule.status === 'active';
+  const statusClass = isActive ? 'bogo-status--live' : 'bogo-status--inactive';
+  const statusLabel = isActive ? 'Live' : 'Inactive';
+
+  return (
+    <div className="bogo-rule">
+      <div className="bogo-col">
+        <div className="bogo-row" style={{ gap: 8 }}>
+          <span className="bogo-rule__name">{rule.title}</span>
+          <span style={{ fontSize: 11, color: 'var(--muted)', background: 'var(--chip)', padding: '2px 8px', borderRadius: 999 }}>
+            {ruleTypeLabels[rule.rule_type] || rule.rule_type}
+          </span>
+        </div>
+        <div className="bogo-flow">
+          <span className="bogo-flow__node">
+            Buy {rule.buy_quantity}
+            {rule.apply_to === 'specific_products' ? ' items' : ' from category'}
+          </span>
+          <span className="bogo-flow__arrow">→</span>
+          <span className="bogo-flow__node bogo-flow__node--get">
+            <GiftIcon size={12} />
+            Get {rule.free_quantity}
+            {rule.discount_type === 'free' ? ' free' : ` at ${rule.discount_value}% off`}
+          </span>
+        </div>
+        {rule.start_date && (
+          <div className="bogo-rule__meta">
+            <span>{rule.start_date} → {rule.end_date || 'ongoing'}</span>
+          </div>
+        )}
+      </div>
+      <div className="bogo-col bogo-align-right" style={{ fontSize: 12, minWidth: 60 }}>
+        <span style={{ color: 'var(--muted)' }}>Priority</span>
+        <span style={{ fontWeight: 600, marginTop: 2 }} className="bogo-mono">{rule.priority}</span>
+      </div>
+      <div className="bogo-row" style={{ gap: 8 }}>
+        <span className={`bogo-status ${statusClass}`}>
+          <span className="bogo-status__dot" />
+          {statusLabel}
+        </span>
+        <button
+          className={`bogo-toggle${isActive ? ' bogo-toggle--on' : ''}`}
+          onClick={() => onToggle(rule)}
+          title={isActive ? 'Deactivate' : 'Activate'}
+        />
+        <button
+          className="bogo-button bogo-button--sm bogo-button--ghost"
+          onClick={() => onEdit(rule.id)}
+          title="Edit"
+        >
+          <EditIcon size={13} />
+        </button>
+        <button
+          className="bogo-button bogo-button--sm bogo-button--ghost"
+          onClick={() => onDelete(rule.id)}
+          title="Delete"
+          style={{ color: 'var(--danger-clr)' }}
+        >
+          <TrashIcon size={13} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function RulesPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [selectedIds, setSelectedIds] = useState([]);
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, ruleId: null });
 
   const { data: rules, isLoading, error } = useRules({
     page,
-    per_page: 20,
+    per_page: PER_PAGE,
     search,
     status: statusFilter,
   });
 
   const deleteRule = useDeleteRule();
   const updateStatus = useUpdateRuleStatus();
-  const bulkAction = useBulkAction();
   const { success, error: showError } = useNotification();
 
   const handleStatusToggle = async (rule) => {
@@ -37,7 +105,7 @@ function RulesPage() {
     try {
       await updateStatus.mutateAsync({ id: rule.id, status: newStatus });
       success(`Rule ${newStatus === 'active' ? 'activated' : 'deactivated'}`);
-    } catch (err) {
+    } catch {
       showError('Failed to update rule status');
     }
   };
@@ -47,211 +115,103 @@ function RulesPage() {
       await deleteRule.mutateAsync(deleteModal.ruleId);
       success('Rule deleted successfully');
       setDeleteModal({ isOpen: false, ruleId: null });
-    } catch (err) {
+    } catch {
       showError('Failed to delete rule');
     }
   };
 
-  const handleBulkAction = async (action) => {
-    if (selectedIds.length === 0) return;
-    try {
-      await bulkAction.mutateAsync({ action, ids: selectedIds });
-      success(`${selectedIds.length} rules ${action === 'delete' ? 'deleted' : action + 'd'}`);
-      setSelectedIds([]);
-    } catch (err) {
-      showError('Bulk action failed');
-    }
-  };
+  const liveCount = rules?.filter((r) => r.status === 'active').length ?? 0;
 
-  const toggleSelectAll = () => {
-    if (selectedIds.length === rules?.length) {
-      setSelectedIds([]);
-    } else {
-      setSelectedIds(rules?.map((r) => r.id) || []);
-    }
-  };
+  const actions = (
+    <button
+      className="bogo-button bogo-button--primary bogo-button--sm"
+      onClick={() => { window.location.href = 'admin.php?page=buy-one-get-one&tab=rules&action=create'; }}
+    >
+      <PlusIcon size={14} /> New rule
+    </button>
+  );
 
-  const toggleSelect = (id) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
-    );
-  };
+  if (isLoading) return (
+    <AppShell crumb={['Bogo', 'BOGO Rules']} actions={actions}>
+      <PageLoader />
+    </AppShell>
+  );
 
-  if (isLoading) {
-    return <PageLoader />;
-  }
-
-  if (error) {
-    return (
-      <div className="bogo-text-center bogo-py-12">
-        <p className="bogo-text-danger-500">Failed to load rules. Please try again.</p>
+  if (error) return (
+    <AppShell crumb={['Bogo', 'BOGO Rules']} actions={actions}>
+      <div style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--muted)' }}>
+        Failed to load rules. Please try again.
       </div>
-    );
-  }
+    </AppShell>
+  );
 
   return (
-    <div className="bogo-space-y-4">
-      {/* Filters */}
-      <div className="bogo-flex bogo-flex-wrap bogo-items-center bogo-gap-4">
-        <div className="bogo-flex-1 bogo-min-w-64">
-          <input
-            type="text"
-            placeholder="Search rules..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="bogo-input"
-          />
+    <AppShell crumb={['Bogo', 'BOGO Rules']} actions={actions}>
+      <div className="bogo-page-header">
+        <div>
+          <div className="bogo-page-header__title">BOGO Rules</div>
+          <div className="bogo-page-header__desc">{liveCount} active · {rules?.length ?? 0} total</div>
         </div>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="bogo-select bogo-w-40"
-        >
-          <option value="">All Status</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-        </select>
+        <div className="bogo-row" style={{ gap: 10 }}>
+          <div style={{ position: 'relative' }}>
+            <input
+              className="bogo-form-input"
+              placeholder="Search rules…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{ width: 240, paddingLeft: 32 }}
+            />
+            <SearchIcon size={14} stroke="var(--muted-2)" style={{ position: 'absolute', left: 11, top: 11 }} />
+          </div>
+          <div className="bogo-tabs">
+            <button className={`bogo-tabs__tab${statusFilter === '' ? ' bogo-tabs__tab--active' : ''}`} onClick={() => setStatusFilter('')}>All</button>
+            <button className={`bogo-tabs__tab${statusFilter === 'active' ? ' bogo-tabs__tab--active' : ''}`} onClick={() => setStatusFilter('active')}>Live</button>
+            <button className={`bogo-tabs__tab${statusFilter === 'inactive' ? ' bogo-tabs__tab--active' : ''}`} onClick={() => setStatusFilter('inactive')}>Inactive</button>
+          </div>
+        </div>
       </div>
 
-      {/* Bulk Actions */}
-      {selectedIds.length > 0 && (
-        <div className="bogo-flex bogo-items-center bogo-gap-4 bogo-p-4 bogo-bg-primary-50 bogo-rounded-lg">
-          <span className="bogo-text-sm bogo-font-medium bogo-text-primary-700">
-            {selectedIds.length} selected
-          </span>
-          <button
-            onClick={() => handleBulkAction('activate')}
-            className="bogo-text-sm bogo-text-primary-600 hover:bogo-text-primary-700"
-          >
-            Activate
-          </button>
-          <button
-            onClick={() => handleBulkAction('deactivate')}
-            className="bogo-text-sm bogo-text-primary-600 hover:bogo-text-primary-700"
-          >
-            Deactivate
-          </button>
-          <button
-            onClick={() => handleBulkAction('delete')}
-            className="bogo-text-sm bogo-text-danger-600 hover:bogo-text-danger-700"
-          >
-            Delete
-          </button>
-        </div>
-      )}
-
-      {/* Rules Table */}
-      <div className="bogo-card bogo-overflow-hidden">
+      <div className="bogo-rule-list">
         {rules && rules.length > 0 ? (
-          <table className="bogo-table">
-            <thead>
-              <tr>
-                <th className="bogo-w-10">
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.length === rules.length}
-                    onChange={toggleSelectAll}
-                    className="bogo-rounded"
-                  />
-                </th>
-                <th>Title</th>
-                <th>Type</th>
-                <th>Buy / Get</th>
-                <th>Status</th>
-                <th className="bogo-w-32">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bogo-divide-y bogo-divide-gray-200">
-              {rules.map((rule) => (
-                <tr key={rule.id} className="hover:bogo-bg-gray-50">
-                  <td>
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.includes(rule.id)}
-                      onChange={() => toggleSelect(rule.id)}
-                      className="bogo-rounded"
-                    />
-                  </td>
-                  <td>
-                    <div className="bogo-font-medium bogo-text-gray-900">
-                      {rule.title}
-                    </div>
-                    {rule.start_date && (
-                      <div className="bogo-text-xs bogo-text-gray-500">
-                        {rule.start_date} - {rule.end_date || 'No end'}
-                      </div>
-                    )}
-                  </td>
-                  <td>
-                    <span className="bogo-badge bogo-bg-gray-100 bogo-text-gray-700">
-                      {ruleTypeLabels[rule.rule_type] || rule.rule_type}
-                    </span>
-                  </td>
-                  <td>
-                    <span className="bogo-text-sm">
-                      Buy {rule.buy_quantity} / Get {rule.free_quantity}
-                      {rule.discount_type === 'percentage' && ` @ ${rule.discount_value}% off`}
-                      {rule.discount_type === 'free' && ' FREE'}
-                    </span>
-                  </td>
-                  <td>
-                    <Toggle
-                      checked={rule.status === 'active'}
-                      onChange={() => handleStatusToggle(rule)}
-                    />
-                  </td>
-                  <td>
-                    <div className="bogo-flex bogo-items-center bogo-gap-2">
-                      <button
-                        onClick={() => {
-                          window.location.href = `admin.php?page=buy-one-get-one&tab=rules&action=edit&rule_id=${rule.id}`;
-                        }}
-                        className="bogo-text-primary-600 hover:bogo-text-primary-700"
-                        title="Edit"
-                      >
-                        <svg className="bogo-w-5 bogo-h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => setDeleteModal({ isOpen: true, ruleId: rule.id })}
-                        className="bogo-text-danger-600 hover:bogo-text-danger-700"
-                        title="Delete"
-                      >
-                        <svg className="bogo-w-5 bogo-h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          rules.map((rule) => (
+            <RuleRow
+              key={rule.id}
+              rule={rule}
+              onEdit={(id) => { window.location.href = `admin.php?page=buy-one-get-one&tab=rules&action=edit&rule_id=${id}`; }}
+              onDelete={(id) => setDeleteModal({ isOpen: true, ruleId: id })}
+              onToggle={handleStatusToggle}
+            />
+          ))
         ) : (
-          <div className="bogo-text-center bogo-py-12">
-            <svg className="bogo-mx-auto bogo-h-12 bogo-w-12 bogo-text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" />
-            </svg>
-            <h3 className="bogo-mt-2 bogo-text-sm bogo-font-medium bogo-text-gray-900">
-              No rules found
-            </h3>
-            <p className="bogo-mt-1 bogo-text-sm bogo-text-gray-500">
-              Get started by creating a new BOGO rule.
-            </p>
-            <button
-              onClick={() => {
-                window.location.href = 'admin.php?page=buy-one-get-one&tab=rules&action=create';
-              }}
-              className="bogo-mt-4 bogo-btn bogo-btn-primary"
-            >
-              Create Rule
-            </button>
+          <div className="bogo-panel" style={{ textAlign: 'center', padding: '48px 20px' }}>
+            <GiftIcon size={40} stroke="var(--muted-2)" />
+            <div style={{ marginTop: 14, fontSize: 15, fontWeight: 600 }}>No rules found</div>
+            <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4 }}>
+              {search ? 'Try a different search term.' : 'Create your first BOGO rule to get started.'}
+            </div>
+            {!search && (
+              <button
+                className="bogo-button bogo-button--primary bogo-button--sm"
+                style={{ marginTop: 16 }}
+                onClick={() => { window.location.href = 'admin.php?page=buy-one-get-one&tab=rules&action=create'; }}
+              >
+                <PlusIcon size={13} /> Create rule
+              </button>
+            )}
           </div>
         )}
       </div>
 
-      {/* Delete Confirmation Modal */}
+      {rules && (page > 1 || rules.length === PER_PAGE) && (
+        <div className="bogo-row" style={{ justifyContent: 'space-between', marginTop: 18, color: 'var(--muted)', fontSize: 12 }}>
+          <span>Showing {rules.length} rules</span>
+          <div className="bogo-row" style={{ gap: 6 }}>
+            <button className="bogo-button bogo-button--sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>‹ Prev</button>
+            <button className="bogo-button bogo-button--sm" onClick={() => setPage((p) => p + 1)} disabled={rules.length < PER_PAGE}>Next ›</button>
+          </div>
+        </div>
+      )}
+
       <ConfirmModal
         isOpen={deleteModal.isOpen}
         onClose={() => setDeleteModal({ isOpen: false, ruleId: null })}
@@ -260,7 +220,7 @@ function RulesPage() {
         message="Are you sure you want to delete this rule? This action cannot be undone."
         confirmText="Delete"
       />
-    </div>
+    </AppShell>
   );
 }
 

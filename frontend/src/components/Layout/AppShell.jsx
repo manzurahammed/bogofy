@@ -1,17 +1,17 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Sidebar from './Sidebar';
-import Header from './Header';
+import Topbar from './Header';
 import { Notification } from '../Shared/Notification';
 
-function AppShell({ children }) {
+function AppShell({ children, crumb = ['Bogo'], actions = null }) {
   return (
-    <div className="bogo-flex bogo-min-h-screen">
-      <Sidebar />
-      <div className="bogo-flex-1 bogo-flex bogo-flex-col">
-        <Header />
-        <main className="bogo-flex-1 bogo-p-6 bogo-bg-gray-50">
-          {children}
+    <div className="bogo-admin">
+      <div className="bogo-app">
+        <Sidebar />
+        <main className="bogo-main">
+          <Topbar crumb={crumb} actions={actions} />
+          <div className="bogo-content">{children}</div>
         </main>
       </div>
       <Notification />
@@ -21,6 +21,8 @@ function AppShell({ children }) {
 
 AppShell.propTypes = {
   children: PropTypes.node.isRequired,
+  crumb: PropTypes.arrayOf(PropTypes.string),
+  actions: PropTypes.node,
 };
 
 export default AppShell;

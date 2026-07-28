@@ -105,10 +105,19 @@ class Plugin {
 	private function define_public_hooks() {
 		// Cart handling.
 		$cart_handler = new CartHandler();
-		$this->loader->add_action( 'woocommerce_before_calculate_totals', $cart_handler, 'apply_bogo_rules', 10, 1 );
-		$this->loader->add_action( 'woocommerce_add_to_cart', $cart_handler, 'on_add_to_cart', 10, 6 );
-		$this->loader->add_action( 'woocommerce_cart_item_removed', $cart_handler, 'on_cart_item_removed', 10, 2 );
-		$this->loader->add_action( 'woocommerce_update_cart_action_cart_updated', $cart_handler, 'on_cart_updated', 10, 1 );
+
+		// Reconcile free item lines on cart mutations and on each cart load (never during totals calc).
+		$this->loader->add_action( 'woocommerce_add_to_cart', $cart_handler, 'on_add_to_cart', 20, 6 );
+		$this->loader->add_action( 'woocommerce_cart_item_removed', $cart_handler, 'on_cart_item_removed', 20, 2 );
+		$this->loader->add_action( 'woocommerce_cart_item_restored', $cart_handler, 'sync_free_items', 20 );
+		$this->loader->add_action( 'woocommerce_after_cart_item_quantity_update', $cart_handler, 'sync_free_items', 20 );
+		$this->loader->add_action( 'woocommerce_update_cart_action_cart_updated', $cart_handler, 'on_cart_updated', 20, 1 );
+		$this->loader->add_action( 'woocommerce_cart_loaded_from_session', $cart_handler, 'sync_free_items', 20 );
+		$this->loader->add_action( 'woocommerce_check_cart_items', $cart_handler, 'sync_free_items', 20 );
+
+		// Price free/discounted items during totals calculation only.
+		$this->loader->add_action( 'woocommerce_before_calculate_totals', $cart_handler, 'apply_bogo_prices', 10, 1 );
+
 		$this->loader->add_filter( 'woocommerce_cart_item_quantity', $cart_handler, 'filter_cart_item_quantity', 10, 3 );
 
 		// Product page display.

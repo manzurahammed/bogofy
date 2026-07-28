@@ -67,9 +67,6 @@ class FreeItemManager {
 			$variation    = $product->get_variation_attributes();
 		}
 
-		// Temporarily remove our hook to prevent recursion.
-		remove_action( 'woocommerce_add_to_cart', array( $this, 'on_add_to_cart' ), 10 );
-
 		$cart_item_key = $cart->add_to_cart(
 			$product_id,
 			$quantity,
@@ -77,9 +74,6 @@ class FreeItemManager {
 			$variation,
 			$cart_item_data
 		);
-
-		// Re-add hook.
-		add_action( 'woocommerce_add_to_cart', array( $this, 'on_add_to_cart' ), 10, 6 );
 
 		if ( $cart_item_key ) {
 			$this->apply_free_price( $cart, $cart_item_key, $rule );
@@ -107,6 +101,40 @@ class FreeItemManager {
 				(int) $cart_item[ CartHandler::BOGO_RULE_KEY ] === $rule_id
 			) {
 				$items_to_remove[] = $cart_item_key;
+			}
+		}
+
+		foreach ( $items_to_remove as $key ) {
+			$cart->remove_cart_item( $key );
+		}
+	}
+
+	/**
+	 * Remove BOGO items for a rule except for the given product IDs.
+	 *
+	 * Keeps free items whose product is still being granted and removes the rest,
+	 * so stale free lines are cleaned up when the eligible products change.
+	 *
+	 * @param \WC_Cart $cart             Cart object.
+	 * @param int      $rule_id          Rule ID.
+	 * @param array    $keep_product_ids Product/variation IDs to keep.
+	 *
+	 * @return void
+	 */
+	public function remove_rule_items_except( $cart, $rule_id, $keep_product_ids ) {
+		$keep_product_ids = array_map( 'intval', (array) $keep_product_ids );
+		$items_to_remove  = array();
+
+		foreach ( $cart->get_cart() as $cart_item_key => $cart_item ) {
+			if (
+				CartHandler::is_bogo_item( $cart_item ) &&
+				isset( $cart_item[ CartHandler::BOGO_RULE_KEY ] ) &&
+				(int) $cart_item[ CartHandler::BOGO_RULE_KEY ] === (int) $rule_id
+			) {
+				$item_product_id = $cart_item['variation_id'] ? $cart_item['variation_id'] : $cart_item['product_id'];
+				if ( ! in_array( (int) $item_product_id, $keep_product_ids, true ) ) {
+					$items_to_remove[] = $cart_item_key;
+				}
 			}
 		}
 
@@ -200,7 +228,7 @@ class FreeItemManager {
 	 *
 	 * @return void
 	 */
-	private function apply_free_price( $cart, $cart_item_key, Rule $rule ) {
+	public function apply_free_price( $cart, $cart_item_key, Rule $rule ) {
 		if ( ! isset( $cart->cart_contents[ $cart_item_key ] ) ) {
 			return;
 		}

@@ -1,59 +1,31 @@
 import React from 'react';
+import PropTypes from 'prop-types';
+import { ChevRIcon } from '../Icons';
 
-function Header() {
-  const params = new URLSearchParams(window.location.search);
-  const currentTab = params.get('tab') || 'dashboard';
-  const action = params.get('action');
-
-  const getTitle = () => {
-    if (action === 'create') return 'Create New Rule';
-    if (action === 'edit') return 'Edit Rule';
-
-    switch (currentTab) {
-      case 'rules':
-        return 'BOGO Rules';
-      case 'settings':
-        return 'Settings';
-      case 'dashboard':
-      default:
-        return 'Dashboard';
-    }
-  };
-
-  const handleCreateRule = () => {
-    window.location.href = 'admin.php?page=buy-one-get-one&tab=rules&action=create';
-  };
-
+function Topbar({ crumb = ['Bogo'], actions }) {
   return (
-    <header className="bogo-bg-white bogo-border-b bogo-border-gray-200 bogo-px-6 bogo-py-4">
-      <div className="bogo-flex bogo-items-center bogo-justify-between">
-        <h2 className="bogo-text-2xl bogo-font-semibold bogo-text-gray-900">
-          {getTitle()}
-        </h2>
-        {currentTab === 'rules' && !action && (
-          <button
-            onClick={handleCreateRule}
-            className="bogo-btn bogo-btn-primary"
-          >
-            <svg
-              className="bogo-w-4 bogo-h-4 bogo-mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 4v16m8-8H4"
-              />
-            </svg>
-            Create Rule
-          </button>
-        )}
+    <div className="bogo-topbar">
+      <div className="bogo-breadcrumb">
+        {crumb.map((c, i) => (
+          <React.Fragment key={i}>
+            {i > 0 && <ChevRIcon size={12} stroke="var(--muted-2)" />}
+            {i === crumb.length - 1 ? <b>{c}</b> : <span>{c}</span>}
+          </React.Fragment>
+        ))}
       </div>
-    </header>
+      <div className="bogo-fill" />
+      {actions && (
+        <div className="bogo-row" style={{ gap: 8, flexShrink: 0 }}>
+          {actions}
+        </div>
+      )}
+    </div>
   );
 }
 
-export default Header;
+Topbar.propTypes = {
+  crumb: PropTypes.arrayOf(PropTypes.string),
+  actions: PropTypes.node,
+};
+
+export default Topbar;

@@ -1,13 +1,12 @@
 <?php
 /**
  * Plugin Name:       Buy One Get One
- * Plugin URI:        https://github.com/your-username/buy-one-get-one
  * Description:       Create powerful BOGO (Buy One Get One) discount rules for WooCommerce — unlimited rules, scheduling, category support, and more. Completely free.
  * Version:           1.0.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
- * Author:            Your Name
- * Author URI:        https://your-website.com
+ * Author:            Manzur Ahammed
+ * Author URI:        https://manzur.me
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       buy-one-get-one

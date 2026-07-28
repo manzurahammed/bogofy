@@ -154,8 +154,14 @@ class RestApi {
 					'callback'            => array( $this, 'search_products' ),
 					'permission_callback' => array( $this, 'check_permission' ),
 					'args'                => array(
-						'q' => array(
-							'required'          => true,
+						'q'       => array(
+							'required'          => false,
+							'default'           => '',
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+						'include' => array(
+							'required'          => false,
+							'default'           => '',
 							'sanitize_callback' => 'sanitize_text_field',
 						),
 					),
@@ -173,8 +179,14 @@ class RestApi {
 					'callback'            => array( $this, 'search_categories' ),
 					'permission_callback' => array( $this, 'check_permission' ),
 					'args'                => array(
-						'q' => array(
+						'q'       => array(
 							'required'          => false,
+							'default'           => '',
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+						'include' => array(
+							'required'          => false,
+							'default'           => '',
 							'sanitize_callback' => 'sanitize_text_field',
 						),
 					),
@@ -336,9 +348,9 @@ class RestApi {
 			);
 		}
 
-		$data     = $request->get_json_params();
+		$data       = $request->get_json_params();
 		$data['id'] = $id;
-		$rule     = Rule::from_request( $data );
+		$rule       = Rule::from_request( $data );
 
 		$validation = $rule->validate();
 		if ( is_wp_error( $validation ) ) {
@@ -551,15 +563,21 @@ class RestApi {
 	 * @return WP_REST_Response
 	 */
 	public function search_products( WP_REST_Request $request ) {
-		$search = $request->get_param( 'q' );
+		$search  = $request->get_param( 'q' );
+		$include = array_filter( array_map( 'absint', explode( ',', (string) $request->get_param( 'include' ) ) ) );
 
 		$args = array(
 			'status'  => 'publish',
 			'limit'   => 20,
-			's'       => $search,
 			'orderby' => 'title',
 			'order'   => 'ASC',
 		);
+
+		if ( ! empty( $include ) ) {
+			$args['include'] = $include;
+		} else {
+			$args['s'] = $search;
+		}
 
 		$products = wc_get_products( $args );
 		$results  = array();
@@ -586,7 +604,8 @@ class RestApi {
 	 * @return WP_REST_Response
 	 */
 	public function search_categories( WP_REST_Request $request ) {
-		$search = $request->get_param( 'q' );
+		$search  = $request->get_param( 'q' );
+		$include = array_filter( array_map( 'absint', explode( ',', (string) $request->get_param( 'include' ) ) ) );
 
 		$args = array(
 			'taxonomy'   => 'product_cat',
@@ -596,7 +615,9 @@ class RestApi {
 			'order'      => 'ASC',
 		);
 
-		if ( ! empty( $search ) ) {
+		if ( ! empty( $include ) ) {
+			$args['include'] = $include;
+		} elseif ( ! empty( $search ) ) {
 			$args['search'] = $search;
 		}
 

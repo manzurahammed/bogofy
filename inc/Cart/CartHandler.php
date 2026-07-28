@@ -67,11 +67,11 @@ class CartHandler {
 	private $free_item_manager;
 
 	/**
-	 * Flag to prevent recursion.
+	 * Flag to prevent recursion while syncing free items.
 	 *
 	 * @var bool
 	 */
-	private $processing = false;
+	private $syncing = false;
 
 	/**
 	 * Constructor.
@@ -84,17 +84,19 @@ class CartHandler {
 	}
 
 	/**
-	 * Apply BOGO rules to cart.
+	 * Reconcile BOGO free items in the cart.
 	 *
-	 * @param \WC_Cart $cart Cart object.
+	 * Adds, updates, or removes free item lines based on the currently eligible
+	 * cart contents. This runs on cart-mutation hooks (add to cart, remove, quantity
+	 * update) and when the cart is loaded from the session, so it never adds items
+	 * during totals calculation.
+	 *
+	 * Accepts (and ignores) any arguments so it can be attached directly to hooks
+	 * with differing signatures.
 	 *
 	 * @return void
 	 */
-	public function apply_bogo_rules( $cart ) {
-		if ( $this->processing ) {
-			return;
-		}
-
+	public function sync_free_items() {
 		if ( ! Settings::is_enabled() ) {
 			return;
 		}
@@ -103,54 +105,111 @@ class CartHandler {
 			return;
 		}
 
-		if ( did_action( 'woocommerce_before_calculate_totals' ) >= 2 ) {
+		if ( $this->syncing ) {
 			return;
 		}
 
-		$this->processing = true;
+		$cart = WC()->cart;
 
-		// Get active rules.
+		if ( ! $cart instanceof \WC_Cart ) {
+			return;
+		}
+
 		$rules = $this->repository->get_active_rules();
 
 		if ( empty( $rules ) ) {
-			$this->processing = false;
 			return;
 		}
 
-		// Check eligibility and apply rules.
+		$this->syncing = true;
+
 		foreach ( $rules as $rule ) {
 			$eligible_items = $this->eligibility_checker->get_eligible_items( $cart, $rule );
 
 			if ( ! empty( $eligible_items ) ) {
-				$this->discount_applier->apply( $cart, $rule, $eligible_items );
+				$this->discount_applier->sync( $cart, $rule, $eligible_items );
 			} else {
 				// Remove free items for this rule if no longer eligible.
 				$this->free_item_manager->remove_rule_items( $cart, $rule->id );
 			}
 		}
 
-		$this->processing = false;
+		$this->syncing = false;
+	}
+
+	/**
+	 * Apply BOGO prices during totals calculation.
+	 *
+	 * Only sets prices on items already in the cart. Free item lines are priced to
+	 * zero (or their configured discount) and "discounted" rule types reduce the
+	 * price of the cheapest eligible items. No items are added or removed here.
+	 *
+	 * @param \WC_Cart $cart Cart object.
+	 *
+	 * @return void
+	 */
+	public function apply_bogo_prices( $cart ) {
+		if ( ! Settings::is_enabled() ) {
+			return;
+		}
+
+		if ( is_admin() && ! defined( 'DOING_AJAX' ) ) {
+			return;
+		}
+
+		$rules = $this->repository->get_active_rules();
+
+		if ( empty( $rules ) ) {
+			return;
+		}
+
+		// Index rules by ID for quick lookup when pricing free lines.
+		$rule_map = array();
+		foreach ( $rules as $rule ) {
+			$rule_map[ (int) $rule->id ] = $rule;
+		}
+
+		// Price every free item line according to its owning rule.
+		foreach ( $cart->get_cart() as $cart_item_key => $cart_item ) {
+			if ( ! self::is_bogo_item( $cart_item ) || ! isset( $cart_item[ self::BOGO_RULE_KEY ] ) ) {
+				continue;
+			}
+
+			$rule_id = (int) $cart_item[ self::BOGO_RULE_KEY ];
+
+			if ( isset( $rule_map[ $rule_id ] ) ) {
+				$this->free_item_manager->apply_free_price( $cart, $cart_item_key, $rule_map[ $rule_id ] );
+			}
+		}
+
+		// Apply "Buy X Get X Discounted" rules to existing eligible lines.
+		foreach ( $rules as $rule ) {
+			if ( \BuyOneGetOne\Models\Rule::TYPE_BUY_X_GET_X_DISCOUNTED !== $rule->rule_type ) {
+				continue;
+			}
+
+			$eligible_items = $this->eligibility_checker->get_eligible_items( $cart, $rule );
+
+			if ( ! empty( $eligible_items ) ) {
+				$this->discount_applier->apply_discounted( $cart, $rule, $eligible_items );
+			}
+		}
 	}
 
 	/**
 	 * Handle add to cart event.
 	 *
-	 * @param string $cart_item_key Cart item key.
-	 * @param int    $product_id    Product ID.
-	 * @param int    $quantity      Quantity.
-	 * @param int    $variation_id  Variation ID.
-	 * @param array  $variation     Variation data.
+	 * @param string $cart_item_key  Cart item key.
+	 * @param int    $product_id     Product ID.
+	 * @param int    $quantity       Quantity.
+	 * @param int    $variation_id   Variation ID.
+	 * @param array  $variation      Variation data.
 	 * @param array  $cart_item_data Cart item data.
 	 *
 	 * @return void
 	 */
 	public function on_add_to_cart( $cart_item_key, $product_id, $quantity, $variation_id, $variation, $cart_item_data ) {
-		if ( ! Settings::is_enabled() ) {
-			return;
-		}
-
-		// Recalculate totals to trigger rule application.
-		WC()->cart->calculate_totals();
+		$this->sync_free_items();
 	}
 
 	/**
@@ -166,11 +225,11 @@ class CartHandler {
 			return;
 		}
 
-		// Check if removed item was a "buy" item that triggered a free item.
+		// Remove any free items whose triggering products are no longer present.
 		$this->free_item_manager->cleanup_orphaned_items( $cart );
 
-		// Recalculate to re-evaluate rules.
-		$cart->calculate_totals();
+		// Re-evaluate rules against the remaining cart contents.
+		$this->sync_free_items();
 	}
 
 	/**
@@ -186,7 +245,7 @@ class CartHandler {
 		}
 
 		if ( $cart_updated ) {
-			WC()->cart->calculate_totals();
+			$this->sync_free_items();
 		}
 	}
 
