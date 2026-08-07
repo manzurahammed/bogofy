@@ -1,6 +1,6 @@
 import React from 'react';
 import AppShell from '../components/Layout/AppShell';
-import { BoxIcon, GiftIcon, PercentIcon, LayersIcon, PlusIcon } from '../components/Icons';
+import { BoxIcon, GiftIcon, PlusIcon } from '../components/Icons';
 
 const ruleTypes = [
   {
@@ -13,34 +13,12 @@ const ruleTypes = [
     title: 'Buy X, Get Y free',
     desc: 'Customer buys a trigger product and receives a different gift product at no cost.',
   },
-  {
-    Icon: PercentIcon,
-    title: 'Buy X, Get X at % off',
-    desc: 'Instead of fully free, the extra item is discounted by a percentage you choose.',
-  },
-  {
-    Icon: LayersIcon,
-    title: 'Cross-category BOGO',
-    desc: 'Customer buys from one category and receives a gift product from another.',
-  },
 ];
 
 const faqs = [
   {
     q: 'Does this plugin work with variable products?',
     a: 'Yes. Both simple and variable products are supported as trigger and gift products.',
-  },
-  {
-    q: 'Can I schedule deals?',
-    a: 'Every rule can have an optional start and end date. Leave them blank to keep the rule always on.',
-  },
-  {
-    q: 'What happens when several rules match the same cart?',
-    a: 'Rules are evaluated by priority — a lower number wins. You set the priority when creating or editing a rule.',
-  },
-  {
-    q: 'Do BOGO discounts stack with coupon codes?',
-    a: 'That is up to you. Toggle "Stack with coupon codes" in Settings to allow or prevent stacking.',
   },
   {
     q: 'How do I turn everything off temporarily?',

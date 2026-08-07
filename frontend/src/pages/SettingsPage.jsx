@@ -16,7 +16,6 @@ function SettingsPage() {
     cart_notice_text: 'Congratulations! You got a free item with your purchase.',
     show_product_page_messages: true,
     show_shop_badges: true,
-    stack_with_coupons: true,
   });
 
   useEffect(() => {
@@ -144,17 +143,6 @@ function SettingsPage() {
               <div className="bogo-section-header__meta">Encourage shoppers to qualify</div>
             </div>
             <div className="bogo-settings-list">
-              <div className="bogo-settings-list__row">
-                <div className="bogo-col">
-                  <div className="bogo-settings-list__name">Stack with coupon codes</div>
-                  <div className="bogo-settings-list__desc">Allow BOGO discounts to stack with coupon codes.</div>
-                </div>
-                <button
-                  type="button"
-                  className={`bogo-toggle${formData.stack_with_coupons ? ' bogo-toggle--on' : ''}`}
-                  onClick={() => handleToggle('stack_with_coupons')}
-                />
-              </div>
               <div className="bogo-settings-list__row">
                 <div className="bogo-col">
                   <div className="bogo-settings-list__name">Cart notice text</div>
