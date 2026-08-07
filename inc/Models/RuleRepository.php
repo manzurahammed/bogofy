@@ -17,6 +17,29 @@ use BuyOneGetOne\Database\Schema;
 class RuleRepository {
 
 	/**
+	 * Object cache group.
+	 *
+	 * @var string
+	 */
+	const CACHE_GROUP = 'bogo_rules';
+
+	/**
+	 * Cache key for the active rules list.
+	 *
+	 * @var string
+	 */
+	const CACHE_KEY_ACTIVE = 'active_rules';
+
+	/**
+	 * Invalidate cached rule data after a write.
+	 *
+	 * @return void
+	 */
+	private function flush_cache() {
+		wp_cache_delete( self::CACHE_KEY_ACTIVE, self::CACHE_GROUP );
+	}
+
+	/**
 	 * Get table name.
 	 *
 	 * @return string
@@ -157,6 +180,8 @@ class RuleRepository {
 			return false;
 		}
 
+		$this->flush_cache();
+
 		return $wpdb->insert_id;
 	}
 
@@ -178,6 +203,8 @@ class RuleRepository {
 			array( '%d' )
 		);
 
+		$this->flush_cache();
+
 		return false !== $result;
 	}
 
@@ -196,6 +223,8 @@ class RuleRepository {
 			array( 'id' => $id ),
 			array( '%d' )
 		);
+
+		$this->flush_cache();
 
 		return false !== $result;
 	}
@@ -219,6 +248,8 @@ class RuleRepository {
 			array( '%d' )
 		);
 
+		$this->flush_cache();
+
 		return false !== $result;
 	}
 
@@ -241,13 +272,15 @@ class RuleRepository {
 		$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
 		$table        = $this->get_table();
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$result = $wpdb->query(
 			$wpdb->prepare(
 				"UPDATE {$table} SET status = %s WHERE id IN ({$placeholders})",
 				array_merge( array( $status ), $ids )
 			)
 		);
+
+		$this->flush_cache();
 
 		return $result;
 	}
@@ -270,13 +303,15 @@ class RuleRepository {
 		$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
 		$table        = $this->get_table();
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$result = $wpdb->query(
 			$wpdb->prepare(
 				"DELETE FROM {$table} WHERE id IN ({$placeholders})",
 				$ids
 			)
 		);
+
+		$this->flush_cache();
 
 		return $result;
 	}
@@ -287,12 +322,17 @@ class RuleRepository {
 	 * @return array Array of Rule objects.
 	 */
 	public function get_active_rules() {
+		$cached = wp_cache_get( self::CACHE_KEY_ACTIVE, self::CACHE_GROUP );
+		if ( is_array( $cached ) ) {
+			return $cached;
+		}
+
 		global $wpdb;
 
 		$table = $this->get_table();
 		$now   = current_time( 'mysql' );
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$results = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT * FROM {$table}
@@ -310,6 +350,9 @@ class RuleRepository {
 		foreach ( $results as $row ) {
 			$rules[] = Rule::from_db( $row );
 		}
+
+		// Cache briefly: the cart reads this on every recalculation within a request.
+		wp_cache_set( self::CACHE_KEY_ACTIVE, $rules, self::CACHE_GROUP, MINUTE_IN_SECONDS );
 
 		return $rules;
 	}
