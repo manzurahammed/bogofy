@@ -1,103 +1,91 @@
 === Buy One Get One ===
 Contributors: manzurahammed
-Tags: woocommerce, bogo, buy one get one, discount, promotion
+Tags: woocommerce, bogo, buy one get one, free gift, discount
 Requires at least: 6.0
-Tested up to: 6.8
+Tested up to: 7.0
 Requires PHP: 7.4
 Stable tag: 1.0.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Create powerful BOGO (Buy One Get One) discount rules for WooCommerce — unlimited rules, scheduling, category support, and more. Completely free.
+Create Buy One Get One (BOGO) free-gift offers for WooCommerce. Add a free product to the cart automatically when customers buy qualifying items.
 
 == Description ==
 
-Buy One Get One is a powerful and completely free WooCommerce plugin that lets you create unlimited BOGO deals for your store. Unlike other plugins that limit features in their free versions, this plugin gives you everything you need to run successful promotions.
+Buy One Get One lets you run simple, effective BOGO promotions in your WooCommerce store. When a customer buys the products you choose, a free item is added to their cart automatically — no coupon codes required.
 
-= Features =
+= Rule types =
 
-**Unlimited BOGO Rules**
-Create as many BOGO rules as you need without any restrictions.
+* **Buy X Get X Free** — Buy N of a product and get M of the same product free.
+* **Buy X Get Y Free** — Buy a trigger product and get a different product free.
 
-**Multiple Rule Types**
-* **Buy X Get X Free** — Buy N of the same product, get M of the same product free
-* **Buy X Get Y Free** — Buy product A, get product B free
-* **Buy from Category, Get Free** — Buy from category A, get a specific product free
-* **Buy X Get X Discounted** — Buy N, get M at a percentage discount
+= Product selection =
 
-**Flexible Product Selection**
 * Apply to specific products
-* Apply to specific categories
 * Apply to all products
 
-**Schedule Your Deals**
-Set start and end dates for time-limited promotions.
+= Display options =
 
-**Customizable Messages**
-* Display BOGO messages on product pages
-* Show badges on shop pages
-* Customize cart labels for free items
+* Show BOGO messages on product pages
+* Show badges on shop and category pages
+* Customize the label shown next to free items in the cart
+* Customize the cart notice shown when a deal is applied
 
-**Works with WooCommerce**
+= Works with WooCommerce =
+
 * Compatible with HPOS (High-Performance Order Storage)
-* Works with Cart and Checkout Blocks
-* Stacks with coupon codes (optional)
+* Compatible with the Cart and Checkout Blocks
 
-= Why Choose This Plugin? =
+= Built for store owners =
 
-* **100% Free** — No premium version, no feature restrictions
-* **No Tracking** — We don't collect any data
-* **Modern Admin Panel** — Beautiful React-based interface
-* **Developer Friendly** — Clean code following WordPress standards
+* **No tracking** — the plugin does not collect or send any data
+* **Modern admin panel** — a clean React-based interface
+* **Clean code** — follows WordPress coding standards
 
 == Installation ==
 
-1. Upload the `buy-one-get-one` folder to the `/wp-content/plugins/` directory
-2. Activate the plugin through the 'Plugins' menu in WordPress
-3. Go to 'Buy One Get One' in the WordPress admin menu
-4. Create your first BOGO rule!
+1. Upload the `buy-one-get-one` folder to the `/wp-content/plugins/` directory, or install it from the Plugins screen in WordPress.
+2. Activate the plugin through the 'Plugins' menu in WordPress.
+3. Make sure WooCommerce is installed and active.
+4. Go to 'Buy One Get One' in the WordPress admin menu and create your first BOGO rule.
 
 == Frequently Asked Questions ==
 
+= Does this plugin require WooCommerce? =
+
+Yes. WooCommerce must be installed and active for the plugin to work.
+
 = Does this plugin work with variable products? =
 
-Yes! The plugin fully supports both simple and variable products.
+Yes. Both simple and variable products are supported as trigger and gift products.
 
-= Can I schedule BOGO deals? =
+= Do customers need a coupon code? =
 
-Absolutely! Each rule can have a start date and end date for time-limited promotions.
+No. When the cart qualifies, the free item is added and priced at zero automatically.
 
-= Will this slow down my site? =
+= How do I turn everything off temporarily? =
 
-No. The plugin is optimized for performance with efficient database queries and caching.
-
-= Does it work with other discount plugins? =
-
-The plugin is designed to work alongside other discount plugins. You can enable or disable stacking with coupons in the settings.
-
-= Is there a premium version? =
-
-No! This plugin is completely free with all features included. There's no premium version and no upsells.
+Use the "Enable plugin" toggle on the Settings screen to switch all BOGO functionality off without deleting your rules.
 
 == Screenshots ==
 
-1. Dashboard overview showing active rules and stats
-2. Rules listing with status toggles and bulk actions
-3. Create rule form with multiple rule types
-4. Settings page for customizing labels and display options
+1. Dashboard overview showing active rules and stats.
+2. Rules listing with status toggles.
+3. Create rule wizard.
+4. Settings screen for labels and display options.
 
 == Changelog ==
 
 = 1.0.0 =
-* Initial release
-* BOGO rule engine with 4 rule types
-* React-based admin panel
-* Product and category selection
-* Rule scheduling with start/end dates
-* HPOS and Cart/Checkout Blocks compatibility
-* Customizable messages and labels
+* Initial release.
+* Buy X Get X Free and Buy X Get Y Free rule types.
+* Apply to specific products or all products.
+* Automatic free items added to the cart.
+* Product page messages, shop badges, and customizable cart labels.
+* React-based admin panel.
+* HPOS and Cart/Checkout Blocks compatibility.
 
 == Upgrade Notice ==
 
 = 1.0.0 =
-Initial release of Buy One Get One for WooCommerce.
+Initial release of Buy One Get One.

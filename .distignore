@@ -1,0 +1,46 @@
+# Files and directories that should NOT ship in the distributed plugin zip.
+# (vendor/ is intentionally NOT listed — it is required at runtime.)
+
+# Version control / CI
+/.git
+/.github
+/.gitignore
+/.distignore
+
+# Editor / assistant / local tooling
+/.claude
+/.idea
+/.vscode
+/graphify-out
+claude-code-prompt-*.md
+
+# Node / JS build toolchain (source in /frontend/src is kept for review)
+/node_modules
+/frontend/node_modules
+package.json
+package-lock.json
+jest.config.js
+postcss.config.js
+tailwind.config.js
+vite.config.js
+.eslintrc.js
+
+# PHP dev tooling
+composer.json
+composer.lock
+phpunit.xml
+.phpcs.xml
+.phpunit.result.cache
+/tests
+/bin
+
+# Docs / misc
+/docs
+
+# Git placeholder files
+.gitkeep
+
+# Logs and OS files
+*.log
+.DS_Store
+Thumbs.db
