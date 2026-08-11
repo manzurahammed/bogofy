@@ -75,9 +75,9 @@ class Settings {
 	 * @return bool
 	 */
 	public static function update( $new_settings ) {
-		$current = self::get_all();
+		$current   = self::get_all();
 		$sanitized = self::sanitize( $new_settings );
-		$merged = wp_parse_args( $sanitized, $current );
+		$merged    = wp_parse_args( $sanitized, $current );
 
 		return update_option( self::OPTION_NAME, $merged );
 	}

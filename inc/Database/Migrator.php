@@ -57,7 +57,7 @@ class Migrator {
 
 		// Future migrations can be added here.
 		// if ( version_compare( $from_version, '1.1.0', '<' ) ) {
-		//     self::migrate_to_1_1_0();
+		// self::migrate_to_1_1_0();
 		// }
 	}
 

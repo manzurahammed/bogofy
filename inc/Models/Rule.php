@@ -17,9 +17,9 @@ class Rule {
 	/**
 	 * Rule types.
 	 */
-	const TYPE_BUY_X_GET_X           = 'buy_x_get_x';
-	const TYPE_BUY_X_GET_Y           = 'buy_x_get_y';
-	const TYPE_BUY_CAT_GET_FREE      = 'buy_cat_get_free';
+	const TYPE_BUY_X_GET_X            = 'buy_x_get_x';
+	const TYPE_BUY_X_GET_Y            = 'buy_x_get_y';
+	const TYPE_BUY_CAT_GET_FREE       = 'buy_cat_get_free';
 	const TYPE_BUY_X_GET_X_DISCOUNTED = 'buy_x_get_x_discounted';
 
 	/**
@@ -381,9 +381,9 @@ class Rule {
 	 */
 	public function get_type_label() {
 		$labels = array(
-			self::TYPE_BUY_X_GET_X           => __( 'Buy X Get X Free', 'buy-one-get-one' ),
-			self::TYPE_BUY_X_GET_Y           => __( 'Buy X Get Y Free', 'buy-one-get-one' ),
-			self::TYPE_BUY_CAT_GET_FREE      => __( 'Buy from Category Get Free', 'buy-one-get-one' ),
+			self::TYPE_BUY_X_GET_X            => __( 'Buy X Get X Free', 'buy-one-get-one' ),
+			self::TYPE_BUY_X_GET_Y            => __( 'Buy X Get Y Free', 'buy-one-get-one' ),
+			self::TYPE_BUY_CAT_GET_FREE       => __( 'Buy from Category Get Free', 'buy-one-get-one' ),
 			self::TYPE_BUY_X_GET_X_DISCOUNTED => __( 'Buy X Get X Discounted', 'buy-one-get-one' ),
 		);
 

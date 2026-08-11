@@ -40,6 +40,9 @@ phpunit.xml
 # Git placeholder files
 .gitkeep
 
+# Build artifacts
+*.zip
+
 # Logs and OS files
 *.log
 .DS_Store
