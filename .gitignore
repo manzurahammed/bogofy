@@ -18,6 +18,9 @@ Thumbs.db
 *.swo
 *~
 
+# Build artifacts
+*.zip
+
 # Logs
 *.log
 npm-debug.log*

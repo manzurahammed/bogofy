@@ -108,10 +108,12 @@ class Admin {
 		wp_enqueue_script(
 			'bogo-admin',
 			'http://localhost:3000/src/main.jsx',
-			array( 'vite-client' ),
+			array( 'vite-client', 'wp-i18n' ),
 			null, // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion
 			true
 		);
+
+		$this->set_translations();
 
 		// Add type="module" to script tags.
 		add_filter( 'script_loader_tag', array( $this, 'add_module_type' ), 10, 3 );
@@ -150,10 +152,12 @@ class Admin {
 		wp_enqueue_script(
 			'bogo-admin',
 			BOGO_PLUGIN_URL . 'assets/build/' . $entry['file'],
-			array(),
+			array( 'wp-i18n' ),
 			BOGO_VERSION,
 			true
 		);
+
+		$this->set_translations();
 
 		// Add type="module" to script tag.
 		add_filter( 'script_loader_tag', array( $this, 'add_module_type' ), 10, 3 );
@@ -171,10 +175,12 @@ class Admin {
 			wp_enqueue_script(
 				'bogo-admin',
 				BOGO_PLUGIN_URL . 'assets/build/main.js',
-				array(),
+				array( 'wp-i18n' ),
 				BOGO_VERSION,
 				true
 			);
+
+			$this->set_translations();
 
 			add_filter( 'script_loader_tag', array( $this, 'add_module_type' ), 10, 3 );
 		}
@@ -189,6 +195,18 @@ class Admin {
 				BOGO_VERSION
 			);
 		}
+	}
+
+	/**
+	 * Register JS translations for the admin app.
+	 *
+	 * Lets strings wrapped in @wordpress/i18n functions be translated via the
+	 * JSON translation files in /languages.
+	 *
+	 * @return void
+	 */
+	private function set_translations() {
+		wp_set_script_translations( 'bogo-admin', 'buy-one-get-one', BOGO_PLUGIN_DIR . 'languages' );
 	}
 
 	/**

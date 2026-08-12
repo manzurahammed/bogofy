@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
+import { __, sprintf } from '@wordpress/i18n';
 import { useCategorySearch } from '../../hooks/useProducts';
 import { Loader } from './Loader';
 
-export function CategorySearch({ selectedCategories = [], onChange, placeholder = 'Search categories...' }) {
+export function CategorySearch({ selectedCategories = [], onChange, placeholder = __('Search categories...', 'buy-one-get-one') }) {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const containerRef = useRef(null);
@@ -94,7 +95,7 @@ export function CategorySearch({ selectedCategories = [], onChange, placeholder 
         <div className="bogo-absolute bogo-z-10 bogo-w-full bogo-mt-1 bogo-bg-white bogo-border bogo-border-gray-200 bogo-rounded-md bogo-shadow-lg bogo-max-h-60 bogo-overflow-auto">
           {filteredCategories.length === 0 ? (
             <div className="bogo-px-4 bogo-py-3 bogo-text-sm bogo-text-gray-500">
-              {isLoading ? 'Loading...' : 'No categories found'}
+              {isLoading ? __('Loading...', 'buy-one-get-one') : __('No categories found', 'buy-one-get-one')}
             </div>
           ) : (
             <ul className="bogo-py-1">
@@ -107,7 +108,8 @@ export function CategorySearch({ selectedCategories = [], onChange, placeholder 
                   >
                     <span className="bogo-text-gray-900">{category.name}</span>
                     <span className="bogo-text-xs bogo-text-gray-500">
-                      {category.count} products
+                      {/* translators: %d: number of products in the category */}
+                      {sprintf(__('%d products', 'buy-one-get-one'), category.count)}
                     </span>
                   </button>
                 </li>

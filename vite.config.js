@@ -27,6 +27,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'frontend/src'),
+      // Use WordPress's runtime i18n instead of bundling @wordpress/i18n.
+      '@wordpress/i18n': path.resolve(__dirname, 'frontend/src/utils/i18n-shim.js'),
     },
   },
 });

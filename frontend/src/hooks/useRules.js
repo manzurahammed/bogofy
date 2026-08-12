@@ -7,11 +7,11 @@ import * as rulesApi from '../services/rulesApi';
  * @param {Object} params - Query parameters.
  * @returns {Object}
  */
-export function useRules(params = {}) {
-  return useQuery({
-    queryKey: ['rules', params],
-    queryFn: () => rulesApi.getRules(params),
-  });
+export function useRules( params = {} ) {
+	return useQuery( {
+		                 queryKey: ['rules', params],
+		                 queryFn: () => rulesApi.getRules( params ),
+	                 } );
 }
 
 /**
@@ -20,12 +20,12 @@ export function useRules(params = {}) {
  * @param {number} id - Rule ID.
  * @returns {Object}
  */
-export function useRule(id) {
-  return useQuery({
-    queryKey: ['rule', id],
-    queryFn: () => rulesApi.getRule(id),
-    enabled: !!id,
-  });
+export function useRule( id ) {
+	return useQuery( {
+		                 queryKey: ['rule', id],
+		                 queryFn: () => rulesApi.getRule( id ),
+		                 enabled: !!id,
+	                 } );
 }
 
 /**
@@ -34,14 +34,14 @@ export function useRule(id) {
  * @returns {Object}
  */
 export function useCreateRule() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (data) => rulesApi.createRule(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['rules'] });
-    },
-  });
+	const queryClient = useQueryClient();
+	
+	return useMutation( {
+		                    mutationFn: ( data ) => rulesApi.createRule( data ),
+		                    onSuccess: () => {
+			                    queryClient.invalidateQueries( { queryKey: ['rules'] } );
+		                    },
+	                    } );
 }
 
 /**
@@ -50,15 +50,15 @@ export function useCreateRule() {
  * @returns {Object}
  */
 export function useUpdateRule() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ id, data }) => rulesApi.updateRule(id, data),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ['rules'] });
-      queryClient.invalidateQueries({ queryKey: ['rule', id] });
-    },
-  });
+	const queryClient = useQueryClient();
+	
+	return useMutation( {
+		                    mutationFn: ( { id, data } ) => rulesApi.updateRule( id, data ),
+		                    onSuccess: ( _, { id } ) => {
+			                    queryClient.invalidateQueries( { queryKey: ['rules'] } );
+			                    queryClient.invalidateQueries( { queryKey: ['rule', id] } );
+		                    },
+	                    } );
 }
 
 /**
@@ -67,14 +67,14 @@ export function useUpdateRule() {
  * @returns {Object}
  */
 export function useDeleteRule() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (id) => rulesApi.deleteRule(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['rules'] });
-    },
-  });
+	const queryClient = useQueryClient();
+	
+	return useMutation( {
+		                    mutationFn: ( id ) => rulesApi.deleteRule( id ),
+		                    onSuccess: () => {
+			                    queryClient.invalidateQueries( { queryKey: ['rules'] } );
+		                    },
+	                    } );
 }
 
 /**
@@ -83,14 +83,14 @@ export function useDeleteRule() {
  * @returns {Object}
  */
 export function useUpdateRuleStatus() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ id, status }) => rulesApi.updateRuleStatus(id, status),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['rules'] });
-    },
-  });
+	const queryClient = useQueryClient();
+	
+	return useMutation( {
+		                    mutationFn: ( { id, status } ) => rulesApi.updateRuleStatus( id, status ),
+		                    onSuccess: () => {
+			                    queryClient.invalidateQueries( { queryKey: ['rules'] } );
+		                    },
+	                    } );
 }
 
 /**
@@ -99,22 +99,22 @@ export function useUpdateRuleStatus() {
  * @returns {Object}
  */
 export function useBulkAction() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ action, ids }) => rulesApi.bulkAction(action, ids),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['rules'] });
-    },
-  });
+	const queryClient = useQueryClient();
+	
+	return useMutation( {
+		                    mutationFn: ( { action, ids } ) => rulesApi.bulkAction( action, ids ),
+		                    onSuccess: () => {
+			                    queryClient.invalidateQueries( { queryKey: ['rules'] } );
+		                    },
+	                    } );
 }
 
 export default {
-  useRules,
-  useRule,
-  useCreateRule,
-  useUpdateRule,
-  useDeleteRule,
-  useUpdateRuleStatus,
-  useBulkAction,
+	useRules,
+	useRule,
+	useCreateRule,
+	useUpdateRule,
+	useDeleteRule,
+	useUpdateRuleStatus,
+	useBulkAction,
 };

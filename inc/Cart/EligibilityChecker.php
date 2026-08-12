@@ -79,7 +79,7 @@ class EligibilityChecker {
 	 */
 	private function is_in_product_list( $product_id, $parent_id, $product_ids ) {
 		return in_array( $product_id, $product_ids, true ) ||
-			   in_array( $parent_id, $product_ids, true );
+				in_array( $parent_id, $product_ids, true );
 	}
 
 	/**

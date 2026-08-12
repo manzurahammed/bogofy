@@ -221,16 +221,16 @@ class DiscountApplier {
 				break;
 			}
 
-			$product       = $cart_item['data'];
-			$item_quantity = $cart_item['quantity'];
+			$product        = $cart_item['data'];
+			$item_quantity  = $cart_item['quantity'];
 			$original_price = (float) $product->get_regular_price();
 
 			// Calculate how many items to discount in this line.
-			$items_to_discount = min( $item_quantity, $remaining_discount );
+			$items_to_discount   = min( $item_quantity, $remaining_discount );
 			$remaining_discount -= $items_to_discount;
 
 			// Calculate discounted price.
-			$discount_amount = ( $original_price * $discount_percent ) / 100;
+			$discount_amount  = ( $original_price * $discount_percent ) / 100;
 			$discounted_price = $original_price - $discount_amount;
 
 			// If discounting partial quantity, we need to split the line item.

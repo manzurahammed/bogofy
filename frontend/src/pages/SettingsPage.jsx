@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { __ } from '@wordpress/i18n';
 import { useSettings, useUpdateSettings } from '../hooks/useSettings';
 import { useNotification } from '../hooks/useNotification';
 import { PageLoader } from '../components/Shared/Loader';
@@ -35,31 +36,31 @@ function SettingsPage() {
     e.preventDefault();
     try {
       await updateSettings.mutateAsync(formData);
-      success('Settings saved successfully');
+      success(__('Settings saved successfully', 'buy-one-get-one'));
     } catch (err) {
-      error(err.message || 'Failed to save settings');
+      error(err.message || __('Failed to save settings', 'buy-one-get-one'));
     }
   };
 
   if (isLoading) return (
-    <AppShell crumb={['Bogo', 'Settings']}>
+    <AppShell crumb={['Bogo', __('Settings', 'buy-one-get-one')]}>
       <PageLoader />
     </AppShell>
   );
 
   if (fetchError) return (
-    <AppShell crumb={['Bogo', 'Settings']}>
-      <div style={{ textAlign: 'center', padding: 48, color: 'var(--muted)' }}>Failed to load settings.</div>
+    <AppShell crumb={['Bogo', __('Settings', 'buy-one-get-one')]}>
+      <div style={{ textAlign: 'center', padding: 48, color: 'var(--muted)' }}>{__('Failed to load settings.', 'buy-one-get-one')}</div>
     </AppShell>
   );
 
   return (
     <AppShell
-      crumb={['Bogo', 'Settings']}
+      crumb={['Bogo', __('Settings', 'buy-one-get-one')]}
       actions={
         <>
           <button type="button" className="bogo-button bogo-button--sm bogo-button--ghost" onClick={() => setFormData(settings || formData)}>
-            Discard
+            {__('Discard', 'buy-one-get-one')}
           </button>
           <button
             type="button"
@@ -68,7 +69,7 @@ function SettingsPage() {
             disabled={updateSettings.isPending}
           >
             <CheckIcon size={14} />
-            {updateSettings.isPending ? 'Saving…' : 'Save changes'}
+            {updateSettings.isPending ? __('Saving…', 'buy-one-get-one') : __('Save changes', 'buy-one-get-one')}
           </button>
         </>
       }
@@ -76,21 +77,21 @@ function SettingsPage() {
       <div style={{ maxWidth: 760 }}>
         <form onSubmit={handleSubmit} className="bogo-col" style={{ gap: 22 }}>
           <div>
-            <div className="bogo-page-header__title">Settings</div>
-            <div className="bogo-page-header__desc">How BOGO offers are presented on product pages and in the cart.</div>
+            <div className="bogo-page-header__title">{__('Settings', 'buy-one-get-one')}</div>
+            <div className="bogo-page-header__desc">{__('How BOGO offers are presented on product pages and in the cart.', 'buy-one-get-one')}</div>
           </div>
 
           {/* Storefront badges */}
           <div>
             <div className="bogo-section-header" style={{ margin: '0 0 12px' }}>
-              <div className="bogo-section-header__title">Storefront badges</div>
-              <div className="bogo-section-header__meta">Visible to shoppers</div>
+              <div className="bogo-section-header__title">{__('Storefront badges', 'buy-one-get-one')}</div>
+              <div className="bogo-section-header__meta">{__('Visible to shoppers', 'buy-one-get-one')}</div>
             </div>
             <div className="bogo-settings-list">
               <div className="bogo-settings-list__row">
                 <div className="bogo-col">
-                  <div className="bogo-settings-list__name">Enable plugin</div>
-                  <div className="bogo-settings-list__desc">Turn all BOGO functionality on or off globally.</div>
+                  <div className="bogo-settings-list__name">{__('Enable plugin', 'buy-one-get-one')}</div>
+                  <div className="bogo-settings-list__desc">{__('Turn all BOGO functionality on or off globally.', 'buy-one-get-one')}</div>
                 </div>
                 <button
                   type="button"
@@ -100,8 +101,8 @@ function SettingsPage() {
               </div>
               <div className="bogo-settings-list__row">
                 <div className="bogo-col">
-                  <div className="bogo-settings-list__name">Show “BOGO” badge on product cards</div>
-                  <div className="bogo-settings-list__desc">Highlights eligible products in shop &amp; category pages.</div>
+                  <div className="bogo-settings-list__name">{__('Show “BOGO” badge on product cards', 'buy-one-get-one')}</div>
+                  <div className="bogo-settings-list__desc">{__('Highlights eligible products in shop & category pages.', 'buy-one-get-one')}</div>
                 </div>
                 <button
                   type="button"
@@ -111,8 +112,8 @@ function SettingsPage() {
               </div>
               <div className="bogo-settings-list__row">
                 <div className="bogo-col">
-                  <div className="bogo-settings-list__name">Show product page messages</div>
-                  <div className="bogo-settings-list__desc">Display BOGO offer messages on individual product pages.</div>
+                  <div className="bogo-settings-list__name">{__('Show product page messages', 'buy-one-get-one')}</div>
+                  <div className="bogo-settings-list__desc">{__('Display BOGO offer messages on individual product pages.', 'buy-one-get-one')}</div>
                 </div>
                 <button
                   type="button"
@@ -122,8 +123,8 @@ function SettingsPage() {
               </div>
               <div className="bogo-settings-list__row">
                 <div className="bogo-col">
-                  <div className="bogo-settings-list__name">Free item label</div>
-                  <div className="bogo-settings-list__desc">Label shown next to free items in cart.</div>
+                  <div className="bogo-settings-list__name">{__('Free item label', 'buy-one-get-one')}</div>
+                  <div className="bogo-settings-list__desc">{__('Label shown next to free items in cart.', 'buy-one-get-one')}</div>
                 </div>
                 <input
                   className="bogo-form-input"
@@ -139,14 +140,14 @@ function SettingsPage() {
           {/* Cart messaging */}
           <div>
             <div className="bogo-section-header" style={{ margin: '0 0 12px' }}>
-              <div className="bogo-section-header__title">Cart messaging</div>
-              <div className="bogo-section-header__meta">Encourage shoppers to qualify</div>
+              <div className="bogo-section-header__title">{__('Cart messaging', 'buy-one-get-one')}</div>
+              <div className="bogo-section-header__meta">{__('Encourage shoppers to qualify', 'buy-one-get-one')}</div>
             </div>
             <div className="bogo-settings-list">
               <div className="bogo-settings-list__row">
                 <div className="bogo-col">
-                  <div className="bogo-settings-list__name">Cart notice text</div>
-                  <div className="bogo-settings-list__desc">Notice shown when a BOGO deal is applied at checkout.</div>
+                  <div className="bogo-settings-list__name">{__('Cart notice text', 'buy-one-get-one')}</div>
+                  <div className="bogo-settings-list__desc">{__('Notice shown when a BOGO deal is applied at checkout.', 'buy-one-get-one')}</div>
                 </div>
                 <input
                   className="bogo-form-input"
@@ -162,12 +163,12 @@ function SettingsPage() {
           {/* Preview */}
           <div>
             <div className="bogo-section-header" style={{ margin: '0 0 12px' }}>
-              <div className="bogo-section-header__title">Preview</div>
-              <div className="bogo-section-header__meta">How shoppers will see it</div>
+              <div className="bogo-section-header__title">{__('Preview', 'buy-one-get-one')}</div>
+              <div className="bogo-section-header__meta">{__('How shoppers will see it', 'buy-one-get-one')}</div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
               <div className="bogo-panel" style={{ padding: 18 }}>
-                <div style={{ fontSize: 11.5, color: 'var(--muted)', marginBottom: 10 }}>Product card badge</div>
+                <div style={{ fontSize: 11.5, color: 'var(--muted)', marginBottom: 10 }}>{__('Product card badge', 'buy-one-get-one')}</div>
                 <div style={{ borderRadius: 10, overflow: 'hidden', border: '1px solid var(--line)' }}>
                   <div style={{ height: 100, background: 'linear-gradient(135deg, #f0d3c8, #e0a78c)', position: 'relative' }}>
                     <span style={{
@@ -176,21 +177,21 @@ function SettingsPage() {
                       fontSize: 10.5, fontWeight: 700, padding: '4px 10px',
                       borderRadius: 999, letterSpacing: '0.04em',
                     }}>
-                      {formData.free_item_label || 'FREE (BOGO Deal)'}
+                      {formData.free_item_label || __('FREE (BOGO Deal)', 'buy-one-get-one')}
                     </span>
                   </div>
                   <div style={{ padding: 12 }}>
-                    <div style={{ fontSize: 13, fontWeight: 500 }}>Example Product</div>
+                    <div style={{ fontSize: 13, fontWeight: 500 }}>{__('Example Product', 'buy-one-get-one')}</div>
                     <div className="bogo-mono" style={{ fontSize: 12, color: 'var(--muted)', marginTop: 3 }}>$48.00</div>
                   </div>
                 </div>
               </div>
               <div className="bogo-panel" style={{ padding: 18 }}>
-                <div style={{ fontSize: 11.5, color: 'var(--muted)', marginBottom: 10 }}>Cart notice</div>
+                <div style={{ fontSize: 11.5, color: 'var(--muted)', marginBottom: 10 }}>{__('Cart notice', 'buy-one-get-one')}</div>
                 <div style={{ background: 'var(--accent-soft)', padding: 12, borderRadius: 10, display: 'flex', gap: 10, alignItems: 'center' }}>
                   <GiftIcon size={18} stroke="var(--accent-ink)" />
                   <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent-ink)', lineHeight: 1.4 }}>
-                    {formData.cart_notice_text || 'Congratulations! You got a free item!'}
+                    {formData.cart_notice_text || __('Congratulations! You got a free item!', 'buy-one-get-one')}
                   </div>
                 </div>
               </div>
