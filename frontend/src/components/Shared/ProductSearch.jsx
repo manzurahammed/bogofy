@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
+import { __ } from '@wordpress/i18n';
 import { useProductSearch } from '../../hooks/useProducts';
 import { Loader } from './Loader';
 
-export function ProductSearch({ selectedProducts = [], onChange, placeholder = 'Search products...' }) {
+export function ProductSearch({ selectedProducts = [], onChange, placeholder = __('Search products...', 'buy-one-get-one') }) {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const containerRef = useRef(null);
@@ -93,7 +94,7 @@ export function ProductSearch({ selectedProducts = [], onChange, placeholder = '
         <div className="bogo-absolute bogo-z-10 bogo-w-full bogo-mt-1 bogo-bg-white bogo-border bogo-border-gray-200 bogo-rounded-md bogo-shadow-lg bogo-max-h-60 bogo-overflow-auto">
           {filteredProducts.length === 0 ? (
             <div className="bogo-px-4 bogo-py-3 bogo-text-sm bogo-text-gray-500">
-              {isLoading ? 'Searching...' : 'No products found'}
+              {isLoading ? __('Searching...', 'buy-one-get-one') : __('No products found', 'buy-one-get-one')}
             </div>
           ) : (
             <ul className="bogo-py-1">

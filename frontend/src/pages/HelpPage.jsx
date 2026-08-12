@@ -1,28 +1,29 @@
 import React from 'react';
+import { __ } from '@wordpress/i18n';
 import AppShell from '../components/Layout/AppShell';
 import { BoxIcon, GiftIcon, PlusIcon } from '../components/Icons';
 
 const ruleTypes = [
   {
     Icon: BoxIcon,
-    title: 'Buy X, Get same free',
-    desc: 'Customer buys N of a product and gets M of the same product free. The cheapest items become free.',
+    title: __('Buy X, Get same free', 'buy-one-get-one'),
+    desc: __('Customer buys N of a product and gets M of the same product free. The cheapest items become free.', 'buy-one-get-one'),
   },
   {
     Icon: GiftIcon,
-    title: 'Buy X, Get Y free',
-    desc: 'Customer buys a trigger product and receives a different gift product at no cost.',
+    title: __('Buy X, Get Y free', 'buy-one-get-one'),
+    desc: __('Customer buys a trigger product and receives a different gift product at no cost.', 'buy-one-get-one'),
   },
 ];
 
 const faqs = [
   {
-    q: 'Does this plugin work with variable products?',
-    a: 'Yes. Both simple and variable products are supported as trigger and gift products.',
+    q: __('Does this plugin work with variable products?', 'buy-one-get-one'),
+    a: __('Yes. Both simple and variable products are supported as trigger and gift products.', 'buy-one-get-one'),
   },
   {
-    q: 'How do I turn everything off temporarily?',
-    a: 'Use the "Enable plugin" toggle in Settings to switch all BOGO functionality off without deleting rules.',
+    q: __('How do I turn everything off temporarily?', 'buy-one-get-one'),
+    a: __('Use the "Enable plugin" toggle in Settings to switch all BOGO functionality off without deleting rules.', 'buy-one-get-one'),
   },
 ];
 
@@ -31,19 +32,19 @@ function HelpPage() {
     <AppShell crumb={['Bogo', 'Help & docs']}>
       <div className="bogo-page-header">
         <div>
-          <div className="bogo-page-header__title">Help &amp; docs</div>
-          <div className="bogo-page-header__desc">How BOGO rules work and answers to common questions.</div>
+          <div className="bogo-page-header__title">{__('Help & docs', 'buy-one-get-one')}</div>
+          <div className="bogo-page-header__desc">{__('How BOGO rules work and answers to common questions.', 'buy-one-get-one')}</div>
         </div>
         <button
           className="bogo-button bogo-button--primary bogo-button--sm"
           onClick={() => { window.location.href = 'admin.php?page=buy-one-get-one&tab=rules&action=create'; }}
         >
-          <PlusIcon size={14} /> Create a rule
+          <PlusIcon size={14} /> {__('Create a rule', 'buy-one-get-one')}
         </button>
       </div>
 
       <div className="bogo-section-header" style={{ margin: '0 0 12px' }}>
-        <div className="bogo-section-header__title">Rule types</div>
+        <div className="bogo-section-header__title">{__('Rule types', 'buy-one-get-one')}</div>
       </div>
       <div className="bogo-type-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', marginTop: 0 }}>
         {ruleTypes.map((t) => (
@@ -60,7 +61,7 @@ function HelpPage() {
       </div>
 
       <div className="bogo-section-header">
-        <div className="bogo-section-header__title">Frequently asked questions</div>
+        <div className="bogo-section-header__title">{__('Frequently asked questions', 'buy-one-get-one')}</div>
       </div>
       <div className="bogo-settings-list">
         {faqs.map((f) => (

@@ -1,4 +1,5 @@
 import React from 'react';
+import { __ } from '@wordpress/i18n';
 import {
 	HomeIcon, TagIcon, WandIcon,
 	SettingsIcon, HelpIcon,
@@ -34,17 +35,17 @@ function Sidebar() {
 				</div>
 			</div>
 			
-			<SbItem label="Dashboard" Icon={HomeIcon} active={currentTab === 'dashboard'}
+			<SbItem label={__( 'Dashboard', 'buy-one-get-one' )} Icon={HomeIcon} active={currentTab === 'dashboard'}
 			        onClick={() => navigate( 'dashboard' )}/>
-			<SbItem label="BOGO Rules" Icon={TagIcon} active={currentTab === 'rules' && !isCreating}
+			<SbItem label={__( 'BOGO Rules', 'buy-one-get-one' )} Icon={TagIcon} active={currentTab === 'rules' && !isCreating}
 			        onClick={() => navigate( 'rules' )}/>
-			<SbItem label="New rule" Icon={WandIcon} active={isCreating}
+			<SbItem label={__( 'New rule', 'buy-one-get-one' )} Icon={WandIcon} active={isCreating}
 			        onClick={() => navigate( 'rules', '&action=create' )}/>
-			
-			<div className="bogo-sidebar__section">System</div>
-			<SbItem label="Settings" Icon={SettingsIcon} active={currentTab === 'settings'}
+
+			<div className="bogo-sidebar__section">{__( 'System', 'buy-one-get-one' )}</div>
+			<SbItem label={__( 'Settings', 'buy-one-get-one' )} Icon={SettingsIcon} active={currentTab === 'settings'}
 			        onClick={() => navigate( 'settings' )}/>
-			<SbItem label="Help &amp; docs" Icon={HelpIcon} active={currentTab === 'help'}
+			<SbItem label={__( 'Help & docs', 'buy-one-get-one' )} Icon={HelpIcon} active={currentTab === 'help'}
 			        onClick={() => navigate( 'help' )}/>
 		</aside>
 	);

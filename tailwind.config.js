@@ -1,5 +1,5 @@
 /** @type {import('tailwindcss').Config} */
-export default {
+module.exports = {
   content: ['./frontend/src/**/*.{js,jsx}'],
   prefix: 'bogo-',
   important: '.bogo-admin',
