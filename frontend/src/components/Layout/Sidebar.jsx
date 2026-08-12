@@ -5,6 +5,8 @@ import {
 	SettingsIcon, HelpIcon,
 } from '../Icons';
 
+const logoUrl = `${window.bogoAdmin?.pluginUrl || ''}assets/images/bogo-logo.svg`;
+
 const navigate = ( tab, extra = '' ) => {
 	window.location.href = `admin.php?page=buy-one-get-one&tab=${tab}${extra}`;
 };
@@ -29,7 +31,9 @@ function Sidebar() {
 	return (
 		<aside className="bogo-sidebar">
 			<div className="bogo-sidebar__brand">
-				<div className="bogo-sidebar__mark">B</div>
+				<div className="bogo-sidebar__mark">
+					<img className="bogo-sidebar__logo" src={logoUrl} width={30} height={30} alt=""/>
+				</div>
 				<div className="bogo-col">
 					<div className="bogo-sidebar__name">Bogo</div>
 				</div>

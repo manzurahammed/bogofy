@@ -76,25 +76,16 @@
 .bogo-admin .bogo-sidebar__mark {
     width: 30px;
     height: 30px;
-    border-radius: 8px;
-    background: var(--ink);
-    color: #fff;
     display: grid;
     place-items: center;
-    font-weight: 700;
-    font-size: 13px;
-    letter-spacing: -0.04em;
     position: relative;
     flex-shrink: 0;
 }
 
-.bogo-admin .bogo-sidebar__mark::after {
-    content: '';
-    position: absolute;
-    inset: -3px;
-    border: 1.5px solid var(--accent);
-    border-radius: 11px;
-    opacity: 0.35;
+.bogo-admin .bogo-sidebar__logo {
+    display: block;
+    width: 30px;
+    height: 30px;
 }
 
 .bogo-admin .bogo-sidebar__name {
