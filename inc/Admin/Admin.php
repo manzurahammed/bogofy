@@ -19,7 +19,7 @@ class Admin {
 	 *
 	 * @var string
 	 */
-	const PAGE_SLUG = 'buy-one-get-one';
+	const PAGE_SLUG = 'bogofy';
 
 	/**
 	 * Register admin menu.
@@ -28,8 +28,8 @@ class Admin {
 	 */
 	public function register_admin_menu() {
 		add_menu_page(
-			__( 'Buy One Get One', 'buy-one-get-one' ),
-			__( 'Buy One Get One', 'buy-one-get-one' ),
+			__( 'Bogofy', 'bogofy' ),
+			__( 'Bogofy', 'bogofy' ),
 			'manage_woocommerce',
 			self::PAGE_SLUG,
 			array( $this, 'render_admin_page' ),
@@ -81,7 +81,7 @@ class Admin {
 			'bogo-admin',
 			'bogoAdmin',
 			array(
-				'apiUrl'    => rest_url( 'buy-one-get-one/v1' ),
+				'apiUrl'    => rest_url( 'bogofy/v1' ),
 				'nonce'     => wp_create_nonce( 'wp_rest' ),
 				'adminUrl'  => admin_url(),
 				'pluginUrl' => BOGO_PLUGIN_URL,
@@ -206,7 +206,7 @@ class Admin {
 	 * @return void
 	 */
 	private function set_translations() {
-		wp_set_script_translations( 'bogo-admin', 'buy-one-get-one', BOGO_PLUGIN_DIR . 'languages' );
+		wp_set_script_translations( 'bogo-admin', 'bogofy', BOGO_PLUGIN_DIR . 'languages' );
 	}
 
 	/**

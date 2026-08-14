@@ -26,7 +26,7 @@ class RestApi {
 	 *
 	 * @var string
 	 */
-	const NAMESPACE = 'buy-one-get-one/v1';
+	const NAMESPACE = 'bogofy/v1';
 
 	/**
 	 * Rule repository.
@@ -204,7 +204,7 @@ class RestApi {
 		if ( ! current_user_can( 'manage_woocommerce' ) ) {
 			return new WP_Error(
 				'rest_forbidden',
-				__( 'You do not have permission to access this resource.', 'buy-one-get-one' ),
+				__( 'You do not have permission to access this resource.', 'bogofy' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -291,7 +291,7 @@ class RestApi {
 		if ( ! $rule ) {
 			return new WP_Error(
 				'rule_not_found',
-				__( 'Rule not found.', 'buy-one-get-one' ),
+				__( 'Rule not found.', 'bogofy' ),
 				array( 'status' => 404 )
 			);
 		}
@@ -320,7 +320,7 @@ class RestApi {
 		if ( false === $id ) {
 			return new WP_Error(
 				'create_failed',
-				__( 'Failed to create rule.', 'buy-one-get-one' ),
+				__( 'Failed to create rule.', 'bogofy' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -343,7 +343,7 @@ class RestApi {
 		if ( ! $existing ) {
 			return new WP_Error(
 				'rule_not_found',
-				__( 'Rule not found.', 'buy-one-get-one' ),
+				__( 'Rule not found.', 'bogofy' ),
 				array( 'status' => 404 )
 			);
 		}
@@ -362,7 +362,7 @@ class RestApi {
 		if ( ! $success ) {
 			return new WP_Error(
 				'update_failed',
-				__( 'Failed to update rule.', 'buy-one-get-one' ),
+				__( 'Failed to update rule.', 'bogofy' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -385,7 +385,7 @@ class RestApi {
 		if ( ! $existing ) {
 			return new WP_Error(
 				'rule_not_found',
-				__( 'Rule not found.', 'buy-one-get-one' ),
+				__( 'Rule not found.', 'bogofy' ),
 				array( 'status' => 404 )
 			);
 		}
@@ -395,7 +395,7 @@ class RestApi {
 		if ( ! $success ) {
 			return new WP_Error(
 				'delete_failed',
-				__( 'Failed to delete rule.', 'buy-one-get-one' ),
+				__( 'Failed to delete rule.', 'bogofy' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -418,7 +418,7 @@ class RestApi {
 		if ( ! $existing ) {
 			return new WP_Error(
 				'rule_not_found',
-				__( 'Rule not found.', 'buy-one-get-one' ),
+				__( 'Rule not found.', 'bogofy' ),
 				array( 'status' => 404 )
 			);
 		}
@@ -427,7 +427,7 @@ class RestApi {
 		if ( ! in_array( $status, array( Rule::STATUS_ACTIVE, Rule::STATUS_INACTIVE ), true ) ) {
 			return new WP_Error(
 				'invalid_status',
-				__( 'Invalid status.', 'buy-one-get-one' ),
+				__( 'Invalid status.', 'bogofy' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -437,7 +437,7 @@ class RestApi {
 		if ( ! $success ) {
 			return new WP_Error(
 				'update_failed',
-				__( 'Failed to update status.', 'buy-one-get-one' ),
+				__( 'Failed to update status.', 'bogofy' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -461,7 +461,7 @@ class RestApi {
 		if ( empty( $ids ) ) {
 			return new WP_Error(
 				'no_ids',
-				__( 'No rule IDs provided.', 'buy-one-get-one' ),
+				__( 'No rule IDs provided.', 'bogofy' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -484,7 +484,7 @@ class RestApi {
 			default:
 				return new WP_Error(
 					'invalid_action',
-					__( 'Invalid bulk action.', 'buy-one-get-one' ),
+					__( 'Invalid bulk action.', 'bogofy' ),
 					array( 'status' => 400 )
 				);
 		}
@@ -521,7 +521,7 @@ class RestApi {
 		if ( ! $success ) {
 			return new WP_Error(
 				'update_failed',
-				__( 'Failed to update settings.', 'buy-one-get-one' ),
+				__( 'Failed to update settings.', 'bogofy' ),
 				array( 'status' => 500 )
 			);
 		}

@@ -78,7 +78,7 @@ Modal.propTypes = {
   size: PropTypes.oneOf(['sm', 'md', 'lg', 'xl']),
 };
 
-export function ConfirmModal({ isOpen, onClose, onConfirm, title, message, confirmText = __('Confirm', 'buy-one-get-one'), cancelText = __('Cancel', 'buy-one-get-one'), variant = 'danger' }) {
+export function ConfirmModal({ isOpen, onClose, onConfirm, title, message, confirmText = __('Confirm', 'bogofy'), cancelText = __('Cancel', 'bogofy'), variant = 'danger' }) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title} size="sm">
       <div className="bogo-space-y-4">

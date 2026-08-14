@@ -5,7 +5,7 @@ import path from 'path';
 export default defineConfig({
   plugins: [react()],
   root: 'frontend',
-  base: '/wp-content/plugins/buy-one-get-one/assets/build/',
+  base: '/wp-content/plugins/bogofy/assets/build/',
   build: {
     outDir: '../assets/build',
     emptyOutDir: true,

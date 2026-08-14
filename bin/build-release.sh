@@ -10,7 +10,7 @@
 #
 set -euo pipefail
 
-SLUG="buy-one-get-one"
+SLUG="bogofy"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 BUILD="$(mktemp -d)"
 DEST="$BUILD/$SLUG"

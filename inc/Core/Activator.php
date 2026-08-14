@@ -27,7 +27,7 @@ class Activator {
 		if ( version_compare( PHP_VERSION, '7.4', '<' ) ) {
 			deactivate_plugins( BOGO_PLUGIN_BASENAME );
 			wp_die(
-				esc_html__( 'Buy One Get One requires PHP 7.4 or higher.', 'buy-one-get-one' ),
+				esc_html__( 'Bogofy requires PHP 7.4 or higher.', 'bogofy' ),
 				'Plugin Activation Error',
 				array( 'back_link' => true )
 			);
@@ -38,7 +38,7 @@ class Activator {
 		if ( version_compare( $wp_version, '6.0', '<' ) ) {
 			deactivate_plugins( BOGO_PLUGIN_BASENAME );
 			wp_die(
-				esc_html__( 'Buy One Get One requires WordPress 6.0 or higher.', 'buy-one-get-one' ),
+				esc_html__( 'Bogofy requires WordPress 6.0 or higher.', 'bogofy' ),
 				'Plugin Activation Error',
 				array( 'back_link' => true )
 			);
@@ -65,8 +65,8 @@ class Activator {
 	private static function set_default_options() {
 		$defaults = array(
 			'enabled'                    => true,
-			'free_item_label'            => __( 'FREE (BOGO Deal)', 'buy-one-get-one' ),
-			'cart_notice_text'           => __( 'Congratulations! You got a free item with your purchase.', 'buy-one-get-one' ),
+			'free_item_label'            => __( 'FREE (Bogofy Deal)', 'bogofy' ),
+			'cart_notice_text'           => __( 'Congratulations! You got a free item with your purchase.', 'bogofy' ),
 			'show_product_page_messages' => true,
 			'show_shop_badges'           => true,
 			'stack_with_coupons'         => true,

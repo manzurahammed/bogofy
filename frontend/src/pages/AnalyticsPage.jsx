@@ -9,7 +9,7 @@ function AnalyticsPage() {
 	
 	if ( isLoading ) {
 		return (
-			<AppShell crumb={['Bogo', 'Analytics']}>
+			<AppShell crumb={['Bogofy', 'Analytics']}>
 				<PageLoader/>
 			</AppShell>
 		);
@@ -18,7 +18,7 @@ function AnalyticsPage() {
 	const kpis = [
 		{ l: 'Active rules', v: stats?.active_rules ?? 0, d: 'Rules currently live' },
 		{ l: 'Total rules', v: stats?.total_rules ?? 0, d: 'All rules ever created' },
-		{ l: 'Orders with BOGO', v: stats?.bogo_orders ?? 0, d: 'Orders with a BOGO discount' },
+		{ l: 'Orders with Bogofy', v: stats?.bogo_orders ?? 0, d: 'Orders with a Bogofy discount' },
 		{
 			l: 'Discount given',
 			v: `$${Number( stats?.total_discount ?? 0 ).toFixed( 0 )}`,
@@ -27,11 +27,11 @@ function AnalyticsPage() {
 	];
 	
 	return (
-		<AppShell crumb={['Bogo', 'Analytics']}>
+		<AppShell crumb={['Bogofy', 'Analytics']}>
 			<div className="bogo-page-header">
 				<div>
 					<div className="bogo-page-header__title">Analytics</div>
-					<div className="bogo-page-header__desc">How your BOGO offers are performing across the store.</div>
+					<div className="bogo-page-header__desc">How your Bogofy offers are performing across the store.</div>
 				</div>
 			</div>
 			
@@ -68,7 +68,7 @@ function AnalyticsPage() {
 					<div style={{ fontWeight: 600, fontSize: 14 }}>Advanced analytics coming soon</div>
 					<div style={{ color: 'var(--muted)', fontSize: 13, marginTop: 3 }}>
 						Detailed per-rule analytics, conversion funnels, and revenue attribution are in development.
-						For now, use WooCommerce order reports to track BOGO performance.
+						For now, use WooCommerce order reports to track Bogofy performance.
 					</div>
 				</div>
 			</div>

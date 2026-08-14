@@ -22,13 +22,13 @@ async function hydrateItems(endpoint, ids, fallbackLabel) {
 }
 
 const ruleTypes = [
-  { value: 'buy_x_get_x', label: __('Buy X Get X Free', 'buy-one-get-one'), description: __('Buy N of same product, get M of same product free', 'buy-one-get-one') },
-  { value: 'buy_x_get_y', label: __('Buy X Get Y Free', 'buy-one-get-one'), description: __('Buy product A, get product B free', 'buy-one-get-one') },
+  { value: 'buy_x_get_x', label: __('Buy X Get X Free', 'bogofy'), description: __('Buy N of same product, get M of same product free', 'bogofy') },
+  { value: 'buy_x_get_y', label: __('Buy X Get Y Free', 'bogofy'), description: __('Buy product A, get product B free', 'bogofy') },
 ];
 
 const applyToOptions = [
-  { value: 'specific_products', label: __('Specific Products', 'buy-one-get-one') },
-  { value: 'all_products', label: __('All Products', 'buy-one-get-one') },
+  { value: 'specific_products', label: __('Specific Products', 'bogofy') },
+  { value: 'all_products', label: __('All Products', 'bogofy') },
 ];
 
 const defaultFormData = {
@@ -88,19 +88,19 @@ export function RuleForm({ initialData = null, onSubmit, isLoading = false, form
   const validate = () => {
     const newErrors = {};
     if (!formData.title.trim()) {
-      newErrors.title = __('Title is required', 'buy-one-get-one');
+      newErrors.title = __('Title is required', 'bogofy');
     }
     if (formData.buy_quantity < 1) {
-      newErrors.buy_quantity = __('Must be at least 1', 'buy-one-get-one');
+      newErrors.buy_quantity = __('Must be at least 1', 'bogofy');
     }
     if (formData.free_quantity < 1) {
-      newErrors.free_quantity = __('Must be at least 1', 'buy-one-get-one');
+      newErrors.free_quantity = __('Must be at least 1', 'bogofy');
     }
     if (formData.apply_to === 'specific_products' && selectedBuyProducts.length === 0) {
-      newErrors.buy_products = __('Select at least one product', 'buy-one-get-one');
+      newErrors.buy_products = __('Select at least one product', 'bogofy');
     }
     if (formData.rule_type === 'buy_x_get_y' && selectedFreeProducts.length === 0) {
-      newErrors.free_products = __('Select the free product', 'buy-one-get-one');
+      newErrors.free_products = __('Select the free product', 'bogofy');
     }
 
     setErrors(newErrors);
@@ -131,24 +131,24 @@ export function RuleForm({ initialData = null, onSubmit, isLoading = false, form
       {/* Basic Info */}
       <div className="bogo-card bogo-p-6">
         <h3 className="bogo-text-lg bogo-font-semibold bogo-text-gray-900 bogo-mb-4">
-          {__('Basic Information', 'buy-one-get-one')}
+          {__('Basic Information', 'bogofy')}
         </h3>
         <div className="bogo-grid bogo-grid-cols-1 md:bogo-grid-cols-2 bogo-gap-4">
           <div className="md:bogo-col-span-2">
-            <label className="bogo-label">{__('Rule Title *', 'buy-one-get-one')}</label>
+            <label className="bogo-label">{__('Rule Title *', 'bogofy')}</label>
             <input
               type="text"
               name="title"
               value={formData.title}
               onChange={handleChange}
               className={clsx('bogo-input', errors.title && 'bogo-border-danger-500')}
-              placeholder={__('e.g., Buy 2 Get 1 Free on T-Shirts', 'buy-one-get-one')}
+              placeholder={__('e.g., Buy 2 Get 1 Free on T-Shirts', 'bogofy')}
             />
             {errors.title && <p className="bogo-text-sm bogo-text-danger-500 bogo-mt-1">{errors.title}</p>}
           </div>
 
           <div className="md:bogo-col-span-2">
-            <label className="bogo-label">{__('Rule Type *', 'buy-one-get-one')}</label>
+            <label className="bogo-label">{__('Rule Type *', 'bogofy')}</label>
             <div className="bogo-grid bogo-grid-cols-1 md:bogo-grid-cols-2 bogo-gap-3">
               {ruleTypes.map((type) => (
                 <label
@@ -184,11 +184,11 @@ export function RuleForm({ initialData = null, onSubmit, isLoading = false, form
       {/* Quantities */}
       <div className="bogo-card bogo-p-6">
         <h3 className="bogo-text-lg bogo-font-semibold bogo-text-gray-900 bogo-mb-4">
-          {__('Quantities & Discount', 'buy-one-get-one')}
+          {__('Quantities & Discount', 'bogofy')}
         </h3>
         <div className="bogo-grid bogo-grid-cols-1 md:bogo-grid-cols-3 bogo-gap-4">
           <div>
-            <label className="bogo-label">{__('Buy Quantity *', 'buy-one-get-one')}</label>
+            <label className="bogo-label">{__('Buy Quantity *', 'bogofy')}</label>
             <input
               type="number"
               name="buy_quantity"
@@ -201,7 +201,7 @@ export function RuleForm({ initialData = null, onSubmit, isLoading = false, form
           </div>
 
           <div>
-            <label className="bogo-label">{__('Free/Discounted Quantity *', 'buy-one-get-one')}</label>
+            <label className="bogo-label">{__('Free/Discounted Quantity *', 'bogofy')}</label>
             <input
               type="number"
               name="free_quantity"
@@ -219,11 +219,11 @@ export function RuleForm({ initialData = null, onSubmit, isLoading = false, form
       {/* Products & Categories */}
       <div className="bogo-card bogo-p-6">
         <h3 className="bogo-text-lg bogo-font-semibold bogo-text-gray-900 bogo-mb-4">
-          {__('Product Selection', 'buy-one-get-one')}
+          {__('Product Selection', 'bogofy')}
         </h3>
 
         <div className="bogo-mb-4">
-          <label className="bogo-label">{__('Apply To *', 'buy-one-get-one')}</label>
+          <label className="bogo-label">{__('Apply To *', 'bogofy')}</label>
           <select
             name="apply_to"
             value={formData.apply_to}
@@ -240,11 +240,11 @@ export function RuleForm({ initialData = null, onSubmit, isLoading = false, form
 
         {formData.apply_to === 'specific_products' && (
           <div className="bogo-mb-4">
-            <label className="bogo-label">{__('Select Products *', 'buy-one-get-one')}</label>
+            <label className="bogo-label">{__('Select Products *', 'bogofy')}</label>
             <ProductSearch
               selectedProducts={selectedBuyProducts}
               onChange={setSelectedBuyProducts}
-              placeholder={__('Search for products...', 'buy-one-get-one')}
+              placeholder={__('Search for products...', 'bogofy')}
             />
             {errors.buy_products && <p className="bogo-text-sm bogo-text-danger-500 bogo-mt-1">{errors.buy_products}</p>}
           </div>
@@ -252,11 +252,11 @@ export function RuleForm({ initialData = null, onSubmit, isLoading = false, form
 
         {showFreeProductSelector && (
           <div>
-            <label className="bogo-label">{__('Free Product *', 'buy-one-get-one')}</label>
+            <label className="bogo-label">{__('Free Product *', 'bogofy')}</label>
             <ProductSearch
               selectedProducts={selectedFreeProducts}
               onChange={setSelectedFreeProducts}
-              placeholder={__('Search for free product...', 'buy-one-get-one')}
+              placeholder={__('Search for free product...', 'bogofy')}
             />
             {errors.free_products && <p className="bogo-text-sm bogo-text-danger-500 bogo-mt-1">{errors.free_products}</p>}
           </div>
@@ -270,14 +270,14 @@ export function RuleForm({ initialData = null, onSubmit, isLoading = false, form
           onClick={() => window.history.back()}
           className="bogo-btn bogo-btn-secondary"
         >
-          {__('Cancel', 'buy-one-get-one')}
+          {__('Cancel', 'bogofy')}
         </button>
         <button
           type="submit"
           disabled={isLoading}
           className="bogo-btn bogo-btn-primary"
         >
-          {isLoading ? __('Saving...', 'buy-one-get-one') : initialData ? __('Update Rule', 'buy-one-get-one') : __('Create Rule', 'buy-one-get-one')}
+          {isLoading ? __('Saving...', 'bogofy') : initialData ? __('Update Rule', 'bogofy') : __('Create Rule', 'bogofy')}
         </button>
       </div>
     </form>

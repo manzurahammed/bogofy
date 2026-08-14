@@ -304,7 +304,7 @@ class Rule {
 	 */
 	public function validate() {
 		if ( empty( $this->title ) ) {
-			return new \WP_Error( 'invalid_title', __( 'Rule title is required.', 'buy-one-get-one' ) );
+			return new \WP_Error( 'invalid_title', __( 'Rule title is required.', 'bogofy' ) );
 		}
 
 		$valid_types = array(
@@ -315,20 +315,20 @@ class Rule {
 		);
 
 		if ( ! in_array( $this->rule_type, $valid_types, true ) ) {
-			return new \WP_Error( 'invalid_rule_type', __( 'Invalid rule type.', 'buy-one-get-one' ) );
+			return new \WP_Error( 'invalid_rule_type', __( 'Invalid rule type.', 'bogofy' ) );
 		}
 
 		if ( $this->buy_quantity < 1 ) {
-			return new \WP_Error( 'invalid_buy_quantity', __( 'Buy quantity must be at least 1.', 'buy-one-get-one' ) );
+			return new \WP_Error( 'invalid_buy_quantity', __( 'Buy quantity must be at least 1.', 'bogofy' ) );
 		}
 
 		if ( $this->free_quantity < 1 ) {
-			return new \WP_Error( 'invalid_free_quantity', __( 'Free quantity must be at least 1.', 'buy-one-get-one' ) );
+			return new \WP_Error( 'invalid_free_quantity', __( 'Free quantity must be at least 1.', 'bogofy' ) );
 		}
 
 		if ( self::DISCOUNT_PERCENTAGE === $this->discount_type ) {
 			if ( $this->discount_value <= 0 || $this->discount_value > 100 ) {
-				return new \WP_Error( 'invalid_discount', __( 'Discount percentage must be between 1 and 100.', 'buy-one-get-one' ) );
+				return new \WP_Error( 'invalid_discount', __( 'Discount percentage must be between 1 and 100.', 'bogofy' ) );
 			}
 		}
 
@@ -381,10 +381,10 @@ class Rule {
 	 */
 	public function get_type_label() {
 		$labels = array(
-			self::TYPE_BUY_X_GET_X            => __( 'Buy X Get X Free', 'buy-one-get-one' ),
-			self::TYPE_BUY_X_GET_Y            => __( 'Buy X Get Y Free', 'buy-one-get-one' ),
-			self::TYPE_BUY_CAT_GET_FREE       => __( 'Buy from Category Get Free', 'buy-one-get-one' ),
-			self::TYPE_BUY_X_GET_X_DISCOUNTED => __( 'Buy X Get X Discounted', 'buy-one-get-one' ),
+			self::TYPE_BUY_X_GET_X            => __( 'Buy X Get X Free', 'bogofy' ),
+			self::TYPE_BUY_X_GET_Y            => __( 'Buy X Get Y Free', 'bogofy' ),
+			self::TYPE_BUY_CAT_GET_FREE       => __( 'Buy from Category Get Free', 'bogofy' ),
+			self::TYPE_BUY_X_GET_X_DISCOUNTED => __( 'Buy X Get X Discounted', 'bogofy' ),
 		);
 
 		return $labels[ $this->rule_type ] ?? $this->rule_type;

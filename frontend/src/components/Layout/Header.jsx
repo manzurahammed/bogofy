@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { ChevRIcon } from '../Icons';
 
-function Topbar( { crumb = ['Bogo'], actions } ) {
+function Topbar( { crumb = ['Bogofy'], actions } ) {
 	return (
 		<div className="bogo-topbar">
 			<div className="bogo-breadcrumb">

@@ -6,45 +6,45 @@ import { BoxIcon, GiftIcon, PlusIcon } from '../components/Icons';
 const ruleTypes = [
   {
     Icon: BoxIcon,
-    title: __('Buy X, Get same free', 'buy-one-get-one'),
-    desc: __('Customer buys N of a product and gets M of the same product free. The cheapest items become free.', 'buy-one-get-one'),
+    title: __('Buy X, Get same free', 'bogofy'),
+    desc: __('Customer buys N of a product and gets M of the same product free. The cheapest items become free.', 'bogofy'),
   },
   {
     Icon: GiftIcon,
-    title: __('Buy X, Get Y free', 'buy-one-get-one'),
-    desc: __('Customer buys a trigger product and receives a different gift product at no cost.', 'buy-one-get-one'),
+    title: __('Buy X, Get Y free', 'bogofy'),
+    desc: __('Customer buys a trigger product and receives a different gift product at no cost.', 'bogofy'),
   },
 ];
 
 const faqs = [
   {
-    q: __('Does this plugin work with variable products?', 'buy-one-get-one'),
-    a: __('Yes. Both simple and variable products are supported as trigger and gift products.', 'buy-one-get-one'),
+    q: __('Does this plugin work with variable products?', 'bogofy'),
+    a: __('Yes. Both simple and variable products are supported as trigger and gift products.', 'bogofy'),
   },
   {
-    q: __('How do I turn everything off temporarily?', 'buy-one-get-one'),
-    a: __('Use the "Enable plugin" toggle in Settings to switch all BOGO functionality off without deleting rules.', 'buy-one-get-one'),
+    q: __('How do I turn everything off temporarily?', 'bogofy'),
+    a: __('Use the "Enable plugin" toggle in Settings to switch all Bogofy functionality off without deleting rules.', 'bogofy'),
   },
 ];
 
 function HelpPage() {
   return (
-    <AppShell crumb={['Bogo', 'Help & docs']}>
+    <AppShell crumb={['Bogofy', 'Help & docs']}>
       <div className="bogo-page-header">
         <div>
-          <div className="bogo-page-header__title">{__('Help & docs', 'buy-one-get-one')}</div>
-          <div className="bogo-page-header__desc">{__('How BOGO rules work and answers to common questions.', 'buy-one-get-one')}</div>
+          <div className="bogo-page-header__title">{__('Help & docs', 'bogofy')}</div>
+          <div className="bogo-page-header__desc">{__('How Bogofy rules work and answers to common questions.', 'bogofy')}</div>
         </div>
         <button
           className="bogo-button bogo-button--primary bogo-button--sm"
-          onClick={() => { window.location.href = 'admin.php?page=buy-one-get-one&tab=rules&action=create'; }}
+          onClick={() => { window.location.href = 'admin.php?page=bogofy&tab=rules&action=create'; }}
         >
-          <PlusIcon size={14} /> {__('Create a rule', 'buy-one-get-one')}
+          <PlusIcon size={14} /> {__('Create a rule', 'bogofy')}
         </button>
       </div>
 
       <div className="bogo-section-header" style={{ margin: '0 0 12px' }}>
-        <div className="bogo-section-header__title">{__('Rule types', 'buy-one-get-one')}</div>
+        <div className="bogo-section-header__title">{__('Rule types', 'bogofy')}</div>
       </div>
       <div className="bogo-type-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', marginTop: 0 }}>
         {ruleTypes.map((t) => (
@@ -61,7 +61,7 @@ function HelpPage() {
       </div>
 
       <div className="bogo-section-header">
-        <div className="bogo-section-header__title">{__('Frequently asked questions', 'buy-one-get-one')}</div>
+        <div className="bogo-section-header__title">{__('Frequently asked questions', 'bogofy')}</div>
       </div>
       <div className="bogo-settings-list">
         {faqs.map((f) => (

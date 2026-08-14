@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name:       Buy One Get One
+ * Plugin Name:       Bogofy – Buy One Get One for WooCommerce
  * Description:       Create Buy One Get One (BOGO) free-gift offers for WooCommerce. Add a free product to the cart automatically when customers buy qualifying items.
  * Version:           1.0.0
  * Requires at least: 6.0
@@ -10,7 +10,7 @@
  * Author URI:        https://manzur.me
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain:       buy-one-get-one
+ * Text Domain:       bogofy
  * Domain Path:       /languages
  * WC requires at least: 7.0
  * WC tested up to:   9.0
@@ -57,8 +57,8 @@ function bogo_woocommerce_missing_notice() {
 		<p>
 			<?php
 			echo esc_html__(
-				'Buy One Get One requires WooCommerce to be installed and active.',
-				'buy-one-get-one'
+				'Bogofy requires WooCommerce to be installed and active.',
+				'bogofy'
 			);
 			?>
 		</p>
@@ -77,9 +77,6 @@ function bogo_init() {
 		add_action( 'admin_notices', __NAMESPACE__ . '\\bogo_woocommerce_missing_notice' );
 		return;
 	}
-
-	// Load text domain.
-	load_plugin_textdomain( 'buy-one-get-one', false, dirname( BOGO_PLUGIN_BASENAME ) . '/languages' );
 
 	// Initialize plugin.
 	Core\Plugin::get_instance();
