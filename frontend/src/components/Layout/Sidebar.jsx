@@ -8,7 +8,7 @@ import {
 const logoUrl = `${window.bogoAdmin?.pluginUrl || ''}assets/images/bogo-logo.svg`;
 
 const navigate = ( tab, extra = '' ) => {
-	window.location.href = `admin.php?page=buy-one-get-one&tab=${tab}${extra}`;
+	window.location.href = `admin.php?page=bogofy&tab=${tab}${extra}`;
 };
 
 function SbItem( { label, Icon, active, onClick } ) {
@@ -35,21 +35,21 @@ function Sidebar() {
 					<img className="bogo-sidebar__logo" src={logoUrl} width={30} height={30} alt=""/>
 				</div>
 				<div className="bogo-col">
-					<div className="bogo-sidebar__name">Bogo</div>
+					<div className="bogo-sidebar__name">Bogofy</div>
 				</div>
 			</div>
 			
-			<SbItem label={__( 'Dashboard', 'buy-one-get-one' )} Icon={HomeIcon} active={currentTab === 'dashboard'}
+			<SbItem label={__( 'Dashboard', 'bogofy' )} Icon={HomeIcon} active={currentTab === 'dashboard'}
 			        onClick={() => navigate( 'dashboard' )}/>
-			<SbItem label={__( 'BOGO Rules', 'buy-one-get-one' )} Icon={TagIcon} active={currentTab === 'rules' && !isCreating}
+			<SbItem label={__( 'Bogofy Rules', 'bogofy' )} Icon={TagIcon} active={currentTab === 'rules' && !isCreating}
 			        onClick={() => navigate( 'rules' )}/>
-			<SbItem label={__( 'New rule', 'buy-one-get-one' )} Icon={WandIcon} active={isCreating}
+			<SbItem label={__( 'New rule', 'bogofy' )} Icon={WandIcon} active={isCreating}
 			        onClick={() => navigate( 'rules', '&action=create' )}/>
 
-			<div className="bogo-sidebar__section">{__( 'System', 'buy-one-get-one' )}</div>
-			<SbItem label={__( 'Settings', 'buy-one-get-one' )} Icon={SettingsIcon} active={currentTab === 'settings'}
+			<div className="bogo-sidebar__section">{__( 'System', 'bogofy' )}</div>
+			<SbItem label={__( 'Settings', 'bogofy' )} Icon={SettingsIcon} active={currentTab === 'settings'}
 			        onClick={() => navigate( 'settings' )}/>
-			<SbItem label={__( 'Help & docs', 'buy-one-get-one' )} Icon={HelpIcon} active={currentTab === 'help'}
+			<SbItem label={__( 'Help & docs', 'bogofy' )} Icon={HelpIcon} active={currentTab === 'help'}
 			        onClick={() => navigate( 'help' )}/>
 		</aside>
 	);

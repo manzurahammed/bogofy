@@ -82,7 +82,7 @@ class ProductPage {
 		}
 
 		// Display a simple badge.
-		echo '<span class="bogo-badge">' . esc_html__( 'BOGO Deal!', 'buy-one-get-one' ) . '</span>';
+		echo '<span class="bogo-badge">' . esc_html__( 'BOGO Deal!', 'bogofy' ) . '</span>';
 	}
 
 	/**
@@ -171,7 +171,7 @@ class ProductPage {
 			case Rule::TYPE_BUY_X_GET_X:
 				return sprintf(
 					/* translators: 1: buy quantity, 2: free quantity */
-					__( 'Buy %1$d, Get %2$d FREE!', 'buy-one-get-one' ),
+					__( 'Buy %1$d, Get %2$d FREE!', 'bogofy' ),
 					$rule->buy_quantity,
 					$rule->free_quantity
 				);
@@ -186,7 +186,7 @@ class ProductPage {
 				}
 				return sprintf(
 					/* translators: 1: buy quantity, 2: free product name */
-					__( 'Buy %1$d, Get %2$s FREE!', 'buy-one-get-one' ),
+					__( 'Buy %1$d, Get %2$s FREE!', 'bogofy' ),
 					$rule->buy_quantity,
 					$free_product_name
 				);
@@ -194,7 +194,7 @@ class ProductPage {
 			case Rule::TYPE_BUY_CAT_GET_FREE:
 				return sprintf(
 					/* translators: 1: buy quantity, 2: free quantity */
-					__( 'Buy %1$d from this category, Get %2$d FREE!', 'buy-one-get-one' ),
+					__( 'Buy %1$d from this category, Get %2$d FREE!', 'bogofy' ),
 					$rule->buy_quantity,
 					$rule->free_quantity
 				);
@@ -202,7 +202,7 @@ class ProductPage {
 			case Rule::TYPE_BUY_X_GET_X_DISCOUNTED:
 				return sprintf(
 					/* translators: 1: buy quantity, 2: free quantity, 3: discount percentage */
-					__( 'Buy %1$d, Get %2$d at %3$d%% OFF!', 'buy-one-get-one' ),
+					__( 'Buy %1$d, Get %2$d at %3$d%% OFF!', 'bogofy' ),
 					$rule->buy_quantity,
 					$rule->free_quantity,
 					$rule->discount_value

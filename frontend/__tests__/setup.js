@@ -2,17 +2,17 @@ import '@testing-library/jest-dom';
 
 // Mock window.bogoAdmin
 window.bogoAdmin = {
-  apiUrl: 'http://localhost/wp-json/buy-one-get-one/v1',
+  apiUrl: 'http://localhost/wp-json/bogofy/v1',
   nonce: 'test-nonce',
   adminUrl: 'http://localhost/wp-admin/',
-  pluginUrl: 'http://localhost/wp-content/plugins/buy-one-get-one/',
+  pluginUrl: 'http://localhost/wp-content/plugins/bogofy/',
 };
 
 // Mock window.location
 delete window.location;
 window.location = {
-  href: 'http://localhost/wp-admin/admin.php?page=buy-one-get-one',
-  search: '?page=buy-one-get-one',
+  href: 'http://localhost/wp-admin/admin.php?page=bogofy',
+  search: '?page=bogofy',
   assign: jest.fn(),
 };
 

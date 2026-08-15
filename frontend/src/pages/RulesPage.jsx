@@ -12,16 +12,16 @@ import {
 const PER_PAGE = 20;
 
 const ruleTypeLabels = {
-  buy_x_get_x: __('Buy X Get X Free', 'buy-one-get-one'),
-  buy_x_get_y: __('Buy X Get Y Free', 'buy-one-get-one'),
-  buy_cat_get_free: __('Category BOGO', 'buy-one-get-one'),
-  buy_x_get_x_discounted: __('Buy X Get X Discounted', 'buy-one-get-one'),
+  buy_x_get_x: __('Buy X Get X Free', 'bogofy'),
+  buy_x_get_y: __('Buy X Get Y Free', 'bogofy'),
+  buy_cat_get_free: __('Category Bogofy', 'bogofy'),
+  buy_x_get_x_discounted: __('Buy X Get X Discounted', 'bogofy'),
 };
 
 function RuleRow({ rule, onEdit, onDelete, onToggle }) {
   const isActive = rule.status === 'active';
   const statusClass = isActive ? 'bogo-status--live' : 'bogo-status--inactive';
-  const statusLabel = isActive ? __('Live', 'buy-one-get-one') : __('Inactive', 'buy-one-get-one');
+  const statusLabel = isActive ? __('Live', 'bogofy') : __('Inactive', 'bogofy');
 
   return (
     <div className="bogo-rule">
@@ -35,26 +35,26 @@ function RuleRow({ rule, onEdit, onDelete, onToggle }) {
         <div className="bogo-flow">
           <span className="bogo-flow__node">
             {rule.apply_to === 'specific_products'
-              ? sprintf(__('Buy %d items', 'buy-one-get-one'), rule.buy_quantity)
-              : sprintf(__('Buy %d from category', 'buy-one-get-one'), rule.buy_quantity)}
+              ? sprintf(__('Buy %d items', 'bogofy'), rule.buy_quantity)
+              : sprintf(__('Buy %d from category', 'bogofy'), rule.buy_quantity)}
           </span>
           <span className="bogo-flow__arrow">→</span>
           <span className="bogo-flow__node bogo-flow__node--get">
             <GiftIcon size={12} />
             {rule.discount_type === 'free'
-              ? sprintf(__('Get %d free', 'buy-one-get-one'), rule.free_quantity)
+              ? sprintf(__('Get %d free', 'bogofy'), rule.free_quantity)
               /* translators: 1: quantity, 2: discount percentage */
-              : sprintf(__('Get %1$d at %2$s%% off', 'buy-one-get-one'), rule.free_quantity, rule.discount_value)}
+              : sprintf(__('Get %1$d at %2$s%% off', 'bogofy'), rule.free_quantity, rule.discount_value)}
           </span>
         </div>
         {rule.start_date && (
           <div className="bogo-rule__meta">
-            <span>{rule.start_date} → {rule.end_date || __('ongoing', 'buy-one-get-one')}</span>
+            <span>{rule.start_date} → {rule.end_date || __('ongoing', 'bogofy')}</span>
           </div>
         )}
       </div>
       <div className="bogo-col bogo-align-right" style={{ fontSize: 12, minWidth: 60 }}>
-        <span style={{ color: 'var(--muted)' }}>{__('Priority', 'buy-one-get-one')}</span>
+        <span style={{ color: 'var(--muted)' }}>{__('Priority', 'bogofy')}</span>
         <span style={{ fontWeight: 600, marginTop: 2 }} className="bogo-mono">{rule.priority}</span>
       </div>
       <div className="bogo-row" style={{ gap: 8 }}>
@@ -65,19 +65,19 @@ function RuleRow({ rule, onEdit, onDelete, onToggle }) {
         <button
           className={`bogo-toggle${isActive ? ' bogo-toggle--on' : ''}`}
           onClick={() => onToggle(rule)}
-          title={isActive ? __('Deactivate', 'buy-one-get-one') : __('Activate', 'buy-one-get-one')}
+          title={isActive ? __('Deactivate', 'bogofy') : __('Activate', 'bogofy')}
         />
         <button
           className="bogo-button bogo-button--sm bogo-button--ghost"
           onClick={() => onEdit(rule.id)}
-          title={__('Edit', 'buy-one-get-one')}
+          title={__('Edit', 'bogofy')}
         >
           <EditIcon size={13} />
         </button>
         <button
           className="bogo-button bogo-button--sm bogo-button--ghost"
           onClick={() => onDelete(rule.id)}
-          title={__('Delete', 'buy-one-get-one')}
+          title={__('Delete', 'bogofy')}
           style={{ color: 'var(--danger-clr)' }}
         >
           <TrashIcon size={13} />
@@ -108,19 +108,19 @@ function RulesPage() {
     const newStatus = rule.status === 'active' ? 'inactive' : 'active';
     try {
       await updateStatus.mutateAsync({ id: rule.id, status: newStatus });
-      success(newStatus === 'active' ? __('Rule activated', 'buy-one-get-one') : __('Rule deactivated', 'buy-one-get-one'));
+      success(newStatus === 'active' ? __('Rule activated', 'bogofy') : __('Rule deactivated', 'bogofy'));
     } catch {
-      showError(__('Failed to update rule status', 'buy-one-get-one'));
+      showError(__('Failed to update rule status', 'bogofy'));
     }
   };
 
   const handleDelete = async () => {
     try {
       await deleteRule.mutateAsync(deleteModal.ruleId);
-      success(__('Rule deleted successfully', 'buy-one-get-one'));
+      success(__('Rule deleted successfully', 'bogofy'));
       setDeleteModal({ isOpen: false, ruleId: null });
     } catch {
-      showError(__('Failed to delete rule', 'buy-one-get-one'));
+      showError(__('Failed to delete rule', 'bogofy'));
     }
   };
 
@@ -129,39 +129,39 @@ function RulesPage() {
   const actions = (
     <button
       className="bogo-button bogo-button--primary bogo-button--sm"
-      onClick={() => { window.location.href = 'admin.php?page=buy-one-get-one&tab=rules&action=create'; }}
+      onClick={() => { window.location.href = 'admin.php?page=bogofy&tab=rules&action=create'; }}
     >
-      <PlusIcon size={14} /> {__('New rule', 'buy-one-get-one')}
+      <PlusIcon size={14} /> {__('New rule', 'bogofy')}
     </button>
   );
 
   if (isLoading) return (
-    <AppShell crumb={['Bogo', __('BOGO Rules', 'buy-one-get-one')]} actions={actions}>
+    <AppShell crumb={['Bogofy', __('Bogofy Rules', 'bogofy')]} actions={actions}>
       <PageLoader />
     </AppShell>
   );
 
   if (error) return (
-    <AppShell crumb={['Bogo', __('BOGO Rules', 'buy-one-get-one')]} actions={actions}>
+    <AppShell crumb={['Bogofy', __('Bogofy Rules', 'bogofy')]} actions={actions}>
       <div style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--muted)' }}>
-        {__('Failed to load rules. Please try again.', 'buy-one-get-one')}
+        {__('Failed to load rules. Please try again.', 'bogofy')}
       </div>
     </AppShell>
   );
 
   return (
-    <AppShell crumb={['Bogo', __('BOGO Rules', 'buy-one-get-one')]} actions={actions}>
+    <AppShell crumb={['Bogofy', __('Bogofy Rules', 'bogofy')]} actions={actions}>
       <div className="bogo-page-header">
         <div>
-          <div className="bogo-page-header__title">{__('BOGO Rules', 'buy-one-get-one')}</div>
+          <div className="bogo-page-header__title">{__('Bogofy Rules', 'bogofy')}</div>
           {/* translators: 1: active rule count, 2: total rule count */}
-          <div className="bogo-page-header__desc">{sprintf(__('%1$d active · %2$d total', 'buy-one-get-one'), liveCount, rules?.length ?? 0)}</div>
+          <div className="bogo-page-header__desc">{sprintf(__('%1$d active · %2$d total', 'bogofy'), liveCount, rules?.length ?? 0)}</div>
         </div>
         <div className="bogo-row" style={{ gap: 10 }}>
           <div style={{ position: 'relative' }}>
             <input
               className="bogo-form-input"
-              placeholder={__('Search rules…', 'buy-one-get-one')}
+              placeholder={__('Search rules…', 'bogofy')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               style={{ width: 240, paddingLeft: 32 }}
@@ -169,9 +169,9 @@ function RulesPage() {
             <SearchIcon size={14} stroke="var(--muted-2)" style={{ position: 'absolute', left: 11, top: 11 }} />
           </div>
           <div className="bogo-tabs">
-            <button className={`bogo-tabs__tab${statusFilter === '' ? ' bogo-tabs__tab--active' : ''}`} onClick={() => setStatusFilter('')}>{__('All', 'buy-one-get-one')}</button>
-            <button className={`bogo-tabs__tab${statusFilter === 'active' ? ' bogo-tabs__tab--active' : ''}`} onClick={() => setStatusFilter('active')}>{__('Live', 'buy-one-get-one')}</button>
-            <button className={`bogo-tabs__tab${statusFilter === 'inactive' ? ' bogo-tabs__tab--active' : ''}`} onClick={() => setStatusFilter('inactive')}>{__('Inactive', 'buy-one-get-one')}</button>
+            <button className={`bogo-tabs__tab${statusFilter === '' ? ' bogo-tabs__tab--active' : ''}`} onClick={() => setStatusFilter('')}>{__('All', 'bogofy')}</button>
+            <button className={`bogo-tabs__tab${statusFilter === 'active' ? ' bogo-tabs__tab--active' : ''}`} onClick={() => setStatusFilter('active')}>{__('Live', 'bogofy')}</button>
+            <button className={`bogo-tabs__tab${statusFilter === 'inactive' ? ' bogo-tabs__tab--active' : ''}`} onClick={() => setStatusFilter('inactive')}>{__('Inactive', 'bogofy')}</button>
           </div>
         </div>
       </div>
@@ -182,7 +182,7 @@ function RulesPage() {
             <RuleRow
               key={rule.id}
               rule={rule}
-              onEdit={(id) => { window.location.href = `admin.php?page=buy-one-get-one&tab=rules&action=edit&rule_id=${id}`; }}
+              onEdit={(id) => { window.location.href = `admin.php?page=bogofy&tab=rules&action=edit&rule_id=${id}`; }}
               onDelete={(id) => setDeleteModal({ isOpen: true, ruleId: id })}
               onToggle={handleStatusToggle}
             />
@@ -190,17 +190,17 @@ function RulesPage() {
         ) : (
           <div className="bogo-panel" style={{ textAlign: 'center', padding: '48px 20px' }}>
             <GiftIcon size={40} stroke="var(--muted-2)" />
-            <div style={{ marginTop: 14, fontSize: 15, fontWeight: 600 }}>{__('No rules found', 'buy-one-get-one')}</div>
+            <div style={{ marginTop: 14, fontSize: 15, fontWeight: 600 }}>{__('No rules found', 'bogofy')}</div>
             <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4 }}>
-              {search ? __('Try a different search term.', 'buy-one-get-one') : __('Create your first BOGO rule to get started.', 'buy-one-get-one')}
+              {search ? __('Try a different search term.', 'bogofy') : __('Create your first Bogofy rule to get started.', 'bogofy')}
             </div>
             {!search && (
               <button
                 className="bogo-button bogo-button--primary bogo-button--sm"
                 style={{ marginTop: 16 }}
-                onClick={() => { window.location.href = 'admin.php?page=buy-one-get-one&tab=rules&action=create'; }}
+                onClick={() => { window.location.href = 'admin.php?page=bogofy&tab=rules&action=create'; }}
               >
-                <PlusIcon size={13} /> {__('Create rule', 'buy-one-get-one')}
+                <PlusIcon size={13} /> {__('Create rule', 'bogofy')}
               </button>
             )}
           </div>
@@ -210,10 +210,10 @@ function RulesPage() {
       {rules && (page > 1 || rules.length === PER_PAGE) && (
         <div className="bogo-row" style={{ justifyContent: 'space-between', marginTop: 18, color: 'var(--muted)', fontSize: 12 }}>
           {/* translators: %d: number of rules shown */}
-          <span>{sprintf(__('Showing %d rules', 'buy-one-get-one'), rules.length)}</span>
+          <span>{sprintf(__('Showing %d rules', 'bogofy'), rules.length)}</span>
           <div className="bogo-row" style={{ gap: 6 }}>
-            <button className="bogo-button bogo-button--sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>{__('‹ Prev', 'buy-one-get-one')}</button>
-            <button className="bogo-button bogo-button--sm" onClick={() => setPage((p) => p + 1)} disabled={rules.length < PER_PAGE}>{__('Next ›', 'buy-one-get-one')}</button>
+            <button className="bogo-button bogo-button--sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>{__('‹ Prev', 'bogofy')}</button>
+            <button className="bogo-button bogo-button--sm" onClick={() => setPage((p) => p + 1)} disabled={rules.length < PER_PAGE}>{__('Next ›', 'bogofy')}</button>
           </div>
         </div>
       )}
@@ -222,9 +222,9 @@ function RulesPage() {
         isOpen={deleteModal.isOpen}
         onClose={() => setDeleteModal({ isOpen: false, ruleId: null })}
         onConfirm={handleDelete}
-        title={__('Delete Rule', 'buy-one-get-one')}
-        message={__('Are you sure you want to delete this rule? This action cannot be undone.', 'buy-one-get-one')}
-        confirmText={__('Delete', 'buy-one-get-one')}
+        title={__('Delete Rule', 'bogofy')}
+        message={__('Are you sure you want to delete this rule? This action cannot be undone.', 'bogofy')}
+        confirmText={__('Delete', 'bogofy')}
       />
     </AppShell>
   );

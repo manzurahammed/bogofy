@@ -29,7 +29,7 @@ function bogo_tests_setup() {
 	}
 
 	if ( ! defined( 'BOGO_PLUGIN_FILE' ) ) {
-		define( 'BOGO_PLUGIN_FILE', dirname( __DIR__ ) . '/buy-one-get-one.php' );
+		define( 'BOGO_PLUGIN_FILE', dirname( __DIR__ ) . '/bogofy.php' );
 	}
 
 	if ( ! defined( 'BOGO_PLUGIN_DIR' ) ) {
@@ -37,11 +37,11 @@ function bogo_tests_setup() {
 	}
 
 	if ( ! defined( 'BOGO_PLUGIN_URL' ) ) {
-		define( 'BOGO_PLUGIN_URL', 'http://example.com/wp-content/plugins/buy-one-get-one/' );
+		define( 'BOGO_PLUGIN_URL', 'http://example.com/wp-content/plugins/bogofy/' );
 	}
 
 	if ( ! defined( 'BOGO_PLUGIN_BASENAME' ) ) {
-		define( 'BOGO_PLUGIN_BASENAME', 'buy-one-get-one/buy-one-get-one.php' );
+		define( 'BOGO_PLUGIN_BASENAME', 'bogofy/bogofy.php' );
 	}
 
 	bogo_tests_stub_wp_functions();

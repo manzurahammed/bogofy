@@ -28,7 +28,7 @@ class Settings {
 	 */
 	private static $defaults = array(
 		'enabled'                    => true,
-		'free_item_label'            => 'FREE (BOGO Deal)',
+		'free_item_label'            => 'FREE (Bogofy Deal)',
 		'cart_notice_text'           => 'Congratulations! You got a free item with your purchase.',
 		'show_product_page_messages' => true,
 		'show_shop_badges'           => true,

@@ -2,7 +2,7 @@
  * API wrapper with WordPress nonce authentication.
  */
 
-const API_BASE = window.bogoAdmin?.apiUrl || '/wp-json/buy-one-get-one/v1';
+const API_BASE = window.bogoAdmin?.apiUrl || '/wp-json/bogofy/v1';
 const NONCE = window.bogoAdmin?.nonce || '';
 
 /**

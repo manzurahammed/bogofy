@@ -27,10 +27,10 @@ class CartDisplay {
 	 */
 	public function add_bogo_label( $item_data, $cart_item ) {
 		if ( CartHandler::is_bogo_item( $cart_item ) ) {
-			$label = Settings::get( 'free_item_label', __( 'FREE (BOGO Deal)', 'buy-one-get-one' ) );
+			$label = Settings::get( 'free_item_label', __( 'FREE (Bogofy Deal)', 'bogofy' ) );
 
 			$item_data[] = array(
-				'key'   => __( 'Offer', 'buy-one-get-one' ),
+				'key'   => __( 'Offer', 'bogofy' ),
 				'value' => $label,
 			);
 		}
@@ -61,7 +61,7 @@ class CartDisplay {
 			return sprintf(
 				'<del>%s</del> <ins class="bogo-free-price">%s</ins>',
 				wc_price( $original_price ),
-				esc_html__( 'FREE', 'buy-one-get-one' )
+				esc_html__( 'FREE', 'bogofy' )
 			);
 		}
 

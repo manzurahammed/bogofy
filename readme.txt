@@ -1,4 +1,4 @@
-=== Buy One Get One ===
+=== Bogofy – Buy One Get One for WooCommerce ===
 Contributors: manzurahammed
 Tags: woocommerce, bogo, buy one get one, free gift, discount
 Requires at least: 6.0
@@ -44,7 +44,7 @@ Buy One Get One lets you run simple, effective BOGO promotions in your WooCommer
 
 == Installation ==
 
-1. Upload the `buy-one-get-one` folder to the `/wp-content/plugins/` directory, or install it from the Plugins screen in WordPress.
+1. Upload the `bogofy` folder to the `/wp-content/plugins/` directory, or install it from the Plugins screen in WordPress.
 2. Activate the plugin through the 'Plugins' menu in WordPress.
 3. Make sure WooCommerce is installed and active.
 4. Go to 'Buy One Get One' in the WordPress admin menu and create your first BOGO rule.

@@ -4,7 +4,7 @@ import Sidebar from './Sidebar';
 import Topbar from './Header';
 import { Notification } from '../Shared/Notification';
 
-function AppShell( { children, crumb = ['Bogo'], actions = null } ) {
+function AppShell( { children, crumb = ['Bogofy'], actions = null } ) {
 	return (
 		<div className="bogo-admin">
 			<div className="bogo-app">
