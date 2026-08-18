@@ -72,7 +72,8 @@ Use the "Enable plugin" toggle on the Settings screen to switch all BOGO functio
 1. Dashboard overview showing active rules and stats.
 2. Rules listing with status toggles.
 3. Create rule wizard.
-4. Settings screen for labels and display options.
+4. Preview Rules.
+5. Settings screen for labels and display options.
 
 == Changelog ==
 
