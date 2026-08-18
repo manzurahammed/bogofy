@@ -14,6 +14,9 @@
 /graphify-out
 claude-code-prompt-*.md
 
+# WordPress.org page assets (icon/banner/screenshots) - not part of the plugin
+/.wporg-assets
+
 # Node / JS build toolchain (source in /frontend/src is kept for review)
 /node_modules
 /frontend/node_modules
