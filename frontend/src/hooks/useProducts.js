@@ -36,38 +36,6 @@ export function useProductSearch( options = {} ) {
 	};
 }
 
-/**
- * Hook for searching categories.
- *
- * @returns {Object}
- */
-export function useCategorySearch() {
-	const [searchTerm, setSearchTerm] = useState( '' );
-	
-	const { data, isLoading, error } = useQuery( {
-		                                             queryKey: ['categories', 'search', searchTerm],
-		                                             queryFn: () => rulesApi.searchCategories( searchTerm ),
-	                                             } );
-	
-	const search = useCallback( ( term ) => {
-		setSearchTerm( term );
-	}, [] );
-	
-	const clear = useCallback( () => {
-		setSearchTerm( '' );
-	}, [] );
-	
-	return {
-		categories: data || [],
-		isLoading,
-		error,
-		searchTerm,
-		search,
-		clear,
-	};
-}
-
 export default {
 	useProductSearch,
-	useCategorySearch,
 };

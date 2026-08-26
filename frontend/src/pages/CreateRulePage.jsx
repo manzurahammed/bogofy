@@ -12,14 +12,14 @@ import {
 const ruleTypes = [
 	{
 		value: 'buy_x_get_x',
-		label: __('Buy X, Get same free', 'bogofy'),
-		desc: __('Cheapest of N identical items becomes free.', 'bogofy'),
+		label: __( 'Buy X, Get same free', 'bogofy' ),
+		desc: __( 'Cheapest of N identical items becomes free.', 'bogofy' ),
 		vis: 'same'
 	},
 	{
 		value: 'buy_x_get_y',
-		label: __('Buy X, Get Y free', 'bogofy'),
-		desc: __('Customer adds trigger item; gift drops to $0.', 'bogofy'),
+		label: __( 'Buy X, Get Y free', 'bogofy' ),
+		desc: __( 'Customer adds trigger item; gift drops to $0.', 'bogofy' ),
 		vis: 'gift'
 	},
 ];
@@ -44,7 +44,7 @@ const defaultData = {
 };
 
 function Stepper( { active } ) {
-	const steps = [__('Offer type', 'bogofy'), __('Products', 'bogofy'), __('Review', 'bogofy')];
+	const steps = [__( 'Offer type', 'bogofy' ), __( 'Products', 'bogofy' ), __( 'Review', 'bogofy' )];
 	return (
 		<div className="bogo-stepper">
 			{steps.map( ( s, i ) => {
@@ -71,8 +71,12 @@ function CartPreview( { formData, selectedBuyProducts, selectedFreeProducts, ste
 		<div className="bogo-wizard__card" style={{ padding: 0, overflow: 'hidden' }}>
 			<div className="bogo-row" style={{ padding: '14px 18px', borderBottom: '1px solid var(--line)', gap: 8 }}>
 				<EyeIcon size={14} stroke="var(--muted)"/>
-				<span style={{ fontSize: 12.5, fontWeight: 600 }}>{__('Live preview', 'bogofy')}</span>
-				<span style={{ marginLeft: 'auto', color: 'var(--muted)', fontSize: 11.5 }}>{__('Cart view', 'bogofy')}</span>
+				<span style={{ fontSize: 12.5, fontWeight: 600 }}>{__( 'Live preview', 'bogofy' )}</span>
+				<span style={{
+					marginLeft: 'auto',
+					color: 'var(--muted)',
+					fontSize: 11.5
+				}}>{__( 'Cart view', 'bogofy' )}</span>
 			</div>
 			<div style={{ padding: 16 }}>
 				<div className="bogo-preview__cart">
@@ -81,7 +85,7 @@ function CartPreview( { formData, selectedBuyProducts, selectedFreeProducts, ste
 							<div className="bogo-thumb"/>
 							<div className="bogo-col">
 								<div className="bogo-preview__name">{p.name}</div>
-								<div className="bogo-preview__price">{__('Qty 1', 'bogofy')}</div>
+								<div className="bogo-preview__price">{__( 'Qty 1', 'bogofy' )}</div>
 							</div>
 							<span className="bogo-mono" style={{ fontSize: 12 }}>—</span>
 						</div>
@@ -90,9 +94,10 @@ function CartPreview( { formData, selectedBuyProducts, selectedFreeProducts, ste
 						<div className="bogo-preview__line">
 							<div className="bogo-thumb"/>
 							<div className="bogo-col">
-								<div className="bogo-preview__name">{__('Trigger product', 'bogofy')}</div>
+								<div className="bogo-preview__name">{__( 'Trigger product', 'bogofy' )}</div>
 								{/* translators: %d: quantity */}
-								<div className="bogo-preview__price">{sprintf(__('Qty %d', 'bogofy'), formData.buy_quantity)}</div>
+								<div
+									className="bogo-preview__price">{sprintf( __( 'Qty %d', 'bogofy' ), formData.buy_quantity )}</div>
 							</div>
 							<span className="bogo-mono" style={{ fontSize: 12 }}>—</span>
 						</div>
@@ -104,10 +109,11 @@ function CartPreview( { formData, selectedBuyProducts, selectedFreeProducts, ste
 							     style={{ background: 'linear-gradient(135deg,#fbcfe8,#f0abfc)' }}/>
 							<div className="bogo-col">
 								<div className="bogo-preview__name">
-									{selectedFreeProducts[0]?.name || __('Gift product', 'bogofy')}{' '}
-									<span className="bogo-free-badge">{__('FREE', 'bogofy')}</span>
+									{selectedFreeProducts[0]?.name || __( 'Gift product', 'bogofy' )}{' '}
+									<span className="bogo-free-badge">{__( 'FREE', 'bogofy' )}</span>
 								</div>
-								<div className="bogo-preview__price" style={{ color: 'var(--accent-ink)' }}>{__('Bogofy discount', 'bogofy')}</div>
+								<div className="bogo-preview__price"
+								     style={{ color: 'var(--accent-ink)' }}>{__( 'Bogofy discount', 'bogofy' )}</div>
 							</div>
 							<div className="bogo-col bogo-align-right">
 								<span className="bogo-mono" style={{
@@ -121,7 +127,7 @@ function CartPreview( { formData, selectedBuyProducts, selectedFreeProducts, ste
 					<div style={{ padding: '10px 0 0', borderTop: '1px solid var(--line)', marginTop: 4 }}>
 						<div className="bogo-row"
 						     style={{ justifyContent: 'space-between', fontSize: 14, fontWeight: 700, marginTop: 4 }}>
-							<span>{__('Total', 'bogofy')}</span>
+							<span>{__( 'Total', 'bogofy' )}</span>
 							<span className="bogo-mono">—</span>
 						</div>
 					</div>
@@ -150,19 +156,21 @@ function SummaryRail( { formData, step, selectedBuyProducts, selectedFreeProduct
 	
 	return (
 		<div className="bogo-wizard__card">
-			<div style={{ fontSize: 12.5, fontWeight: 600, marginBottom: 10 }}>{__('Summary', 'bogofy')}</div>
+			<div style={{ fontSize: 12.5, fontWeight: 600, marginBottom: 10 }}>{__( 'Summary', 'bogofy' )}</div>
 			<div className="bogo-col" style={{ gap: 9 }}>
-				<SumRow l={__('Type', 'bogofy')} v={ruleTypes.find( ( r ) => r.value === formData.rule_type )?.label || '—'}
+				<SumRow l={__( 'Type', 'bogofy' )}
+				        v={ruleTypes.find( ( r ) => r.value === formData.rule_type )?.label || '—'}
 				        done={step >= 1}/>
-				<SumRow l={__('Name', 'bogofy')} v={formData.title || __('Not set', 'bogofy')} done={!!formData.title}/>
-				<SumRow l={__('Trigger', 'bogofy')}
-				        /* translators: 1: number of products, 2: minimum quantity */
-				        v={selectedBuyProducts.length > 0 ? sprintf(__('%1$d products · min %2$d', 'bogofy'), selectedBuyProducts.length, formData.buy_quantity) : __('Not set', 'bogofy')}
-				        done={selectedBuyProducts.length > 0}/>
-				<SumRow l={__('Gift', 'bogofy')}
-				        /* translators: %d: number of products */
-				        v={selectedFreeProducts.length > 0 ? sprintf(__('%d products', 'bogofy'), selectedFreeProducts.length) : __('Not set', 'bogofy')}
-				        done={selectedFreeProducts.length > 0}/>
+				<SumRow l={__( 'Name', 'bogofy' )} v={formData.title || __( 'Not set', 'bogofy' )}
+				        done={!!formData.title}/>
+				<SumRow l={__( 'Trigger', 'bogofy' )}
+					/* translators: 1: number of products, 2: minimum quantity */
+					    v={selectedBuyProducts.length > 0 ? sprintf( __( '%1$d products · min %2$d', 'bogofy' ), selectedBuyProducts.length, formData.buy_quantity ) : __( 'Not set', 'bogofy' )}
+					    done={selectedBuyProducts.length > 0}/>
+				<SumRow l={__( 'Gift', 'bogofy' )}
+					/* translators: %d: number of products */
+					    v={selectedFreeProducts.length > 0 ? sprintf( __( '%d products', 'bogofy' ), selectedFreeProducts.length ) : __( 'Not set', 'bogofy' )}
+					    done={selectedFreeProducts.length > 0}/>
 			</div>
 		</div>
 	);
@@ -172,8 +180,9 @@ function SummaryRail( { formData, step, selectedBuyProducts, selectedFreeProduct
 function Step1( { formData, setFormData } ) {
 	return (
 		<div className="bogo-wizard__card">
-			<div className="bogo-wizard__title">{__('Choose offer type', 'bogofy')}</div>
-			<div className="bogo-wizard__subtitle">{__('The structure of your rule — determines what other steps look like.', 'bogofy')}</div>
+			<div className="bogo-wizard__title">{__( 'Choose offer type', 'bogofy' )}</div>
+			<div
+				className="bogo-wizard__subtitle">{__( 'The structure of your rule — determines what other steps look like.', 'bogofy' )}</div>
 			<div className="bogo-type-grid">
 				{ruleTypes.map( ( t ) => (
 					<div
@@ -198,10 +207,10 @@ function Step1( { formData, setFormData } ) {
 			</div>
 			
 			<div style={{ marginTop: 22 }}>
-				<label className="bogo-form-label">{__('Rule name', 'bogofy')}</label>
+				<label className="bogo-form-label">{__( 'Rule name', 'bogofy' )}</label>
 				<input
 					className="bogo-form-input"
-					placeholder={__('e.g., Summer Swim — Buy 2 Get 1', 'bogofy')}
+					placeholder={__( 'e.g., Summer Swim — Buy 2 Get 1', 'bogofy' )}
 					value={formData.title}
 					onChange={( e ) => setFormData( ( p ) => ( { ...p, title: e.target.value } ) )}
 				/>
@@ -225,14 +234,19 @@ function Step2( {
 	return (
 		<>
 			<div className="bogo-wizard__card">
-				<div className="bogo-wizard__title">{__('Trigger products', 'bogofy')} <span
-					style={{ color: 'var(--muted)', fontWeight: 400, fontSize: 13 }}>{__('· “Buy X”', 'bogofy')}</span></div>
-				<div className="bogo-wizard__subtitle">{__('Customer must add these to cart for the offer to apply.', 'bogofy')}</div>
-
+				<div className="bogo-wizard__title">{__( 'Trigger products', 'bogofy' )} <span
+					style={{
+						color: 'var(--muted)',
+						fontWeight: 400,
+						fontSize: 13
+					}}>{__( '· “Buy X”', 'bogofy' )}</span></div>
+				<div
+					className="bogo-wizard__subtitle">{__( 'Customer must add these to cart for the offer to apply.', 'bogofy' )}</div>
+				
 				<div style={{ display: 'flex', gap: 6, marginTop: 16, marginBottom: 14, flexWrap: 'wrap' }}>
 					{[
-						{ v: 'specific_products', l: __('Specific products', 'bogofy') },
-						{ v: 'all_products', l: __('Any product', 'bogofy') },
+						{ v: 'specific_products', l: __( 'Specific products', 'bogofy' ) },
+						{ v: 'all_products', l: __( 'Any product', 'bogofy' ) },
 					].map( ( opt ) => (
 						<button
 							key={opt.v}
@@ -251,14 +265,15 @@ function Step2( {
 						<ProductSearch
 							selectedProducts={selectedBuyProducts}
 							onChange={setSelectedBuyProducts}
-							placeholder={__('Search for trigger products…', 'bogofy')}
+							placeholder={__( 'Search for trigger products…', 'bogofy' )}
 						/>
 						{errors.buy_products && <div className="bogo-form-error">{errors.buy_products}</div>}
 					</div>
 				)}
-
+				
 				<div className="bogo-row" style={{ gap: 10, marginTop: 8 }}>
-					<label className="bogo-form-label" style={{ margin: 0 }}>{__('Minimum quantity to trigger', 'bogofy')}</label>
+					<label className="bogo-form-label"
+					       style={{ margin: 0 }}>{__( 'Minimum quantity to trigger', 'bogofy' )}</label>
 					<input
 						type="number"
 						className="bogo-form-input"
@@ -267,20 +282,25 @@ function Step2( {
 						value={formData.buy_quantity}
 						onChange={( e ) => setFormData( ( p ) => ( { ...p, buy_quantity: Number( e.target.value ) } ) )}
 					/>
-					<span style={{ color: 'var(--muted)', fontSize: 12 }}>{__('items in cart', 'bogofy')}</span>
+					<span style={{ color: 'var(--muted)', fontSize: 12 }}>{__( 'items in cart', 'bogofy' )}</span>
 				</div>
 			</div>
 			
 			{showFreeSelector && (
 				<div className="bogo-wizard__card">
-					<div className="bogo-wizard__title">{__('Gift products', 'bogofy')} <span
-						style={{ color: 'var(--muted)', fontWeight: 400, fontSize: 13 }}>{__('· “Get Y”', 'bogofy')}</span></div>
-					<div className="bogo-wizard__subtitle">{__('What customers receive when the trigger is met.', 'bogofy')}</div>
+					<div className="bogo-wizard__title">{__( 'Gift products', 'bogofy' )} <span
+						style={{
+							color: 'var(--muted)',
+							fontWeight: 400,
+							fontSize: 13
+						}}>{__( '· “Get Y”', 'bogofy' )}</span></div>
+					<div
+						className="bogo-wizard__subtitle">{__( 'What customers receive when the trigger is met.', 'bogofy' )}</div>
 					<div style={{ marginTop: 14 }}>
 						<ProductSearch
 							selectedProducts={selectedFreeProducts}
 							onChange={setSelectedFreeProducts}
-							placeholder={__('Search for gift products…', 'bogofy')}
+							placeholder={__( 'Search for gift products…', 'bogofy' )}
 						/>
 						{errors.free_products && <div className="bogo-form-error">{errors.free_products}</div>}
 					</div>
@@ -289,13 +309,18 @@ function Step2( {
 					     style={{ marginTop: 16, gap: 14, padding: 14, background: '#fafaf9', borderRadius: 10 }}>
 						<GiftIcon size={18} stroke="var(--accent-ink)"/>
 						<div className="bogo-col bogo-fill">
-							<div style={{ fontWeight: 600, fontSize: 13 }}>{__('100% off (Free)', 'bogofy')}</div>
-							<div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>{__('The gift item is added to the cart at no cost.', 'bogofy')}</div>
+							<div style={{ fontWeight: 600, fontSize: 13 }}>{__( '100% off (Free)', 'bogofy' )}</div>
+							<div style={{
+								fontSize: 12,
+								color: 'var(--muted)',
+								marginTop: 2
+							}}>{__( 'The gift item is added to the cart at no cost.', 'bogofy' )}</div>
 						</div>
 					</div>
-
+					
 					<div className="bogo-row" style={{ gap: 10, marginTop: 14 }}>
-						<label className="bogo-form-label" style={{ margin: 0 }}>{__('Gift quantity', 'bogofy')}</label>
+						<label className="bogo-form-label"
+						       style={{ margin: 0 }}>{__( 'Gift quantity', 'bogofy' )}</label>
 						<input
 							type="number"
 							className="bogo-form-input"
@@ -307,7 +332,7 @@ function Step2( {
 								free_quantity: Number( e.target.value )
 							} ) )}
 						/>
-						<span style={{ color: 'var(--muted)', fontSize: 12 }}>{__('items gifted', 'bogofy')}</span>
+						<span style={{ color: 'var(--muted)', fontSize: 12 }}>{__( 'items gifted', 'bogofy' )}</span>
 					</div>
 				</div>
 			)}
@@ -328,33 +353,39 @@ function Step4( { formData, selectedBuyProducts, selectedFreeProducts, onLaunch,
 					fontWeight: 500
 				}}>{title}</span>
 				{/* translators: %s: step number */}
-				<span style={{ fontSize: 11, color: 'var(--muted)' }}>{sprintf(__('Step %s', 'bogofy'), step)}</span>
+				<span
+					style={{ fontSize: 11, color: 'var(--muted)' }}>{sprintf( __( 'Step %s', 'bogofy' ), step )}</span>
 			</div>
 			{children}
 		</div>
 	);
-
+	
 	return (
 		<div className="bogo-wizard__card">
-			<div className="bogo-wizard__title">{__('Review your rule', 'bogofy')}</div>
-			<div className="bogo-wizard__subtitle">{__('Everything looks good? Launch it live or save as draft.', 'bogofy')}</div>
-
+			<div className="bogo-wizard__title">{__( 'Review your rule', 'bogofy' )}</div>
+			<div
+				className="bogo-wizard__subtitle">{__( 'Everything looks good? Launch it live or save as draft.', 'bogofy' )}</div>
+			
 			<div className="bogo-review-grid">
-				<ReviewBlock title={__('Offer type', 'bogofy')} step="1">
+				<ReviewBlock title={__( 'Offer type', 'bogofy' )} step="1">
 					<div className="bogo-flow">
 						{/* translators: %d: quantity */}
-						<span className="bogo-flow__node"><BoxIcon size={12}/> {sprintf(__('Buy %d', 'bogofy'), formData.buy_quantity)}</span>
+						<span className="bogo-flow__node"><BoxIcon
+							size={12}/> {sprintf( __( 'Buy %d', 'bogofy' ), formData.buy_quantity )}</span>
 						<span className="bogo-flow__arrow">→</span>
 						{/* translators: %d: quantity */}
 						<span className="bogo-flow__node bogo-flow__node--get"><GiftIcon
-							size={12}/> {sprintf(__('Get %d free', 'bogofy'), formData.free_quantity)}</span>
+							size={12}/> {sprintf( __( 'Get %d free', 'bogofy' ), formData.free_quantity )}</span>
 					</div>
 				</ReviewBlock>
-				<ReviewBlock title={__('Name', 'bogofy')} step="1">
-					<div style={{ fontWeight: 600, fontSize: 13 }}>{formData.title || __('(Unnamed rule)', 'bogofy')}</div>
+				<ReviewBlock title={__( 'Name', 'bogofy' )} step="1">
+					<div style={{
+						fontWeight: 600,
+						fontSize: 13
+					}}>{formData.title || __( '(Unnamed rule)', 'bogofy' )}</div>
 				</ReviewBlock>
-
-				<ReviewBlock title={__('Trigger products', 'bogofy')} step="2">
+				
+				<ReviewBlock title={__( 'Trigger products', 'bogofy' )} step="2">
 					<div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
 						{selectedBuyProducts.length > 0
 							? selectedBuyProducts.map( ( p ) => (
@@ -365,13 +396,17 @@ function Step4( { formData, selectedBuyProducts, selectedFreeProducts, onLaunch,
 							: <span style={{
 								color: 'var(--muted)',
 								fontSize: 12
-							}}>{sprintf(__('All products (%s)', 'bogofy'), formData.apply_to)}</span>
+							}}>{sprintf( __( 'All products (%s)', 'bogofy' ), formData.apply_to )}</span>
 						}
 					</div>
 					{/* translators: %d: minimum quantity */}
-					<div style={{ color: 'var(--muted)', fontSize: 11.5, marginTop: 8 }}>{sprintf(__('Min. qty: %d', 'bogofy'), formData.buy_quantity)}</div>
+					<div style={{
+						color: 'var(--muted)',
+						fontSize: 11.5,
+						marginTop: 8
+					}}>{sprintf( __( 'Min. qty: %d', 'bogofy' ), formData.buy_quantity )}</div>
 				</ReviewBlock>
-				<ReviewBlock title={__('Gift products', 'bogofy')} step="2">
+				<ReviewBlock title={__( 'Gift products', 'bogofy' )} step="2">
 					<div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
 						{selectedFreeProducts.length > 0
 							? selectedFreeProducts.map( ( p ) => (
@@ -382,19 +417,19 @@ function Step4( { formData, selectedBuyProducts, selectedFreeProducts, onLaunch,
 						}
 					</div>
 					<div style={{ color: 'var(--accent-ink)', fontSize: 11.5, marginTop: 8, fontWeight: 600 }}>
-						{__('100% off (Free)', 'bogofy')}
+						{__( '100% off (Free)', 'bogofy' )}
 					</div>
 				</ReviewBlock>
 			</div>
-
+			
 			<div className="bogo-row" style={{ marginTop: 22, gap: 10, justifyContent: 'flex-end' }}>
 				<button type="button" className="bogo-button" onClick={onDraft} disabled={isLoading}>
-					{__('Save as draft', 'bogofy')}
+					{__( 'Save as draft', 'bogofy' )}
 				</button>
 				<button type="button" className="bogo-button bogo-button--primary" onClick={onLaunch}
 				        disabled={isLoading}>
 					<PowerIcon size={14}/>
-					{isLoading ? __('Saving…', 'bogofy') : __('Launch rule', 'bogofy')}
+					{isLoading ? __( 'Saving…', 'bogofy' ) : __( 'Launch rule', 'bogofy' )}
 				</button>
 			</div>
 		</div>
@@ -413,12 +448,12 @@ function CreateRulePage() {
 	
 	const validate = () => {
 		const errs = {};
-		if ( !formData.title.trim() ) errs.title = __('Rule name is required', 'bogofy');
+		if ( !formData.title.trim() ) errs.title = __( 'Rule name is required', 'bogofy' );
 		if ( step >= 2 && formData.apply_to === 'specific_products' && selectedBuyProducts.length === 0 ) {
-			errs.buy_products = __('Select at least one trigger product', 'bogofy');
+			errs.buy_products = __( 'Select at least one trigger product', 'bogofy' );
 		}
 		if ( step >= 2 && formData.rule_type === 'buy_x_get_y' && selectedFreeProducts.length === 0 ) {
-			errs.free_products = __('Select at least one gift product', 'bogofy');
+			errs.free_products = __( 'Select at least one gift product', 'bogofy' );
 		}
 		setErrors( errs );
 		return Object.keys( errs ).length === 0;
@@ -441,10 +476,10 @@ function CreateRulePage() {
 		};
 		try {
 			await createRule.mutateAsync( data );
-			success( __('Rule created successfully', 'bogofy') );
+			success( __( 'Rule created successfully', 'bogofy' ) );
 			window.location.href = 'admin.php?page=bogofy&tab=rules';
 		} catch ( err ) {
-			error( err.message || __('Failed to create rule', 'bogofy') );
+			error( err.message || __( 'Failed to create rule', 'bogofy' ) );
 		}
 	};
 	
@@ -468,16 +503,16 @@ function CreateRulePage() {
 	
 	return (
 		<AppShell
-			crumb={['Bogofy', __('Bogofy Rules', 'bogofy'), __('New rule', 'bogofy')]}
+			crumb={['Bogofy', __( 'Bogofy Rules', 'bogofy' ), __( 'New rule', 'bogofy' )]}
 			actions={
 				<>
 					<button className="bogo-button bogo-button--sm bogo-button--ghost"
 					        onClick={() => submitRule( 'inactive' )} disabled={createRule.isPending}>
-						{__('Save draft', 'bogofy')}
+						{__( 'Save draft', 'bogofy' )}
 					</button>
 					{step < 3 ? (
 						<button className="bogo-button bogo-button--primary bogo-button--sm" onClick={goNext}>
-							{__('Continue', 'bogofy')} <ArrowIcon size={13}/>
+							{__( 'Continue', 'bogofy' )} <ArrowIcon size={13}/>
 						</button>
 					) : null}
 				</>
@@ -486,8 +521,9 @@ function CreateRulePage() {
 			<div className="bogo-row"
 			     style={{ alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 22 }}>
 				<div>
-					<div className="bogo-page-header__title">{__('Create Bogofy rule', 'bogofy')}</div>
-					<div className="bogo-page-header__desc">{__('Set up a bogofy offer in 3 steps. You can edit anything later.', 'bogofy')}</div>
+					<div className="bogo-page-header__title">{__( 'Create Bogofy rule', 'bogofy' )}</div>
+					<div
+						className="bogo-page-header__desc">{__( 'Set up a bogofy offer in 3 steps. You can edit anything later.', 'bogofy' )}</div>
 				</div>
 				<Stepper active={step}/>
 			</div>
@@ -513,13 +549,14 @@ function CreateRulePage() {
 					{step < 3 && (
 						<div className="bogo-row" style={{ justifyContent: 'space-between', marginTop: 4 }}>
 							{step > 1 ? (
-								<button className="bogo-button bogo-button--sm" onClick={goPrev}>{__('← Back', 'bogofy')}</button>
+								<button className="bogo-button bogo-button--sm"
+								        onClick={goPrev}>{__( '← Back', 'bogofy' )}</button>
 							) : (
 								<button className="bogo-button bogo-button--sm bogo-button--ghost"
-								        onClick={() => window.history.back()}>{__('Cancel', 'bogofy')}</button>
+								        onClick={() => window.history.back()}>{__( 'Cancel', 'bogofy' )}</button>
 							)}
 							<button className="bogo-button bogo-button--primary bogo-button--sm" onClick={goNext}>
-								{__('Continue', 'bogofy')} <ArrowIcon size={13}/>
+								{__( 'Continue', 'bogofy' )} <ArrowIcon size={13}/>
 							</button>
 						</div>
 					)}

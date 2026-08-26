@@ -6,8 +6,8 @@ import { get, post, put, patch, del } from './api';
  * @param {Object} params - Query parameters.
  * @returns {Promise<Array>}
  */
-export async function getRules(params = {}) {
-  return get('/rules', params);
+export async function getRules( params = {} ) {
+	return get( '/rules', params );
 }
 
 /**
@@ -16,8 +16,8 @@ export async function getRules(params = {}) {
  * @param {number} id - Rule ID.
  * @returns {Promise<Object>}
  */
-export async function getRule(id) {
-  return get(`/rules/${id}`);
+export async function getRule( id ) {
+	return get( `/rules/${id}` );
 }
 
 /**
@@ -26,8 +26,8 @@ export async function getRule(id) {
  * @param {Object} data - Rule data.
  * @returns {Promise<Object>}
  */
-export async function createRule(data) {
-  return post('/rules', data);
+export async function createRule( data ) {
+	return post( '/rules', data );
 }
 
 /**
@@ -37,8 +37,8 @@ export async function createRule(data) {
  * @param {Object} data - Rule data.
  * @returns {Promise<Object>}
  */
-export async function updateRule(id, data) {
-  return put(`/rules/${id}`, data);
+export async function updateRule( id, data ) {
+	return put( `/rules/${id}`, data );
 }
 
 /**
@@ -47,8 +47,8 @@ export async function updateRule(id, data) {
  * @param {number} id - Rule ID.
  * @returns {Promise<null>}
  */
-export async function deleteRule(id) {
-  return del(`/rules/${id}`);
+export async function deleteRule( id ) {
+	return del( `/rules/${id}` );
 }
 
 /**
@@ -58,19 +58,8 @@ export async function deleteRule(id) {
  * @param {string} status - New status.
  * @returns {Promise<Object>}
  */
-export async function updateRuleStatus(id, status) {
-  return patch(`/rules/${id}/status`, { status });
-}
-
-/**
- * Perform bulk action on rules.
- *
- * @param {string} action - Action type (delete, activate, deactivate).
- * @param {Array<number>} ids - Rule IDs.
- * @returns {Promise<Object>}
- */
-export async function bulkAction(action, ids) {
-  return post('/rules/bulk', { action, ids });
+export async function updateRuleStatus( id, status ) {
+	return patch( `/rules/${id}/status`, { status } );
 }
 
 /**
@@ -79,28 +68,16 @@ export async function bulkAction(action, ids) {
  * @param {string} query - Search query.
  * @returns {Promise<Array>}
  */
-export async function searchProducts(query) {
-  return get('/products/search', { q: query });
-}
-
-/**
- * Search categories.
- *
- * @param {string} query - Search query.
- * @returns {Promise<Array>}
- */
-export async function searchCategories(query = '') {
-  return get('/categories/search', { q: query });
+export async function searchProducts( query ) {
+	return get( '/products/search', { q: query } );
 }
 
 export default {
-  getRules,
-  getRule,
-  createRule,
-  updateRule,
-  deleteRule,
-  updateRuleStatus,
-  bulkAction,
-  searchProducts,
-  searchCategories,
+	getRules,
+	getRule,
+	createRule,
+	updateRule,
+	deleteRule,
+	updateRuleStatus,
+	searchProducts,
 };

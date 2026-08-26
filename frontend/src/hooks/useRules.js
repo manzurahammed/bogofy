@@ -93,22 +93,6 @@ export function useUpdateRuleStatus() {
 	                    } );
 }
 
-/**
- * Hook for bulk actions.
- *
- * @returns {Object}
- */
-export function useBulkAction() {
-	const queryClient = useQueryClient();
-	
-	return useMutation( {
-		                    mutationFn: ( { action, ids } ) => rulesApi.bulkAction( action, ids ),
-		                    onSuccess: () => {
-			                    queryClient.invalidateQueries( { queryKey: ['rules'] } );
-		                    },
-	                    } );
-}
-
 export default {
 	useRules,
 	useRule,
@@ -116,5 +100,4 @@ export default {
 	useUpdateRule,
 	useDeleteRule,
 	useUpdateRuleStatus,
-	useBulkAction,
 };
