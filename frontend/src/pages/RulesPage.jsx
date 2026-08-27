@@ -5,111 +5,28 @@ import { useNotification } from '../hooks/useNotification';
 import { PageLoader } from '../components/Shared/Loader';
 import { ConfirmModal } from '../components/Shared/Modal';
 import AppShell from '../components/Layout/AppShell';
-import {
-	PlusIcon, GiftIcon, EditIcon, TrashIcon, SearchIcon,
-} from '../components/Icons';
+import RuleRow from '../components/Rules/RuleRow';
+import { PlusIcon, GiftIcon, SearchIcon } from '../components/Icons';
 
 const PER_PAGE = 20;
-
-const ruleTypeLabels = {
-	buy_x_get_x: __( 'Buy X Get X Free', 'bogofy' ),
-	buy_x_get_y: __( 'Buy X Get Y Free', 'bogofy' ),
-	buy_cat_get_free: __( 'Category Bogofy', 'bogofy' ),
-	buy_x_get_x_discounted: __( 'Buy X Get X Discounted', 'bogofy' ),
-};
-
-function RuleRow( { rule, onEdit, onDelete, onToggle } ) {
-	const isActive    = rule.status === 'active';
-	const statusClass = isActive ? 'bogo-status--live' : 'bogo-status--inactive';
-	const statusLabel = isActive ? __( 'Live', 'bogofy' ) : __( 'Inactive', 'bogofy' );
-	
-	return (
-		<div className="bogo-rule">
-			<div className="bogo-col">
-				<div className="bogo-row" style={{ gap: 8 }}>
-					<span className="bogo-rule__name">{rule.title}</span>
-					<span style={{
-						fontSize: 11,
-						color: 'var(--muted)',
-						background: 'var(--chip)',
-						padding: '2px 8px',
-						borderRadius: 999
-					}}>
-            {ruleTypeLabels[rule.rule_type] || rule.rule_type}
-          </span>
-				</div>
-				<div className="bogo-flow">
-          <span className="bogo-flow__node">
-            {rule.apply_to === 'specific_products'
-	            ? sprintf( __( 'Buy %d items', 'bogofy' ), rule.buy_quantity )
-	            : sprintf( __( 'Buy %d from category', 'bogofy' ), rule.buy_quantity )}
-          </span>
-					<span className="bogo-flow__arrow">→</span>
-					<span className="bogo-flow__node bogo-flow__node--get">
-            <GiftIcon size={12}/>
-						{rule.discount_type === 'free'
-							? sprintf( __( 'Get %d free', 'bogofy' ), rule.free_quantity )
-							/* translators: 1: quantity, 2: discount percentage */
-							: sprintf( __( 'Get %1$d at %2$s%% off', 'bogofy' ), rule.free_quantity, rule.discount_value )}
-          </span>
-				</div>
-				{rule.start_date && (
-					<div className="bogo-rule__meta">
-						<span>{rule.start_date} → {rule.end_date || __( 'ongoing', 'bogofy' )}</span>
-					</div>
-				)}
-			</div>
-			<div className="bogo-col bogo-align-right" style={{ fontSize: 12, minWidth: 60 }}>
-				<span style={{ color: 'var(--muted)' }}>{__( 'Priority', 'bogofy' )}</span>
-				<span style={{ fontWeight: 600, marginTop: 2 }} className="bogo-mono">{rule.priority}</span>
-			</div>
-			<div className="bogo-row" style={{ gap: 8 }}>
-        <span className={`bogo-status ${statusClass}`}>
-          <span className="bogo-status__dot"/>
-	        {statusLabel}
-        </span>
-				<button
-					className={`bogo-toggle${isActive ? ' bogo-toggle--on' : ''}`}
-					onClick={() => onToggle( rule )}
-					title={isActive ? __( 'Deactivate', 'bogofy' ) : __( 'Activate', 'bogofy' )}
-				/>
-				<button
-					className="bogo-button bogo-button--sm bogo-button--ghost"
-					onClick={() => onEdit( rule.id )}
-					title={__( 'Edit', 'bogofy' )}
-				>
-					<EditIcon size={13}/>
-				</button>
-				<button
-					className="bogo-button bogo-button--sm bogo-button--ghost"
-					onClick={() => onDelete( rule.id )}
-					title={__( 'Delete', 'bogofy' )}
-					style={{ color: 'var(--danger-clr)' }}
-				>
-					<TrashIcon size={13}/>
-				</button>
-			</div>
-		</div>
-	);
-}
 
 function RulesPage() {
 	const [page, setPage]                 = useState( 1 );
 	const [search, setSearch]             = useState( '' );
 	const [statusFilter, setStatusFilter] = useState( '' );
 	const [deleteModal, setDeleteModal]   = useState( { isOpen: false, ruleId: null } );
-	
+
 	const { data: rules, isLoading, error } = useRules( {
 		                                                    page,
 		                                                    per_page: PER_PAGE,
 		                                                    search,
 		                                                    status: statusFilter,
 	                                                    } );
-	
+
 	const deleteRule                    = useDeleteRule();
 	const updateStatus                  = useUpdateRuleStatus();
 	const { success, error: showError } = useNotification();
-	
+
 	const handleStatusToggle = async ( rule ) => {
 		const newStatus = rule.status === 'active' ? 'inactive' : 'active';
 		try {
@@ -119,7 +36,7 @@ function RulesPage() {
 			showError( __( 'Failed to update rule status', 'bogofy' ) );
 		}
 	};
-	
+
 	const handleDelete = async () => {
 		try {
 			await deleteRule.mutateAsync( deleteModal.ruleId );
@@ -129,9 +46,9 @@ function RulesPage() {
 			showError( __( 'Failed to delete rule', 'bogofy' ) );
 		}
 	};
-	
+
 	const liveCount = rules?.filter( ( r ) => r.status === 'active' ).length ?? 0;
-	
+
 	const actions = (
 		<button
 			className="bogo-button bogo-button--primary bogo-button--sm"
@@ -142,13 +59,13 @@ function RulesPage() {
 			<PlusIcon size={14}/> {__( 'New rule', 'bogofy' )}
 		</button>
 	);
-	
+
 	if ( isLoading ) return (
 		<AppShell crumb={['Bogofy', __( 'Bogofy Rules', 'bogofy' )]} actions={actions}>
 			<PageLoader/>
 		</AppShell>
 	);
-	
+
 	if ( error ) return (
 		<AppShell crumb={['Bogofy', __( 'Bogofy Rules', 'bogofy' )]} actions={actions}>
 			<div style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--muted)' }}>
@@ -156,7 +73,7 @@ function RulesPage() {
 			</div>
 		</AppShell>
 	);
-	
+
 	return (
 		<AppShell crumb={['Bogofy', __( 'Bogofy Rules', 'bogofy' )]} actions={actions}>
 			<div className="bogo-page-header">
@@ -190,7 +107,7 @@ function RulesPage() {
 					</div>
 				</div>
 			</div>
-			
+
 			<div className="bogo-rule-list">
 				{rules && rules.length > 0 ? (
 					rules.map( ( rule ) => (
@@ -229,7 +146,7 @@ function RulesPage() {
 					</div>
 				)}
 			</div>
-			
+
 			{rules && ( page > 1 || rules.length === PER_PAGE ) && (
 				<div className="bogo-row"
 				     style={{ justifyContent: 'space-between', marginTop: 18, color: 'var(--muted)', fontSize: 12 }}>
@@ -244,7 +161,7 @@ function RulesPage() {
 					</div>
 				</div>
 			)}
-			
+
 			<ConfirmModal
 				isOpen={deleteModal.isOpen}
 				onClose={() => setDeleteModal( { isOpen: false, ruleId: null } )}
