@@ -2,12 +2,12 @@
 /**
  * BOGO Rule repository for database operations.
  *
- * @package BuyOneGetOne\Models
+ * @package Bogofy\Models
  */
 
-namespace BuyOneGetOne\Models;
+namespace Bogofy\Models;
 
-use BuyOneGetOne\Database\Schema;
+use Bogofy\Database\Schema;
 
 /**
  * Class RuleRepository

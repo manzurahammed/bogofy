@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { __, sprintf } from '@wordpress/i18n';
 import { GiftIcon, EditIcon } from '../Icons';
 
@@ -40,4 +40,4 @@ function RuleFlowRow( { rule, onEdit } ) {
 	);
 }
 
-export default RuleFlowRow;
+export default memo( RuleFlowRow );

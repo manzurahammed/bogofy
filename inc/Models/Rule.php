@@ -2,10 +2,10 @@
 /**
  * BOGO Rule data model.
  *
- * @package BuyOneGetOne\Models
+ * @package Bogofy\Models
  */
 
-namespace BuyOneGetOne\Models;
+namespace Bogofy\Models;
 
 /**
  * Class Rule

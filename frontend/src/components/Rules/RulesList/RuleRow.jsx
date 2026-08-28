@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { __, sprintf } from '@wordpress/i18n';
-import { GiftIcon, EditIcon, TrashIcon } from '../Icons';
+import { GiftIcon, EditIcon, TrashIcon } from '../../Icons';
 
 const ruleTypeLabels = {
 	buy_x_get_x: __( 'Buy X Get X Free', 'bogofy' ),
@@ -84,4 +84,4 @@ function RuleRow( { rule, onEdit, onDelete, onToggle } ) {
 	);
 }
 
-export default RuleRow;
+export default memo( RuleRow );

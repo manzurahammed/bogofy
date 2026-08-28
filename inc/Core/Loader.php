@@ -2,10 +2,10 @@
 /**
  * Hook and filter registration manager.
  *
- * @package BuyOneGetOne\Core
+ * @package Bogofy\Core
  */
 
-namespace BuyOneGetOne\Core;
+namespace Bogofy\Core;
 
 /**
  * Class Loader
@@ -29,7 +29,7 @@ class Loader {
 	protected $filters = array();
 
 	/**
-	 * Add an action to the collection.
+	 * Register an action to the collection.
 	 *
 	 * @param string $hook          Hook name.
 	 * @param object $component     Component object.
@@ -39,12 +39,12 @@ class Loader {
 	 *
 	 * @return void
 	 */
-	public function add_action( $hook, $component, $callback, $priority = 10, $accepted_args = 1 ) {
-		$this->actions = $this->add( $this->actions, $hook, $component, $callback, $priority, $accepted_args );
+	public function register_action( $hook, $component, $callback, $priority = 10, $accepted_args = 1 ) {
+		$this->actions = $this->register( $this->actions, $hook, $component, $callback, $priority, $accepted_args );
 	}
 
 	/**
-	 * Add a filter to the collection.
+	 * Register a filter to the collection.
 	 *
 	 * @param string $hook          Hook name.
 	 * @param object $component     Component object.
@@ -54,12 +54,12 @@ class Loader {
 	 *
 	 * @return void
 	 */
-	public function add_filter( $hook, $component, $callback, $priority = 10, $accepted_args = 1 ) {
-		$this->filters = $this->add( $this->filters, $hook, $component, $callback, $priority, $accepted_args );
+	public function register_filter( $hook, $component, $callback, $priority = 10, $accepted_args = 1 ) {
+		$this->filters = $this->register( $this->filters, $hook, $component, $callback, $priority, $accepted_args );
 	}
 
 	/**
-	 * Add hook to collection.
+	 * Add a hook definition to a collection.
 	 *
 	 * @param array  $hooks         Hooks array.
 	 * @param string $hook          Hook name.
@@ -70,7 +70,7 @@ class Loader {
 	 *
 	 * @return array
 	 */
-	private function add( $hooks, $hook, $component, $callback, $priority, $accepted_args ) {
+	private function register( $hooks, $hook, $component, $callback, $priority, $accepted_args ) {
 		$hooks[] = array(
 			'hook'          => $hook,
 			'component'     => $component,

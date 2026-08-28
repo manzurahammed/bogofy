@@ -2,19 +2,20 @@
 /**
  * Eligibility checker for BOGO rules.
  *
- * @package BuyOneGetOne\Cart
+ * @package Bogofy\Cart
  */
 
-namespace BuyOneGetOne\Cart;
+namespace Bogofy\Cart;
 
-use BuyOneGetOne\Models\Rule;
+use Bogofy\Cart\Contracts\EligibilityCheckerInterface;
+use Bogofy\Models\Rule;
 
 /**
  * Class EligibilityChecker
  *
  * Checks if cart items are eligible for BOGO rules.
  */
-class EligibilityChecker {
+class EligibilityChecker implements EligibilityCheckerInterface {
 
 	/**
 	 * Get eligible cart items for a rule.

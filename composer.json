@@ -25,12 +25,12 @@
     },
     "autoload": {
         "psr-4": {
-            "BuyOneGetOne\\": "inc/"
+            "Bogofy\\": "inc/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "BuyOneGetOne\\Tests\\": "tests/"
+            "Bogofy\\Tests\\": "tests/"
         }
     },
     "scripts": {

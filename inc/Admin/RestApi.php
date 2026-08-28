@@ -2,13 +2,13 @@
 /**
  * REST API endpoints.
  *
- * @package BuyOneGetOne\Admin
+ * @package Bogofy\Admin
  */
 
-namespace BuyOneGetOne\Admin;
+namespace Bogofy\Admin;
 
-use BuyOneGetOne\Models\Rule;
-use BuyOneGetOne\Models\RuleRepository;
+use Bogofy\Models\Rule;
+use Bogofy\Models\RuleRepository;
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_REST_Server;
@@ -37,9 +37,11 @@ class RestApi {
 
 	/**
 	 * Constructor.
+	 *
+	 * @param RuleRepository $repository Rule repository.
 	 */
-	public function __construct() {
-		$this->repository = new RuleRepository();
+	public function __construct( RuleRepository $repository ) {
+		$this->repository = $repository;
 	}
 
 	/**

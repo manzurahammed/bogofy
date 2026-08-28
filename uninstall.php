@@ -4,7 +4,7 @@
  *
  * Fired when the plugin is uninstalled.
  *
- * @package BuyOneGetOne
+ * @package Bogofy
  */
 
 // Exit if accessed directly.

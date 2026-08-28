@@ -15,10 +15,10 @@
  * WC requires at least: 7.0
  * WC tested up to:   9.0
  *
- * @package BuyOneGetOne
+ * @package Bogofy
  */
 
-namespace BuyOneGetOne;
+namespace Bogofy;
 
 // Exit if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {

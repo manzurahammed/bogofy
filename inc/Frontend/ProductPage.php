@@ -2,14 +2,14 @@
 /**
  * Product page display handler.
  *
- * @package BuyOneGetOne\Frontend
+ * @package Bogofy\Frontend
  */
 
-namespace BuyOneGetOne\Frontend;
+namespace Bogofy\Frontend;
 
-use BuyOneGetOne\Admin\Settings;
-use BuyOneGetOne\Models\Rule;
-use BuyOneGetOne\Models\RuleRepository;
+use Bogofy\Admin\Settings;
+use Bogofy\Models\Rule;
+use Bogofy\Models\RuleRepository;
 
 /**
  * Class ProductPage
@@ -27,9 +27,11 @@ class ProductPage {
 
 	/**
 	 * Constructor.
+	 *
+	 * @param RuleRepository $repository Rule repository.
 	 */
-	public function __construct() {
-		$this->repository = new RuleRepository();
+	public function __construct( RuleRepository $repository ) {
+		$this->repository = $repository;
 	}
 
 	/**
