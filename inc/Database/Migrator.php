@@ -2,10 +2,10 @@
 /**
  * Database migration manager.
  *
- * @package BuyOneGetOne\Database
+ * @package Bogofy\Database
  */
 
-namespace BuyOneGetOne\Database;
+namespace Bogofy\Database;
 
 /**
  * Class Migrator

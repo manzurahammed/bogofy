@@ -2,19 +2,20 @@
 /**
  * Free item manager for BOGO rules.
  *
- * @package BuyOneGetOne\Cart
+ * @package Bogofy\Cart
  */
 
-namespace BuyOneGetOne\Cart;
+namespace Bogofy\Cart;
 
-use BuyOneGetOne\Models\Rule;
+use Bogofy\Cart\Contracts\FreeItemManagerInterface;
+use Bogofy\Models\Rule;
 
 /**
  * Class FreeItemManager
  *
  * Manages adding and removing free items in cart.
  */
-class FreeItemManager {
+class FreeItemManager implements FreeItemManagerInterface {
 
 	/**
 	 * Add free item to cart.

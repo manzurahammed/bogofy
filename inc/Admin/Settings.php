@@ -2,10 +2,10 @@
 /**
  * Plugin settings handler.
  *
- * @package BuyOneGetOne\Admin
+ * @package Bogofy\Admin
  */
 
-namespace BuyOneGetOne\Admin;
+namespace Bogofy\Admin;
 
 /**
  * Class Settings

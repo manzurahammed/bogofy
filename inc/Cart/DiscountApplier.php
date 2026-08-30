@@ -2,40 +2,49 @@
 /**
  * Discount applier for BOGO rules.
  *
- * @package BuyOneGetOne\Cart
+ * @package Bogofy\Cart
  */
 
-namespace BuyOneGetOne\Cart;
+namespace Bogofy\Cart;
 
-use BuyOneGetOne\Models\Rule;
+use Bogofy\Cart\Contracts\DiscountApplierInterface;
+use Bogofy\Cart\Contracts\EligibilityCheckerInterface;
+use Bogofy\Cart\Contracts\FreeItemManagerInterface;
+use Bogofy\Models\Rule;
 
 /**
  * Class DiscountApplier
  *
  * Applies BOGO discounts to cart.
  */
-class DiscountApplier {
+class DiscountApplier implements DiscountApplierInterface {
 
 	/**
 	 * Free item manager.
 	 *
-	 * @var FreeItemManager
+	 * @var FreeItemManagerInterface
 	 */
 	private $free_item_manager;
 
 	/**
 	 * Eligibility checker.
 	 *
-	 * @var EligibilityChecker
+	 * @var EligibilityCheckerInterface
 	 */
 	private $eligibility_checker;
 
 	/**
 	 * Constructor.
+	 *
+	 * @param EligibilityCheckerInterface $eligibility_checker Eligibility checker.
+	 * @param FreeItemManagerInterface    $free_item_manager   Free item manager.
 	 */
-	public function __construct() {
-		$this->free_item_manager   = new FreeItemManager();
-		$this->eligibility_checker = new EligibilityChecker();
+	public function __construct(
+		EligibilityCheckerInterface $eligibility_checker,
+		FreeItemManagerInterface $free_item_manager
+	) {
+		$this->eligibility_checker = $eligibility_checker;
+		$this->free_item_manager   = $free_item_manager;
 	}
 
 	/**

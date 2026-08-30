@@ -2,10 +2,10 @@
 /**
  * Database schema handler.
  *
- * @package BuyOneGetOne\Database
+ * @package Bogofy\Database
  */
 
-namespace BuyOneGetOne\Database;
+namespace Bogofy\Database;
 
 /**
  * Class Schema

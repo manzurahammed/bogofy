@@ -47,28 +47,4 @@ export function PageLoader() {
   );
 }
 
-export function TableSkeleton({ rows = 5, cols = 4 }) {
-  return (
-    <div className="bogo-animate-pulse">
-      <div className="bogo-space-y-3">
-        {[...Array(rows)].map((_, i) => (
-          <div key={i} className="bogo-flex bogo-gap-4">
-            {[...Array(cols)].map((_, j) => (
-              <div
-                key={j}
-                className="bogo-h-4 bogo-bg-gray-200 bogo-rounded bogo-flex-1"
-              />
-            ))}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-TableSkeleton.propTypes = {
-  rows: PropTypes.number,
-  cols: PropTypes.number,
-};
-
 export default Loader;

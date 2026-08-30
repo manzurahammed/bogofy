@@ -2,10 +2,10 @@
 /**
  * Plugin deactivation handler.
  *
- * @package BuyOneGetOne\Core
+ * @package Bogofy\Core
  */
 
-namespace BuyOneGetOne\Core;
+namespace Bogofy\Core;
 
 /**
  * Class Deactivator

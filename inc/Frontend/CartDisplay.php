@@ -2,13 +2,13 @@
 /**
  * Cart display modifications.
  *
- * @package BuyOneGetOne\Frontend
+ * @package Bogofy\Frontend
  */
 
-namespace BuyOneGetOne\Frontend;
+namespace Bogofy\Frontend;
 
-use BuyOneGetOne\Admin\Settings;
-use BuyOneGetOne\Cart\CartHandler;
+use Bogofy\Admin\Settings;
+use Bogofy\Cart\CartHandler;
 
 /**
  * Class CartDisplay

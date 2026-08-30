@@ -2,13 +2,13 @@
 /**
  * Plugin activation handler.
  *
- * @package BuyOneGetOne\Core
+ * @package Bogofy\Core
  */
 
-namespace BuyOneGetOne\Core;
+namespace Bogofy\Core;
 
-use BuyOneGetOne\Database\Schema;
-use BuyOneGetOne\Database\Migrator;
+use Bogofy\Database\Schema;
+use Bogofy\Database\Migrator;
 
 /**
  * Class Activator

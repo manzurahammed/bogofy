@@ -2,12 +2,12 @@
 /**
  * Rule model tests.
  *
- * @package BuyOneGetOne\Tests\Unit\Models
+ * @package Bogofy\Tests\Unit\Models
  */
 
-namespace BuyOneGetOne\Tests\Unit\Models;
+namespace Bogofy\Tests\Unit\Models;
 
-use BuyOneGetOne\Models\Rule;
+use Bogofy\Models\Rule;
 use PHPUnit\Framework\TestCase;
 use Brain\Monkey;
 

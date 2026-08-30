@@ -2,13 +2,16 @@
 /**
  * Cart handler for BOGO logic.
  *
- * @package BuyOneGetOne\Cart
+ * @package Bogofy\Cart
  */
 
-namespace BuyOneGetOne\Cart;
+namespace Bogofy\Cart;
 
-use BuyOneGetOne\Admin\Settings;
-use BuyOneGetOne\Models\RuleRepository;
+use Bogofy\Admin\Settings;
+use Bogofy\Cart\Contracts\DiscountApplierInterface;
+use Bogofy\Cart\Contracts\EligibilityCheckerInterface;
+use Bogofy\Cart\Contracts\FreeItemManagerInterface;
+use Bogofy\Models\RuleRepository;
 
 /**
  * Class CartHandler
@@ -48,21 +51,21 @@ class CartHandler {
 	/**
 	 * Eligibility checker.
 	 *
-	 * @var EligibilityChecker
+	 * @var EligibilityCheckerInterface
 	 */
 	private $eligibility_checker;
 
 	/**
 	 * Discount applier.
 	 *
-	 * @var DiscountApplier
+	 * @var DiscountApplierInterface
 	 */
 	private $discount_applier;
 
 	/**
 	 * Free item manager.
 	 *
-	 * @var FreeItemManager
+	 * @var FreeItemManagerInterface
 	 */
 	private $free_item_manager;
 
@@ -75,12 +78,22 @@ class CartHandler {
 
 	/**
 	 * Constructor.
+	 *
+	 * @param RuleRepository              $repository          Rule repository.
+	 * @param EligibilityCheckerInterface $eligibility_checker Eligibility checker.
+	 * @param DiscountApplierInterface    $discount_applier    Discount applier.
+	 * @param FreeItemManagerInterface    $free_item_manager   Free item manager.
 	 */
-	public function __construct() {
-		$this->repository          = new RuleRepository();
-		$this->eligibility_checker = new EligibilityChecker();
-		$this->discount_applier    = new DiscountApplier();
-		$this->free_item_manager   = new FreeItemManager();
+	public function __construct(
+		RuleRepository $repository,
+		EligibilityCheckerInterface $eligibility_checker,
+		DiscountApplierInterface $discount_applier,
+		FreeItemManagerInterface $free_item_manager
+	) {
+		$this->repository          = $repository;
+		$this->eligibility_checker = $eligibility_checker;
+		$this->discount_applier    = $discount_applier;
+		$this->free_item_manager   = $free_item_manager;
 	}
 
 	/**
@@ -184,7 +197,7 @@ class CartHandler {
 
 		// Apply "Buy X Get X Discounted" rules to existing eligible lines.
 		foreach ( $rules as $rule ) {
-			if ( \BuyOneGetOne\Models\Rule::TYPE_BUY_X_GET_X_DISCOUNTED !== $rule->rule_type ) {
+			if ( \Bogofy\Models\Rule::TYPE_BUY_X_GET_X_DISCOUNTED !== $rule->rule_type ) {
 				continue;
 			}
 

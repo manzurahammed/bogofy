@@ -1104,7 +1104,7 @@
 }
 
 /* ── Compat: legacy shared component classes ── */
-/* Used by RuleForm, Modal, Notification, ProductSearch, CategorySearch */
+/* Used by RuleForm, Modal, Notification, ProductSearch */
 .bogo-admin .bogo-card {
     @apply bogo-bg-white bogo-rounded-lg bogo-shadow-sm bogo-border bogo-border-gray-200;
 }

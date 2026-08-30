@@ -2,7 +2,7 @@
 /**
  * PHPUnit bootstrap file.
  *
- * @package BuyOneGetOne\Tests
+ * @package Bogofy\Tests
  */
 
 // Composer autoloader.
