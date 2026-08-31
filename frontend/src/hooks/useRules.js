@@ -1,8 +1,17 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  keepPreviousData,
+} from "@tanstack/react-query";
 import * as rulesApi from "../services/rulesApi";
 
 /**
  * Hook for fetching rules list.
+ *
+ * Keeps the previously fetched page/results visible while a new query (e.g. a
+ * search term or status filter change) loads, so the list updates in place
+ * instead of the whole page dropping to a loading state.
  *
  * @param {Object} params - Query parameters.
  * @returns {Object}
@@ -11,6 +20,7 @@ export function useRules(params = {}) {
   return useQuery({
     queryKey: ["rules", params],
     queryFn: () => rulesApi.getRules(params),
+    placeholderData: keepPreviousData,
   });
 }
 
