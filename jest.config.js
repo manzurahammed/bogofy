@@ -1,4 +1,4 @@
-export default {
+module.exports = {
   testEnvironment: 'jsdom',
   rootDir: 'frontend',
   setupFilesAfterEnv: ['<rootDir>/__tests__/setup.js'],
