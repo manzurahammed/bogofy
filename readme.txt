@@ -4,7 +4,7 @@ Tags: woocommerce, bogo, buy one get one, free gift, discount
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 2.0.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -128,6 +128,19 @@ Use the "Enable plugin" toggle on the Settings screen to switch all BOGO functio
 
 == Changelog ==
 
+= 2.0.0 =
+* New rule type: **Buy from Category, Get Free** — trigger a gift from any product in a chosen category.
+* New rule type: **Buy X, Get X Discounted** — give the extra items a percentage discount instead of fully free.
+* New: **category targeting** — apply offers to specific product categories, not just individual products.
+* New: **scheduling** — set optional start and end dates so promotions go live and expire automatically.
+* New: **rule priority** — control which offer wins when more than one rule matches a cart.
+* New: **max free items per order** to protect margins.
+* New: **per-rule display messages** with placeholders ({buy_qty}, {free_qty}, {free_product}, {discount}).
+* New: **coupon stacking control** — allow or prevent BOGO discounts from stacking with coupon codes.
+* Improved: redesigned rule-creation wizard with an Options step and live cart preview.
+* Improved: faster rules screen — searching and switching status tabs no longer reloads the whole page.
+* Fixed: search icon alignment inside the rules search field.
+
 = 1.0.0 =
 * Initial release.
 * Buy X Get X Free and Buy X Get Y Free rule types.
@@ -138,6 +151,9 @@ Use the "Enable plugin" toggle on the Settings screen to switch all BOGO functio
 * HPOS and Cart/Checkout Blocks compatibility.
 
 == Upgrade Notice ==
+
+= 2.0.0 =
+Major update: category targeting, percentage-discount and cross-category rule types, scheduling, priority, coupon-stacking control, and a redesigned rule wizard.
 
 = 1.0.0 =
 Initial release of Buy One Get One.
