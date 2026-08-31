@@ -43,6 +43,7 @@ phpunit.xml
 .gitkeep
 
 # Build artifacts
+/build
 *.zip
 
 # Logs and OS files

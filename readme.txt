@@ -8,39 +8,90 @@ Stable tag: 1.0.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Create Buy One Get One (BOGO) free-gift offers for WooCommerce. Add a free product to the cart automatically when customers buy qualifying items.
+Boost sales with automatic Buy One Get One (BOGO) offers for WooCommerce — free gifts or % discounts added to the cart. No coupons, no code.
 
 == Description ==
 
-Buy One Get One lets you run simple, effective BOGO promotions in your WooCommerce store. When a customer buys the products you choose, a free item is added to their cart automatically — no coupon codes required.
+**Bogofy is the easiest way to run Buy One Get One (BOGO) promotions in WooCommerce.** Create free-gift and percentage-discount offers that reward shoppers automatically at the cart — no coupon codes, no custom code, and no monthly fees.
 
-= Rule types =
+Whether you want a classic "Buy 2, Get 1 Free", a "Buy this, Get that free" cross-sell, a category-wide giveaway, or a "Buy X, Get X at 50% off" deal, Bogofy applies the offer the moment a customer's cart qualifies. It works with modern WooCommerce (HPOS and the Cart/Checkout Blocks), ships with a clean React-based admin, and never tracks your store or your customers.
 
-* **Buy X Get X Free** — Buy N of a product and get M of the same product free.
-* **Buy X Get Y Free** — Buy a trigger product and get a different product free.
+Bogofy is built to **increase average order value**, move slow-selling stock, and run seasonal sales — all from one simple screen.
 
-= Product selection =
+= Flexible BOGO rule types =
 
-* Apply to specific products
-* Apply to all products
+Cover every popular promotion with four rule types:
 
-= Display options =
+* **Buy X, Get X Free** — buy N of a product and get M of the same product free (the cheapest qualifying items become free).
+* **Buy X, Get Y Free** — buy a trigger product and get a *different* gift product at no cost.
+* **Buy from Category, Get Free** — buy anything from a chosen category and receive a free gift product.
+* **Buy X, Get X Discounted** — instead of fully free, discount the extra items by a percentage you choose.
 
-* Show BOGO messages on product pages
-* Show badges on shop and category pages
-* Customize the label shown next to free items in the cart
-* Customize the cart notice shown when a deal is applied
+= Target specific products, categories, or your whole store =
 
-= Works with WooCommerce =
+Decide exactly what triggers each deal:
 
-* Compatible with HPOS (High-Performance Order Storage)
-* Compatible with the Cart and Checkout Blocks
+* Apply to **specific products** you hand-pick.
+* Apply to **specific categories** to run catalog-wide offers.
+* Apply to **all products** for a store-wide promotion.
 
-= Built for store owners =
+= Schedule promotions and control priority =
 
-* **No tracking** — the plugin does not collect or send any data
-* **Modern admin panel** — a clean React-based interface
-* **Clean code** — follows WordPress coding standards
+Run time-limited sales and keep overlapping offers under control:
+
+* **Start and end dates** — schedule Black Friday, holiday, or flash sales in advance and let them expire automatically.
+* **Rule priority** — when more than one rule matches a cart, the lower priority number wins, so you always know which deal applies.
+* **Max free items per order** — cap how many free items a single order can receive to protect your margins.
+
+= Automatic free gifts and storefront messaging =
+
+Bogofy makes every offer obvious and effortless for shoppers:
+
+* Free (or discounted) items are **added to the cart automatically** when it qualifies — no coupon codes required.
+* Show **BOGO offer messages on product pages** so customers see the deal before they buy.
+* Show **"BOGO Deal" badges** on shop and category pages to drive clicks.
+* Customize the **free-item label** shown in the cart and the **cart notice** displayed when a deal is applied.
+* Write your own **per-rule message** with placeholders like {buy_qty}, {free_qty}, {free_product}, and {discount}.
+
+= Coupon stacking control =
+
+Choose whether BOGO discounts can **stack with coupon codes** — enable it for generous promotions, or disable it to protect your margins.
+
+= Works with modern WooCommerce =
+
+* **HPOS ready** — fully compatible with High-Performance Order Storage.
+* **Blocks ready** — works with the WooCommerce Cart and Checkout Blocks.
+* Supports **simple and variable products** as both trigger and gift items.
+
+= A modern, no-code admin panel =
+
+Bogofy replaces clunky settings screens with a fast, guided experience:
+
+* A step-by-step **rule creation wizard** with a live cart preview.
+* A clean, React-based dashboard to create, edit, schedule, and toggle rules.
+* Instant search and status filters to manage all your rules at a glance.
+
+= Lightweight, private, and translation-ready =
+
+* **No tracking** — Bogofy never collects or sends any data about your store or customers.
+* **Clean, standards-compliant code** that follows the WordPress Coding Standards.
+* **Translation-ready** and built for performance.
+
+= Perfect for =
+
+* Stores that want to **increase average order value** with irresistible free-gift offers.
+* Shops running **seasonal, holiday, or flash sales**.
+* Merchants who need to **clear slow-moving inventory** by bundling it as a free gift.
+* Anyone who wants **BOGO deals without coupon codes** — or a developer.
+
+= Why choose Bogofy? =
+
+* **Free and full-featured** — every rule type and option is included, with no metered credits or upsell nags.
+* **Set it and forget it** — schedule deals once and let them run and expire on their own.
+* **Modern and reliable** — HPOS + Blocks compatible, privacy-friendly, and built on clean code.
+* **Simple by design** — launch your first BOGO offer in minutes from a single screen.
+
+Start rewarding your customers and growing your sales today with **Bogofy — Buy One Get One for WooCommerce**.
 
 == Installation ==
 
