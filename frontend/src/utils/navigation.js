@@ -8,8 +8,8 @@
  * @param {string} query - Extra query string (without leading `&`), e.g. `tab=rules`.
  * @returns {string}
  */
-export function adminUrl( query = '' ) {
-	return `admin.php?page=bogofy${ query ? `&${query}` : '' }`;
+export function adminUrl(query = "") {
+  return `admin.php?page=bogofy${query ? `&${query}` : ""}`;
 }
 
 /**
@@ -18,6 +18,6 @@ export function adminUrl( query = '' ) {
  * @param {string} query - Extra query string (without leading `&`).
  * @returns {void}
  */
-export function goToAdmin( query = '' ) {
-	window.location.href = adminUrl( query );
+export function goToAdmin(query = "") {
+  window.location.href = adminUrl(query);
 }

@@ -1,6 +1,6 @@
-import { useState, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import * as rulesApi from '../services/rulesApi';
+import { useState, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
+import * as rulesApi from "../services/rulesApi";
 
 /**
  * Hook for searching products with debounce.
@@ -8,34 +8,34 @@ import * as rulesApi from '../services/rulesApi';
  * @param {Object} options - Hook options.
  * @returns {Object}
  */
-export function useProductSearch( options = {} ) {
-	const [searchTerm, setSearchTerm] = useState( '' );
-	const { minChars = 2 }            = options;
-	
-	const { data, isLoading, error } = useQuery( {
-		                                             queryKey: ['products', 'search', searchTerm],
-		                                             queryFn: () => rulesApi.searchProducts( searchTerm ),
-		                                             enabled: searchTerm.length >= minChars,
-	                                             } );
-	
-	const search = useCallback( ( term ) => {
-		setSearchTerm( term );
-	}, [] );
-	
-	const clear = useCallback( () => {
-		setSearchTerm( '' );
-	}, [] );
-	
-	return {
-		products: data || [],
-		isLoading,
-		error,
-		searchTerm,
-		search,
-		clear,
-	};
+export function useProductSearch(options = {}) {
+  const [searchTerm, setSearchTerm] = useState("");
+  const { minChars = 2 } = options;
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["products", "search", searchTerm],
+    queryFn: () => rulesApi.searchProducts(searchTerm),
+    enabled: searchTerm.length >= minChars,
+  });
+
+  const search = useCallback((term) => {
+    setSearchTerm(term);
+  }, []);
+
+  const clear = useCallback(() => {
+    setSearchTerm("");
+  }, []);
+
+  return {
+    products: data || [],
+    isLoading,
+    error,
+    searchTerm,
+    search,
+    clear,
+  };
 }
 
 export default {
-	useProductSearch,
+  useProductSearch,
 };

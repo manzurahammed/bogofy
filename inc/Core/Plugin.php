@@ -81,49 +81,76 @@ class Plugin {
 	 * @return void
 	 */
 	private function register_services() {
-		$this->container->set( RuleRepository::class, function () {
-			return new RuleRepository();
-		} );
+		$this->container->set(
+			RuleRepository::class,
+			function () {
+				return new RuleRepository();
+			}
+		);
 
-		$this->container->set( EligibilityChecker::class, function () {
-			return new EligibilityChecker();
-		} );
+		$this->container->set(
+			EligibilityChecker::class,
+			function () {
+				return new EligibilityChecker();
+			}
+		);
 
-		$this->container->set( FreeItemManager::class, function () {
-			return new FreeItemManager();
-		} );
+		$this->container->set(
+			FreeItemManager::class,
+			function () {
+				return new FreeItemManager();
+			}
+		);
 
-		$this->container->set( DiscountApplier::class, function ( Container $c ) {
-			return new DiscountApplier(
-				$c->get( EligibilityChecker::class ),
-				$c->get( FreeItemManager::class )
-			);
-		} );
+		$this->container->set(
+			DiscountApplier::class,
+			function ( Container $c ) {
+				return new DiscountApplier(
+					$c->get( EligibilityChecker::class ),
+					$c->get( FreeItemManager::class )
+				);
+			}
+		);
 
-		$this->container->set( CartHandler::class, function ( Container $c ) {
-			return new CartHandler(
-				$c->get( RuleRepository::class ),
-				$c->get( EligibilityChecker::class ),
-				$c->get( DiscountApplier::class ),
-				$c->get( FreeItemManager::class )
-			);
-		} );
+		$this->container->set(
+			CartHandler::class,
+			function ( Container $c ) {
+				return new CartHandler(
+					$c->get( RuleRepository::class ),
+					$c->get( EligibilityChecker::class ),
+					$c->get( DiscountApplier::class ),
+					$c->get( FreeItemManager::class )
+				);
+			}
+		);
 
-		$this->container->set( Admin::class, function () {
-			return new Admin();
-		} );
+		$this->container->set(
+			Admin::class,
+			function () {
+				return new Admin();
+			}
+		);
 
-		$this->container->set( RestApi::class, function ( Container $c ) {
-			return new RestApi( $c->get( RuleRepository::class ) );
-		} );
+		$this->container->set(
+			RestApi::class,
+			function ( Container $c ) {
+				return new RestApi( $c->get( RuleRepository::class ) );
+			}
+		);
 
-		$this->container->set( ProductPage::class, function ( Container $c ) {
-			return new ProductPage( $c->get( RuleRepository::class ) );
-		} );
+		$this->container->set(
+			ProductPage::class,
+			function ( Container $c ) {
+				return new ProductPage( $c->get( RuleRepository::class ) );
+			}
+		);
 
-		$this->container->set( CartDisplay::class, function () {
-			return new CartDisplay();
-		} );
+		$this->container->set(
+			CartDisplay::class,
+			function () {
+				return new CartDisplay();
+			}
+		);
 	}
 
 	/**

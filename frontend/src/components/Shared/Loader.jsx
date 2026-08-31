@@ -1,18 +1,26 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import clsx from 'clsx';
+import React from "react";
+import PropTypes from "prop-types";
+import clsx from "clsx";
 
-export function Loader({ size = 'md', className = '' }) {
+export function Loader({ size = "md", className = "" }) {
   const sizeClasses = {
-    sm: 'bogo-w-4 bogo-h-4',
-    md: 'bogo-w-8 bogo-h-8',
-    lg: 'bogo-w-12 bogo-h-12',
+    sm: "bogo-w-4 bogo-h-4",
+    md: "bogo-w-8 bogo-h-8",
+    lg: "bogo-w-12 bogo-h-12",
   };
 
   return (
-    <div className={clsx('bogo-flex bogo-items-center bogo-justify-center', className)}>
+    <div
+      className={clsx(
+        "bogo-flex bogo-items-center bogo-justify-center",
+        className,
+      )}
+    >
       <svg
-        className={clsx('bogo-animate-spin bogo-text-primary-600', sizeClasses[size])}
+        className={clsx(
+          "bogo-animate-spin bogo-text-primary-600",
+          sizeClasses[size],
+        )}
         fill="none"
         viewBox="0 0 24 24"
       >
@@ -35,7 +43,7 @@ export function Loader({ size = 'md', className = '' }) {
 }
 
 Loader.propTypes = {
-  size: PropTypes.oneOf(['sm', 'md', 'lg']),
+  size: PropTypes.oneOf(["sm", "md", "lg"]),
   className: PropTypes.string,
 };
 
