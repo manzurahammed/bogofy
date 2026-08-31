@@ -90,7 +90,7 @@ Sequential jobs — a failure in any job stops the ones after it:
    the Git tag / GitHub Release / WordPress.org tag do **not** already exist.
 2. **quality** — PHP syntax check, PHPCS, PHPUnit, ESLint, Jest.
 3. **build** — `composer install --no-dev`, `npm run build`, then
-   `bin/build-release.sh` to produce `bogofy.zip` (honoring `.distignore`).
+   `bin/build-release.sh` to produce `build/bogofy.zip` (honoring `.distignore`).
    Asserts dev files (`.git`, `.github`, `node_modules`, `tests`, `bin`,
    `phpunit.xml`, …) are excluded and that `vendor/autoload.php` + built assets
    are included.

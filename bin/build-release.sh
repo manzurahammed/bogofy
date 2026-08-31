@@ -24,7 +24,8 @@ rsync -a \
   --exclude='.git' \
   "$ROOT/" "$DEST/"
 
-ZIP="$ROOT/${SLUG}.zip"
+mkdir -p "$ROOT/build"
+ZIP="$ROOT/build/${SLUG}.zip"
 rm -f "$ZIP"
 ( cd "$BUILD" && zip -rqX "$ZIP" "$SLUG" )
 
