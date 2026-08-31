@@ -13,6 +13,18 @@ export const ruleTypes = [
     desc: __("Customer adds trigger item; gift drops to $0.", "bogofy"),
     vis: "gift",
   },
+  {
+    value: "buy_cat_get_free",
+    label: __("Buy from Category, Get free", "bogofy"),
+    desc: __("Customer buys from a category; gift drops to $0.", "bogofy"),
+    vis: "gift",
+  },
+  {
+    value: "buy_x_get_x_discounted",
+    label: __("Buy X, Get X discounted", "bogofy"),
+    desc: __("Extra identical items get a percentage discount.", "bogofy"),
+    vis: "same",
+  },
 ];
 
 export const defaultData = {

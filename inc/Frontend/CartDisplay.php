@@ -41,13 +41,12 @@ class CartDisplay {
 	/**
 	 * Modify price display for free items.
 	 *
-	 * @param string $price_html    Price HTML.
-	 * @param array  $cart_item     Cart item.
-	 * @param string $cart_item_key Cart item key.
+	 * @param string $price_html Price HTML.
+	 * @param array  $cart_item  Cart item.
 	 *
 	 * @return string
 	 */
-	public function modify_free_item_price_display( $price_html, $cart_item, $cart_item_key ) {
+	public function modify_free_item_price_display( $price_html, $cart_item ) {
 		if ( ! CartHandler::is_bogo_item( $cart_item ) ) {
 			return $price_html;
 		}

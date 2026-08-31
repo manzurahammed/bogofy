@@ -1,7 +1,13 @@
 import React from "react";
 import { __ } from "@wordpress/i18n";
 import AppShell from "../components/Layout/AppShell";
-import { BoxIcon, GiftIcon, PlusIcon } from "../components/Icons";
+import {
+  BoxIcon,
+  GiftIcon,
+  PercentIcon,
+  LayersIcon,
+  PlusIcon,
+} from "../components/Icons";
 
 const ruleTypes = [
   {
@@ -20,19 +26,56 @@ const ruleTypes = [
       "bogofy",
     ),
   },
+  {
+    Icon: PercentIcon,
+    title: __("Buy X, Get X at % off", "bogofy"),
+    desc: __(
+      "Instead of fully free, the extra item is discounted by a percentage you choose.",
+      "bogofy",
+    ),
+  },
+  {
+    Icon: LayersIcon,
+    title: __("Cross-category BOGO", "bogofy"),
+    desc: __(
+      "Customer buys from one category and receives a gift product from another.",
+      "bogofy",
+    ),
+  },
 ];
 
 const faqs = [
   {
-    q: __("Does this plugin work with variable products?", "bogofy"),
-    a: __(
+    question: __("Does this plugin work with variable products?", "bogofy"),
+    answer: __(
       "Yes. Both simple and variable products are supported as trigger and gift products.",
       "bogofy",
     ),
   },
   {
-    q: __("How do I turn everything off temporarily?", "bogofy"),
-    a: __(
+    question: __("Can I schedule deals?", "bogofy"),
+    answer: __(
+      "Every rule can have an optional start and end date. Leave them blank to keep the rule always on.",
+      "bogofy",
+    ),
+  },
+  {
+    question: __("What happens when several rules match the same cart?", "bogofy"),
+    answer: __(
+      "Rules are evaluated by priority — a lower number wins. You set the priority when creating or editing a rule.",
+      "bogofy",
+    ),
+  },
+  {
+    question: __("Do BOGO discounts stack with coupon codes?", "bogofy"),
+    answer: __(
+      'That is up to you. Toggle "Stack with coupon codes" in Settings to allow or prevent stacking.',
+      "bogofy",
+    ),
+  },
+  {
+    question: __("How do I turn everything off temporarily?", "bogofy"),
+    answer: __(
       'Use the "Enable plugin" toggle in Settings to switch all Bogofy functionality off without deleting rules.',
       "bogofy",
     ),
@@ -119,15 +162,15 @@ function HelpPage() {
         </div>
       </div>
       <div className="bogo-settings-list">
-        {faqs.map((f) => (
+        {faqs.map((faq) => (
           <div
-            key={f.q}
+            key={faq.question}
             className="bogo-settings-list__row"
             style={{ gridTemplateColumns: "1fr" }}
           >
             <div className="bogo-col">
-              <div className="bogo-settings-list__name">{f.q}</div>
-              <div className="bogo-settings-list__desc">{f.a}</div>
+              <div className="bogo-settings-list__name">{faq.question}</div>
+              <div className="bogo-settings-list__desc">{faq.answer}</div>
             </div>
           </div>
         ))}

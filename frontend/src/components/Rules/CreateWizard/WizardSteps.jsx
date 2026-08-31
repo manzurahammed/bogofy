@@ -1,6 +1,7 @@
 import React from "react";
 import StepOfferType from "./StepOfferType";
 import StepProducts from "./StepProducts";
+import StepOptions from "./StepOptions";
 import StepReview from "./StepReview";
 
 /**
@@ -18,6 +19,8 @@ function WizardSteps({ wizard }) {
     setSelectedBuyProducts,
     selectedFreeProducts,
     setSelectedFreeProducts,
+    selectedCategories,
+    setSelectedCategories,
     errors,
     submitRule,
     isPending,
@@ -35,15 +38,26 @@ function WizardSteps({ wizard }) {
           setSelectedBuyProducts={setSelectedBuyProducts}
           selectedFreeProducts={selectedFreeProducts}
           setSelectedFreeProducts={setSelectedFreeProducts}
+          selectedCategories={selectedCategories}
+          setSelectedCategories={setSelectedCategories}
           errors={errors}
         />
       );
     case 3:
       return (
+        <StepOptions
+          formData={formData}
+          setFormData={setFormData}
+          errors={errors}
+        />
+      );
+    case 4:
+      return (
         <StepReview
           formData={formData}
           selectedBuyProducts={selectedBuyProducts}
           selectedFreeProducts={selectedFreeProducts}
+          selectedCategories={selectedCategories}
           onLaunch={() => submitRule("active")}
           onDraft={() => submitRule("inactive")}
           isLoading={isPending}

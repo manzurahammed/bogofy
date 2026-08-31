@@ -212,16 +212,12 @@ class CartHandler {
 	/**
 	 * Handle add to cart event.
 	 *
-	 * @param string $cart_item_key  Cart item key.
-	 * @param int    $product_id     Product ID.
-	 * @param int    $quantity       Quantity.
-	 * @param int    $variation_id   Variation ID.
-	 * @param array  $variation      Variation data.
-	 * @param array  $cart_item_data Cart item data.
+	 * Hooked to `woocommerce_add_to_cart`; the event arguments are not needed
+	 * because the free items are re-synced from the whole cart.
 	 *
 	 * @return void
 	 */
-	public function on_add_to_cart( $cart_item_key, $product_id, $quantity, $variation_id, $variation, $cart_item_data ) {
+	public function on_add_to_cart() {
 		$this->sync_free_items();
 	}
 

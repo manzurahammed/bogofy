@@ -30,15 +30,22 @@ function ReviewBlock({ title, step, children }) {
   );
 }
 
-// Step 3: Review
+// Step 4: Review
 function StepReview({
   formData,
   selectedBuyProducts,
   selectedFreeProducts,
+  selectedCategories = [],
   onLaunch,
   onDraft,
   isLoading,
 }) {
+  const isCategoryTrigger = formData.apply_to === "specific_categories";
+  const isDiscounted = formData.rule_type === "buy_x_get_x_discounted";
+  const giftLabel = isDiscounted
+    ? /* translators: %d: discount percentage */
+      sprintf(__("%d%% off", "bogofy"), formData.discount_value)
+    : __("100% off (Free)", "bogofy");
   return (
     <div className="bogo-wizard__card">
       <div className="bogo-wizard__title">
@@ -78,9 +85,23 @@ function StepReview({
           </div>
         </ReviewBlock>
 
-        <ReviewBlock title={__("Trigger products", "bogofy")} step="2">
+        <ReviewBlock
+          title={
+            isCategoryTrigger
+              ? __("Trigger categories", "bogofy")
+              : __("Trigger products", "bogofy")
+          }
+          step="2"
+        >
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {selectedBuyProducts.length > 0 ? (
+            {isCategoryTrigger && selectedCategories.length > 0 ? (
+              selectedCategories.map((c) => (
+                <span key={c.id} className="bogo-product-pill">
+                  <span className="bogo-thumb" />
+                  {c.name}
+                </span>
+              ))
+            ) : selectedBuyProducts.length > 0 ? (
               selectedBuyProducts.map((p) => (
                 <span key={p.id} className="bogo-product-pill">
                   <span className="bogo-thumb" />
@@ -88,14 +109,13 @@ function StepReview({
                 </span>
               ))
             ) : (
-              /* translators: %s: apply-to type */
               <span
                 style={{
                   color: "var(--muted)",
                   fontSize: 12,
                 }}
               >
-                {sprintf(__("All products (%s)", "bogofy"), formData.apply_to)}
+                {__("Any product", "bogofy")}
               </span>
             )}
           </div>
@@ -131,7 +151,30 @@ function StepReview({
               fontWeight: 600,
             }}
           >
-            {__("100% off (Free)", "bogofy")}
+            {giftLabel}
+          </div>
+        </ReviewBlock>
+
+        <ReviewBlock title={__("Options", "bogofy")} step="3">
+          <div style={{ color: "var(--muted)", fontSize: 12, lineHeight: 1.6 }}>
+            {/* translators: %d: priority */}
+            <div>{sprintf(__("Priority: %d", "bogofy"), formData.priority)}</div>
+            <div>
+              {formData.max_free_qty
+                ? /* translators: %s: max free items */
+                  sprintf(__("Max free: %s", "bogofy"), formData.max_free_qty)
+                : __("Max free: unlimited", "bogofy")}
+            </div>
+            <div>
+              {formData.start_date || formData.end_date
+                ? sprintf(
+                    /* translators: 1: start date, 2: end date */
+                    __("Scheduled: %1$s → %2$s", "bogofy"),
+                    formData.start_date || __("now", "bogofy"),
+                    formData.end_date || __("∞", "bogofy"),
+                  )
+                : __("Always on", "bogofy")}
+            </div>
           </div>
         </ReviewBlock>
       </div>

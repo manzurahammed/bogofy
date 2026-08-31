@@ -12,7 +12,7 @@ function WizardActions({ step, onSaveDraft, onNext, isPending }) {
       >
         {__("Save draft", "bogofy")}
       </button>
-      {step < 3 ? (
+      {step < 4 ? (
         <button
           className="bogo-button bogo-button--primary bogo-button--sm"
           onClick={onNext}

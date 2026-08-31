@@ -72,6 +72,16 @@ export async function searchProducts(query) {
   return get("/products/search", { q: query });
 }
 
+/**
+ * Search product categories.
+ *
+ * @param {string} query - Search query.
+ * @returns {Promise<Array>}
+ */
+export async function searchCategories(query) {
+  return get("/categories/search", { q: query });
+}
+
 export default {
   getRules,
   getRule,
@@ -80,4 +90,5 @@ export default {
   deleteRule,
   updateRuleStatus,
   searchProducts,
+  searchCategories,
 };
