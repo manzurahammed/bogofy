@@ -48,20 +48,20 @@ class Settings {
 	/**
 	 * Get a single setting.
 	 *
-	 * @param string $key     Setting key.
-	 * @param mixed  $default Default value.
+	 * @param string $key           Setting key.
+	 * @param mixed  $default_value Default value.
 	 *
 	 * @return mixed
 	 */
-	public static function get( $key, $default = null ) {
+	public static function get( $key, $default_value = null ) {
 		$settings = self::get_all();
 
 		if ( isset( $settings[ $key ] ) ) {
 			return $settings[ $key ];
 		}
 
-		if ( null !== $default ) {
-			return $default;
+		if ( null !== $default_value ) {
+			return $default_value;
 		}
 
 		return self::$defaults[ $key ] ?? null;

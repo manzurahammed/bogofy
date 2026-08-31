@@ -212,13 +212,12 @@ class Admin {
 	/**
 	 * Add type="module" to script tags.
 	 *
-	 * @param string $tag Script tag HTML.
+	 * @param string $tag    Script tag HTML.
 	 * @param string $handle Script handle.
-	 * @param string $src Script source URL.
 	 *
 	 * @return string
 	 */
-	public function add_module_type( $tag, $handle, $src ) {
+	public function add_module_type( $tag, $handle ) {
 		if ( 'bogo-admin' === $handle || 'vite-client' === $handle ) {
 			$tag = str_replace( '<script ', '<script type="module" ', $tag );
 		}

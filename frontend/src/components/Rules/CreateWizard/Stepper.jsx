@@ -6,6 +6,7 @@ function Stepper({ active }) {
   const steps = [
     __("Offer type", "bogofy"),
     __("Products", "bogofy"),
+    __("Options", "bogofy"),
     __("Review", "bogofy"),
   ];
   return (

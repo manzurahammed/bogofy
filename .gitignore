@@ -38,13 +38,8 @@ yarn-error.log*
 .env.local
 .env.*.local
 
-# Composer lock (keep for reproducible builds)
-# composer.lock
-
-# Package lock
-package-lock.json
-package-lock
-composer.lock
+# Lock files are committed for reproducible CI builds
+# (npm ci and composer install require them, and setup-node caches on them).
 
 # Claude Code (ignore local state, but share project skills)
 /.claude/*

@@ -57,7 +57,7 @@ class ProductPage {
 		}
 
 		foreach ( $rules as $rule ) {
-			$this->render_product_message( $rule, $product );
+			$this->render_product_message( $rule );
 		}
 	}
 
@@ -90,13 +90,12 @@ class ProductPage {
 	/**
 	 * Render product message for a rule.
 	 *
-	 * @param Rule        $rule    Rule object.
-	 * @param \WC_Product $product Product object.
+	 * @param Rule $rule Rule object.
 	 *
 	 * @return void
 	 */
-	private function render_product_message( Rule $rule, $product ) {
-		$message = $this->get_formatted_message( $rule, $product );
+	private function render_product_message( Rule $rule ) {
+		$message = $this->get_formatted_message( $rule );
 
 		if ( empty( $message ) ) {
 			return;
@@ -115,31 +114,29 @@ class ProductPage {
 	/**
 	 * Get formatted message for rule.
 	 *
-	 * @param Rule        $rule    Rule object.
-	 * @param \WC_Product $product Product object.
+	 * @param Rule $rule Rule object.
 	 *
 	 * @return string
 	 */
-	private function get_formatted_message( Rule $rule, $product ) {
+	private function get_formatted_message( Rule $rule ) {
 		// Use custom template if set.
 		if ( ! empty( $rule->message_template ) ) {
-			return $this->parse_message_template( $rule->message_template, $rule, $product );
+			return $this->parse_message_template( $rule->message_template, $rule );
 		}
 
 		// Generate default message based on rule type.
-		return $this->get_default_message( $rule, $product );
+		return $this->get_default_message( $rule );
 	}
 
 	/**
 	 * Parse message template with placeholders.
 	 *
-	 * @param string      $template Template string.
-	 * @param Rule        $rule     Rule object.
-	 * @param \WC_Product $product  Product object.
+	 * @param string $template Template string.
+	 * @param Rule   $rule     Rule object.
 	 *
 	 * @return string
 	 */
-	private function parse_message_template( $template, Rule $rule, $product ) {
+	private function parse_message_template( $template, Rule $rule ) {
 		$free_product_name = '';
 		if ( ! empty( $rule->free_product_ids ) ) {
 			$free_product = wc_get_product( $rule->free_product_ids[0] );
@@ -163,12 +160,11 @@ class ProductPage {
 	/**
 	 * Get default message for rule type.
 	 *
-	 * @param Rule        $rule    Rule object.
-	 * @param \WC_Product $product Product object.
+	 * @param Rule $rule Rule object.
 	 *
 	 * @return string
 	 */
-	private function get_default_message( Rule $rule, $product ) {
+	private function get_default_message( Rule $rule ) {
 		switch ( $rule->rule_type ) {
 			case Rule::TYPE_BUY_X_GET_X:
 				return sprintf(

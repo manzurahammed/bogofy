@@ -1,6 +1,7 @@
 import React from "react";
 import { __ } from "@wordpress/i18n";
 import { ProductSearch } from "../../Shared/ProductSearch";
+import { CategorySearch } from "../../Shared/CategorySearch";
 import { CheckIcon, GiftIcon } from "../../Icons";
 
 // Step 2: Products
@@ -11,9 +12,13 @@ function StepProducts({
   setSelectedBuyProducts,
   selectedFreeProducts,
   setSelectedFreeProducts,
+  selectedCategories,
+  setSelectedCategories,
   errors,
 }) {
-  const showFreeSelector = formData.rule_type === "buy_x_get_y";
+  const showFreeSelector =
+    formData.rule_type === "buy_x_get_y" ||
+    formData.rule_type === "buy_cat_get_free";
 
   return (
     <>
@@ -48,6 +53,7 @@ function StepProducts({
         >
           {[
             { v: "specific_products", l: __("Specific products", "bogofy") },
+            { v: "specific_categories", l: __("Categories", "bogofy") },
             { v: "all_products", l: __("Any product", "bogofy") },
           ].map((opt) => (
             <button
@@ -71,6 +77,19 @@ function StepProducts({
             />
             {errors.buy_products && (
               <div className="bogo-form-error">{errors.buy_products}</div>
+            )}
+          </div>
+        )}
+
+        {formData.apply_to === "specific_categories" && (
+          <div style={{ marginBottom: 14 }}>
+            <CategorySearch
+              selectedCategories={selectedCategories}
+              onChange={setSelectedCategories}
+              placeholder={__("Search for trigger categories…", "bogofy")}
+            />
+            {errors.categories && (
+              <div className="bogo-form-error">{errors.categories}</div>
             )}
           </div>
         )}

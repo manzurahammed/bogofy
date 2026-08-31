@@ -311,7 +311,7 @@ class RuleRepository {
 		$result = $wpdb->query(
 			$wpdb->prepare(
 				// $table is internal; $placeholders is a list of %d placeholders for absint'd IDs.
-				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 				"DELETE FROM {$table} WHERE id IN ({$placeholders})",
 				$ids
 			)

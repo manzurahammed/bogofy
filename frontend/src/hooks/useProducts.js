@@ -36,6 +36,41 @@ export function useProductSearch(options = {}) {
   };
 }
 
+/**
+ * Hook for searching product categories with debounce.
+ *
+ * @param {Object} options - Hook options.
+ * @returns {Object}
+ */
+export function useCategorySearch(options = {}) {
+  const [searchTerm, setSearchTerm] = useState("");
+  const { minChars = 0 } = options;
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["categories", "search", searchTerm],
+    queryFn: () => rulesApi.searchCategories(searchTerm),
+    enabled: searchTerm.length >= minChars,
+  });
+
+  const search = useCallback((term) => {
+    setSearchTerm(term);
+  }, []);
+
+  const clear = useCallback(() => {
+    setSearchTerm("");
+  }, []);
+
+  return {
+    categories: data || [],
+    isLoading,
+    error,
+    searchTerm,
+    search,
+    clear,
+  };
+}
+
 export default {
   useProductSearch,
+  useCategorySearch,
 };

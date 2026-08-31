@@ -7,6 +7,7 @@ import AppShell from "../components/Layout/AppShell";
 import { CheckIcon } from "../components/Icons";
 import StorefrontBadgesSection from "../components/Settings/StorefrontBadgesSection";
 import CartMessagingSection from "../components/Settings/CartMessagingSection";
+import DiscountBehaviorSection from "../components/Settings/DiscountBehaviorSection";
 import SettingsPreview from "../components/Settings/SettingsPreview";
 
 function SettingsPage() {
@@ -21,6 +22,7 @@ function SettingsPage() {
       "Congratulations! You got a free item with your purchase.",
     show_product_page_messages: true,
     show_shop_badges: true,
+    stack_with_coupons: true,
   });
 
   useEffect(() => {
@@ -114,6 +116,7 @@ function SettingsPage() {
             onChange={handleChange}
           />
           <CartMessagingSection formData={formData} onChange={handleChange} />
+          <DiscountBehaviorSection formData={formData} onToggle={handleToggle} />
           <SettingsPreview formData={formData} />
         </form>
       </div>

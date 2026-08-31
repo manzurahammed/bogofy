@@ -41,6 +41,9 @@
         "release": "bash bin/release.sh"
     },
     "config": {
+        "platform": {
+            "php": "8.0"
+        },
         "allow-plugins": {
             "dealerdirect/phpcodesniffer-composer-installer": true
         }
