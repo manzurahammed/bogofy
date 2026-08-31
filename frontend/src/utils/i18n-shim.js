@@ -11,15 +11,15 @@
  * renders (untranslated) in any environment.
  */
 const wpI18n =
-	      ( typeof window !== 'undefined' && window.wp && window.wp.i18n ) || null;
+  (typeof window !== "undefined" && window.wp && window.wp.i18n) || null;
 
-export const __      = wpI18n ? wpI18n.__ : ( text ) => text;
-export const _x      = wpI18n ? wpI18n._x : ( text ) => text;
-export const _n      = wpI18n
-	? wpI18n._n
-	: ( single, plural, number ) => ( 1 === number ? single : plural );
-export const _nx     = wpI18n
-	? wpI18n._nx
-	: ( single, plural, number ) => ( 1 === number ? single : plural );
-export const sprintf = wpI18n ? wpI18n.sprintf : ( format ) => format;
-export const isRTL   = wpI18n ? wpI18n.isRTL : () => false;
+export const __ = wpI18n ? wpI18n.__ : (text) => text;
+export const _x = wpI18n ? wpI18n._x : (text) => text;
+export const _n = wpI18n
+  ? wpI18n._n
+  : (single, plural, number) => (1 === number ? single : plural);
+export const _nx = wpI18n
+  ? wpI18n._nx
+  : (single, plural, number) => (1 === number ? single : plural);
+export const sprintf = wpI18n ? wpI18n.sprintf : (format) => format;
+export const isRTL = wpI18n ? wpI18n.isRTL : () => false;

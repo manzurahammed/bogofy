@@ -95,9 +95,10 @@ class RuleRepository {
 		$page     = absint( $args['page'] );
 		$offset   = ( $page - 1 ) * $per_page;
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$results = $wpdb->get_results(
 			$wpdb->prepare(
+				// $table, $where_clause, $orderby and $order are internally controlled / whitelisted above.
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				"SELECT * FROM {$table} WHERE {$where_clause} ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d",
 				$per_page,
 				$offset
@@ -151,7 +152,8 @@ class RuleRepository {
 		global $wpdb;
 
 		$table = $this->get_table();
-		$row   = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $id ) );
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is internally controlled.
+		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $id ) );
 
 		if ( ! $row ) {
 			return null;
@@ -275,6 +277,8 @@ class RuleRepository {
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$result = $wpdb->query(
 			$wpdb->prepare(
+				// $table is internal; $placeholders is a list of %d placeholders for absint'd IDs.
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				"UPDATE {$table} SET status = %s WHERE id IN ({$placeholders})",
 				array_merge( array( $status ), $ids )
 			)
@@ -306,6 +310,8 @@ class RuleRepository {
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$result = $wpdb->query(
 			$wpdb->prepare(
+				// $table is internal; $placeholders is a list of %d placeholders for absint'd IDs.
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				"DELETE FROM {$table} WHERE id IN ({$placeholders})",
 				$ids
 			)
@@ -335,6 +341,8 @@ class RuleRepository {
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$results = $wpdb->get_results(
 			$wpdb->prepare(
+				// $table is internally controlled.
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				"SELECT * FROM {$table}
 				WHERE status = %s
 				AND (start_date IS NULL OR start_date <= %s)

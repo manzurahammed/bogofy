@@ -1,4 +1,4 @@
-import { get, post } from './api';
+import { get, post } from "./api";
 
 /**
  * Get plugin settings.
@@ -6,7 +6,7 @@ import { get, post } from './api';
  * @returns {Promise<Object>}
  */
 export async function getSettings() {
-  return get('/settings');
+  return get("/settings");
 }
 
 /**
@@ -16,7 +16,7 @@ export async function getSettings() {
  * @returns {Promise<Object>}
  */
 export async function updateSettings(data) {
-  return post('/settings', data);
+  return post("/settings", data);
 }
 
 /**
@@ -25,7 +25,7 @@ export async function updateSettings(data) {
  * @returns {Promise<Object>}
  */
 export async function getStats() {
-  return get('/stats');
+  return get("/stats");
 }
 
 export default {

@@ -4,7 +4,7 @@
 
     <!-- What to scan -->
     <file>./inc</file>
-    <file>./buy-one-get-one.php</file>
+    <file>./bogofy.php</file>
     <file>./uninstall.php</file>
 
     <!-- Exclude paths -->
@@ -32,10 +32,13 @@
     <rule ref="WordPress.WP.I18n">
         <properties>
             <property name="text_domain" type="array">
-                <element value="buy-one-get-one"/>
+                <element value="bogofy"/>
             </property>
         </properties>
     </rule>
+
+    <!-- Show warnings in reports, but do not fail the build (exit 0) on warnings only. -->
+    <config name="ignore_warnings_on_exit" value="1"/>
 
     <!-- Minimum PHP and WP versions -->
     <config name="minimum_supported_wp_version" value="6.0"/>

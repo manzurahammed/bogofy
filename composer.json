@@ -36,7 +36,9 @@
     "scripts": {
         "test": "phpunit",
         "phpcs": "phpcs",
-        "phpcbf": "phpcbf"
+        "phpcbf": "phpcbf",
+        "check-versions": "bash bin/check-versions.sh",
+        "release": "bash bin/release.sh"
     },
     "config": {
         "allow-plugins": {

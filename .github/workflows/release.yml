@@ -1,0 +1,359 @@
+name: Release
+
+# Manual-only. Triggered by the local `release <version>` command
+# (bin/release.sh) via workflow_dispatch. Never runs on push/PR, so merging
+# code never publishes to WordPress.org.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version, semver (e.g. 4.3.3)'
+        required: true
+        type: string
+      commit:
+        description: 'Exact commit SHA to release (set by bin/release.sh)'
+        required: true
+        type: string
+      dry_run:
+        description: 'Dry run: build + validate, but do NOT tag, release, or deploy'
+        required: false
+        default: false
+        type: boolean
+
+# Least privilege by default; only the job that needs write asks for it.
+permissions:
+  contents: read
+
+# One release per version at a time; a second trigger for the same version waits
+# rather than racing (and then fails at validate because the tag/release exists).
+concurrency:
+  group: release-${{ github.event.inputs.version }}
+  cancel-in-progress: false
+
+env:
+  PLUGIN_SLUG: bogofy
+
+jobs:
+  # 1. Validate the request before doing any work ------------------------------
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the exact release commit (with tags)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.commit }}
+          fetch-depth: 0
+
+      - name: Validate semantic version
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$' \
+            || { echo "::error::'$VERSION' is not valid semver (X.Y.Z)"; exit 1; }
+
+      - name: Verify the commit is on the release branch
+        run: |
+          COMMIT="${{ github.event.inputs.commit }}"
+          BRANCH="${{ github.ref_name }}"
+          git fetch --no-tags --quiet origin "$BRANCH"
+          if ! git merge-base --is-ancestor "$COMMIT" "origin/$BRANCH"; then
+            echo "::error::Commit $COMMIT is not part of the '$BRANCH' branch — refusing to release."
+            exit 1
+          fi
+
+      - name: Verify version consistency (header == readme == input)
+        run: bash bin/check-versions.sh "${{ github.event.inputs.version }}"
+
+      - name: Ensure Git tag does not already exist
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          if git rev-parse -q --verify "refs/tags/$VERSION" >/dev/null; then
+            echo "::error::Git tag $VERSION already exists — refusing to overwrite an existing release."
+            exit 1
+          fi
+
+      - name: Ensure GitHub Release does not already exist
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          if gh release view "$VERSION" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "::error::GitHub Release $VERSION already exists — refusing to overwrite."
+            exit 1
+          fi
+
+      - name: Ensure WordPress.org tag not already deployed
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          URL="https://plugins.svn.wordpress.org/${PLUGIN_SLUG}/tags/${VERSION}/"
+          CODE="$(curl -s -o /dev/null -w '%{http_code}' "$URL")"
+          if [ "$CODE" = "200" ]; then
+            echo "::error::WordPress.org already has tag $VERSION ($URL). Refusing to redeploy."
+            exit 1
+          fi
+          echo "WordPress.org tag $VERSION not present (HTTP $CODE) — OK to proceed."
+
+  # 2. Tests + quality (failure here stops everything: no tag/release/deploy) --
+  quality:
+    name: Tests & quality
+    needs: validate
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: wordpress_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.commit }}
+
+      - name: Setup PHP 8.0
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.0'
+          extensions: mbstring, intl, mysqli
+          coverage: none
+          tools: composer:v2
+
+      - name: PHP syntax check (lint)
+        run: |
+          find . \( -path ./vendor -o -path ./node_modules \) -prune -o \
+            -name '*.php' -print0 | xargs -0 -n1 -P4 php -l
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: PHPCS
+        run: composer run-script phpcs
+
+      - name: Setup WordPress test suite
+        run: bash bin/install-wp-tests.sh wordpress_test root root 127.0.0.1 latest true
+
+      - name: PHPUnit
+        run: composer run-script test
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install JS dependencies
+        run: npm ci
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Jest
+        run: npm test -- --passWithNoTests
+
+  # 3. Build the production package (failure here stops release + deploy) ------
+  build:
+    name: Build production package
+    needs: quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.commit }}
+
+      - name: Setup PHP 8.0
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.0'
+          tools: composer:v2
+
+      - name: Install production Composer dependencies
+        run: composer install --no-dev --optimize-autoloader --no-interaction
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Build assets
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build release zip (honors .distignore)
+        run: bash bin/build-release.sh
+
+      - name: Assert dev files are excluded from the package
+        run: |
+          ZIP="${PLUGIN_SLUG}.zip"
+          echo "Package contents:"; unzip -l "$ZIP"
+          # These must NOT be present in the shipped package.
+          for pattern in \
+            "$PLUGIN_SLUG/.git/" \
+            "$PLUGIN_SLUG/.github/" \
+            "$PLUGIN_SLUG/node_modules/" \
+            "$PLUGIN_SLUG/tests/" \
+            "$PLUGIN_SLUG/bin/" \
+            "$PLUGIN_SLUG/phpunit.xml" \
+            "$PLUGIN_SLUG/.distignore" ; do
+            if unzip -l "$ZIP" | grep -q "$pattern"; then
+              echo "::error::Development file leaked into package: $pattern"
+              exit 1
+            fi
+          done
+          # These MUST be present (runtime requirements).
+          for pattern in \
+            "$PLUGIN_SLUG/bogofy.php" \
+            "$PLUGIN_SLUG/vendor/autoload.php" \
+            "$PLUGIN_SLUG/assets/build/" ; do
+            if ! unzip -l "$ZIP" | grep -q "$pattern"; then
+              echo "::error::Required file missing from package: $pattern"
+              exit 1
+            fi
+          done
+          echo "✓ Package contents verified."
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PLUGIN_SLUG }}-${{ github.event.inputs.version }}
+          path: ${{ env.PLUGIN_SLUG }}.zip
+          retention-days: 7
+
+  # 4. Create the Git tag + GitHub Release ------------------------------------
+  release:
+    name: Tag & GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.dry_run != 'true' }}
+    permissions:
+      contents: write   # needed to push the tag and create the release
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.commit }}
+          fetch-depth: 0
+
+      - name: Download package artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.PLUGIN_SLUG }}-${{ github.event.inputs.version }}
+
+      - name: Guard against an existing tag (idempotency)
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          if git rev-parse -q --verify "refs/tags/$VERSION" >/dev/null; then
+            echo "::error::Tag $VERSION already exists — aborting."
+            exit 1
+          fi
+
+      - name: Create and push tag
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          COMMIT="${{ github.event.inputs.commit }}"
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Tag the exact released commit explicitly (not just whatever HEAD is).
+          git tag -a "$VERSION" "$COMMIT" -m "Release $VERSION"
+          git push origin "refs/tags/$VERSION"
+
+      - name: Extract changelog notes
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          # Pull the "= X.Y.Z =" section out of readme.txt for the release body.
+          awk -v v="= $VERSION =" '
+            $0==v && !started {started=1; grab=1; next}
+            started && /^(= [0-9]+\.[0-9]+\.[0-9]+ =|== )/ {exit}
+            grab {print}
+          ' readme.txt > RELEASE_NOTES.md
+          [ -s RELEASE_NOTES.md ] || echo "Release $VERSION" > RELEASE_NOTES.md
+
+      - name: Create GitHub Release (fails if it already exists)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          gh release create "$VERSION" "${PLUGIN_SLUG}.zip" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "$VERSION" \
+            --verify-tag \
+            --notes-file RELEASE_NOTES.md
+
+  # 5. Deploy to WordPress.org via the official SVN mechanism (10up action) ----
+  deploy:
+    name: Deploy to WordPress.org
+    needs: release
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.dry_run != 'true' }}
+    environment: wordpress-org   # optional: add required reviewers/secrets here
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.commit }}
+
+      - name: Download package artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.PLUGIN_SLUG }}-${{ github.event.inputs.version }}
+
+      - name: Unzip package into build dir
+        run: |
+          mkdir -p build
+          unzip -q "${PLUGIN_SLUG}.zip" -d build
+          test -f "build/${PLUGIN_SLUG}/bogofy.php"
+
+      - name: WordPress.org deploy
+        uses: 10up/action-wordpress-plugin-deploy@stable
+        with:
+          generate-zip: false
+        env:
+          SVN_USERNAME: ${{ secrets.WPORG_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.WPORG_PASSWORD }}
+          SLUG: ${{ env.PLUGIN_SLUG }}
+          VERSION: ${{ github.event.inputs.version }}
+          BUILD_DIR: ./build/${{ env.PLUGIN_SLUG }}
+          ASSETS_DIR: .wporg-assets
+
+  # 6. Verify the WordPress.org deployment ------------------------------------
+  verify:
+    name: Verify WordPress.org deployment
+    needs: deploy
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.dry_run != 'true' }}
+    steps:
+      - name: Poll WordPress.org SVN for the new tag
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          URL="https://plugins.svn.wordpress.org/${PLUGIN_SLUG}/tags/${VERSION}/"
+          echo "Verifying $URL"
+          for i in $(seq 1 12); do
+            CODE="$(curl -s -o /dev/null -w '%{http_code}' "$URL")"
+            if [ "$CODE" = "200" ]; then
+              echo "✓ WordPress.org tag $VERSION is live."
+              exit 0
+            fi
+            echo "Attempt $i: HTTP $CODE — waiting..."
+            sleep 15
+          done
+          echo "::error::Could not verify WordPress.org tag $VERSION after retries."
+          echo "The GitHub Release and Git tag were created. To retry ONLY the WordPress.org"
+          echo "deploy, re-run failed jobs on this workflow run, or check the SVN commit at:"
+          echo "  https://plugins.trac.wordpress.org/log/${PLUGIN_SLUG}/"
+          exit 1
+
+  # Dry-run summary (only path when dry_run=true) -----------------------------
+  dry-run-summary:
+    name: Dry run complete
+    needs: build
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.dry_run == 'true' }}
+    steps:
+      - run: |
+          echo "✓ Dry run for ${{ github.event.inputs.version }} passed validation, tests and build."
+          echo "No tag, GitHub Release, or WordPress.org deploy was performed."

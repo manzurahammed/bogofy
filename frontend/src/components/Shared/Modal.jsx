@@ -1,34 +1,34 @@
-import React, { useEffect } from 'react';
-import PropTypes from 'prop-types';
-import clsx from 'clsx';
-import { __ } from '@wordpress/i18n';
+import React, { useEffect } from "react";
+import PropTypes from "prop-types";
+import clsx from "clsx";
+import { __ } from "@wordpress/i18n";
 
-export function Modal({ isOpen, onClose, title, children, size = 'md' }) {
+export function Modal({ isOpen, onClose, title, children, size = "md" }) {
   useEffect(() => {
     const handleEsc = (e) => {
-      if (e.key === 'Escape') {
+      if (e.key === "Escape") {
         onClose();
       }
     };
 
     if (isOpen) {
-      document.addEventListener('keydown', handleEsc);
-      document.body.style.overflow = 'hidden';
+      document.addEventListener("keydown", handleEsc);
+      document.body.style.overflow = "hidden";
     }
 
     return () => {
-      document.removeEventListener('keydown', handleEsc);
-      document.body.style.overflow = 'unset';
+      document.removeEventListener("keydown", handleEsc);
+      document.body.style.overflow = "unset";
     };
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
   const sizeClasses = {
-    sm: 'bogo-max-w-md',
-    md: 'bogo-max-w-lg',
-    lg: 'bogo-max-w-2xl',
-    xl: 'bogo-max-w-4xl',
+    sm: "bogo-max-w-md",
+    md: "bogo-max-w-lg",
+    lg: "bogo-max-w-2xl",
+    xl: "bogo-max-w-4xl",
   };
 
   return (
@@ -43,8 +43,8 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }) {
         {/* Modal panel */}
         <div
           className={clsx(
-            'bogo-relative bogo-inline-block bogo-align-bottom bogo-bg-white bogo-rounded-lg bogo-text-left bogo-overflow-hidden bogo-shadow-xl bogo-transform bogo-transition-all bogo-w-full',
-            sizeClasses[size]
+            "bogo-relative bogo-inline-block bogo-align-bottom bogo-bg-white bogo-rounded-lg bogo-text-left bogo-overflow-hidden bogo-shadow-xl bogo-transform bogo-transition-all bogo-w-full",
+            sizeClasses[size],
           )}
         >
           {/* Header */}
@@ -56,8 +56,18 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }) {
               onClick={onClose}
               className="bogo-text-gray-400 hover:bogo-text-gray-600 focus:bogo-outline-none"
             >
-              <svg className="bogo-w-6 bogo-h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg
+                className="bogo-w-6 bogo-h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -75,10 +85,19 @@ Modal.propTypes = {
   onClose: PropTypes.func.isRequired,
   title: PropTypes.string.isRequired,
   children: PropTypes.node.isRequired,
-  size: PropTypes.oneOf(['sm', 'md', 'lg', 'xl']),
+  size: PropTypes.oneOf(["sm", "md", "lg", "xl"]),
 };
 
-export function ConfirmModal({ isOpen, onClose, onConfirm, title, message, confirmText = __('Confirm', 'bogofy'), cancelText = __('Cancel', 'bogofy'), variant = 'danger' }) {
+export function ConfirmModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  title,
+  message,
+  confirmText = __("Confirm", "bogofy"),
+  cancelText = __("Cancel", "bogofy"),
+  variant = "danger",
+}) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title} size="sm">
       <div className="bogo-space-y-4">
@@ -89,9 +108,9 @@ export function ConfirmModal({ isOpen, onClose, onConfirm, title, message, confi
           </button>
           <button
             onClick={onConfirm}
-            className={clsx('bogo-btn', {
-              'bogo-btn-danger': variant === 'danger',
-              'bogo-btn-primary': variant === 'primary',
+            className={clsx("bogo-btn", {
+              "bogo-btn-danger": variant === "danger",
+              "bogo-btn-primary": variant === "primary",
             })}
           >
             {confirmText}
@@ -110,7 +129,7 @@ ConfirmModal.propTypes = {
   message: PropTypes.string.isRequired,
   confirmText: PropTypes.string,
   cancelText: PropTypes.string,
-  variant: PropTypes.oneOf(['danger', 'primary']),
+  variant: PropTypes.oneOf(["danger", "primary"]),
 };
 
 export default Modal;

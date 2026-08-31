@@ -1,12 +1,16 @@
-import React, { useState, useRef, useEffect } from 'react';
-import PropTypes from 'prop-types';
-import { __ } from '@wordpress/i18n';
-import { useProductSearch } from '../../hooks/useProducts';
-import { Loader } from './Loader';
+import React, { useState, useRef, useEffect } from "react";
+import PropTypes from "prop-types";
+import { __ } from "@wordpress/i18n";
+import { useProductSearch } from "../../hooks/useProducts";
+import { Loader } from "./Loader";
 
-export function ProductSearch({ selectedProducts = [], onChange, placeholder = __('Search products...', 'bogofy') }) {
+export function ProductSearch({
+  selectedProducts = [],
+  onChange,
+  placeholder = __("Search products...", "bogofy"),
+}) {
   const [isOpen, setIsOpen] = useState(false);
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = useState("");
   const containerRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -19,8 +23,8 @@ export function ProductSearch({ selectedProducts = [], onChange, placeholder = _
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const handleInputChange = (e) => {
@@ -34,7 +38,7 @@ export function ProductSearch({ selectedProducts = [], onChange, placeholder = _
     if (!selectedProducts.find((p) => p.id === product.id)) {
       onChange([...selectedProducts, product]);
     }
-    setInputValue('');
+    setInputValue("");
     setIsOpen(false);
   };
 
@@ -43,7 +47,7 @@ export function ProductSearch({ selectedProducts = [], onChange, placeholder = _
   };
 
   const filteredProducts = products.filter(
-    (product) => !selectedProducts.find((p) => p.id === product.id)
+    (product) => !selectedProducts.find((p) => p.id === product.id),
   );
 
   return (
@@ -62,8 +66,16 @@ export function ProductSearch({ selectedProducts = [], onChange, placeholder = _
                 onClick={() => handleRemoveProduct(product.id)}
                 className="bogo-text-primary-500 hover:bogo-text-primary-700"
               >
-                <svg className="bogo-w-4 bogo-h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                <svg
+                  className="bogo-w-4 bogo-h-4"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               </button>
             </span>
@@ -94,7 +106,9 @@ export function ProductSearch({ selectedProducts = [], onChange, placeholder = _
         <div className="bogo-absolute bogo-z-10 bogo-w-full bogo-mt-1 bogo-bg-white bogo-border bogo-border-gray-200 bogo-rounded-md bogo-shadow-lg bogo-max-h-60 bogo-overflow-auto">
           {filteredProducts.length === 0 ? (
             <div className="bogo-px-4 bogo-py-3 bogo-text-sm bogo-text-gray-500">
-              {isLoading ? __('Searching...', 'bogofy') : __('No products found', 'bogofy')}
+              {isLoading
+                ? __("Searching...", "bogofy")
+                : __("No products found", "bogofy")}
             </div>
           ) : (
             <ul className="bogo-py-1">
@@ -138,7 +152,7 @@ ProductSearch.propTypes = {
     PropTypes.shape({
       id: PropTypes.number.isRequired,
       name: PropTypes.string.isRequired,
-    })
+    }),
   ),
   onChange: PropTypes.func.isRequired,
   placeholder: PropTypes.string,

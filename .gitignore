@@ -46,11 +46,9 @@ package-lock.json
 package-lock
 composer.lock
 
-# Graphify output
-/graphify-out/
-
-# Claude Code
-/.claude/
+# Claude Code (ignore local state, but share project skills)
+/.claude/*
+!/.claude/skills/
 
 # Development spec files
 claude-code-prompt-*.md
