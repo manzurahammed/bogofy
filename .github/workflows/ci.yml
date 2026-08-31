@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main, master, develop]
+    branches: [main, master, develop, release]
   pull_request:
-    branches: [main, master, develop]
+    branches: [main, master, develop, release]
 
 jobs:
   # PHP: syntax check, PHPCS, PHPUnit (PHP 8.0 + WordPress latest)
