@@ -27,7 +27,12 @@ function Sidebar() {
 
   return (
     <aside className="bogo-sidebar">
-      <div className="bogo-sidebar__brand">
+      <button
+        type="button"
+        className="bogo-sidebar__brand"
+        onClick={() => navigate("dashboard")}
+        aria-label={__("Go to dashboard", "bogofy")}
+      >
         <div className="bogo-sidebar__mark">
           <img
             className="bogo-sidebar__logo"
@@ -40,7 +45,7 @@ function Sidebar() {
         <div className="bogo-col">
           <div className="bogo-sidebar__name">Bogofy</div>
         </div>
-      </div>
+      </button>
 
       <SbItem
         label={__("Dashboard", "bogofy")}
