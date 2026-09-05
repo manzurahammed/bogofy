@@ -81,10 +81,13 @@ class Admin {
 			'bogo-admin',
 			'bogoAdmin',
 			array(
-				'apiUrl'    => rest_url( 'bogofy/v1' ),
-				'nonce'     => wp_create_nonce( 'wp_rest' ),
-				'adminUrl'  => admin_url(),
-				'pluginUrl' => BOGO_PLUGIN_URL,
+				'apiUrl'         => rest_url( 'bogofy/v1' ),
+				'nonce'          => wp_create_nonce( 'wp_rest' ),
+				'adminUrl'       => admin_url(),
+				'pluginUrl'      => BOGO_PLUGIN_URL,
+				'currencySymbol' => function_exists( 'get_woocommerce_currency_symbol' )
+					? html_entity_decode( get_woocommerce_currency_symbol() )
+					: '$',
 			)
 		);
 	}
@@ -143,7 +146,7 @@ class Admin {
 					'bogo-admin',
 					BOGO_PLUGIN_URL . 'assets/build/' . $css_file,
 					array(),
-					BOGO_VERSION
+					$this->asset_version( 'assets/build/' . $css_file )
 				);
 			}
 		}
@@ -153,7 +156,7 @@ class Admin {
 			'bogo-admin',
 			BOGO_PLUGIN_URL . 'assets/build/' . $entry['file'],
 			array( 'wp-i18n' ),
-			BOGO_VERSION,
+			$this->asset_version( 'assets/build/' . $entry['file'] ),
 			true
 		);
 
@@ -161,6 +164,25 @@ class Admin {
 
 		// Add type="module" to script tag.
 		add_filter( 'script_loader_tag', array( $this, 'add_module_type' ), 10, 3 );
+	}
+
+	/**
+	 * Build a cache-busting version string for a built asset.
+	 *
+	 * Vite writes stable filenames (e.g. `main.js`), so the plugin version alone
+	 * never busts the browser cache after a rebuild. Use the file's modification
+	 * time when available and fall back to the plugin version.
+	 *
+	 * @param string $relative_path Asset path relative to the plugin directory.
+	 *
+	 * @return string
+	 */
+	private function asset_version( $relative_path ) {
+		$file = BOGO_PLUGIN_DIR . $relative_path;
+		if ( file_exists( $file ) ) {
+			return (string) filemtime( $file );
+		}
+		return BOGO_VERSION;
 	}
 
 	/**

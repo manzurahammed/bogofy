@@ -74,6 +74,16 @@
   align-items: center;
   gap: 10px;
   padding: 6px 8px 18px;
+  width: 100%;
+  background: none;
+  border: 0;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.bogo-admin .bogo-sidebar__brand:hover .bogo-sidebar__name {
+  color: var(--accent-ink);
 }
 
 .bogo-admin .bogo-sidebar__mark {
@@ -516,6 +526,16 @@
   background: var(--muted-2);
 }
 
+.bogo-admin .bogo-status--scheduled {
+  background: #eef1fd;
+  color: #3d51c4;
+}
+
+.bogo-admin .bogo-status--scheduled .bogo-status__dot {
+  background: var(--info);
+  box-shadow: 0 0 0 3px rgba(108, 138, 236, 0.18);
+}
+
 /* ── KPI tiles ── */
 .bogo-admin .bogo-kpi-grid {
   display: grid;
@@ -625,6 +645,15 @@
   color: var(--muted-2);
 }
 
+.bogo-admin .bogo-flow .bogo-flow__sep {
+  color: var(--muted-2);
+}
+
+.bogo-admin .bogo-rule__meta-text {
+  font-size: 12px;
+  color: var(--muted);
+}
+
 .bogo-admin .bogo-flow .bogo-flow__node--get {
   background: var(--accent-soft);
   border-color: rgba(52, 211, 154, 0.4);
@@ -647,6 +676,19 @@
   font-weight: 500;
   border-radius: 999px;
   white-space: nowrap;
+  background: none;
+  border: 0;
+  font-family: inherit;
+  cursor: default;
+}
+
+.bogo-admin .bogo-stepper__step--clickable {
+  cursor: pointer;
+}
+
+.bogo-admin .bogo-stepper__step--clickable:hover {
+  background: var(--chip);
+  color: var(--ink);
 }
 
 .bogo-admin .bogo-stepper__step .bogo-stepper__num {
