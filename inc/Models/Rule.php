@@ -175,6 +175,22 @@ class Rule {
 	public $updated_at = '';
 
 	/**
+	 * Number of completed orders that used this rule.
+	 *
+	 * Running total maintained on order completion; not set from request data.
+	 *
+	 * @var int
+	 */
+	public $orders_count = 0;
+
+	/**
+	 * Total base-price revenue attributed to this rule across completed orders.
+	 *
+	 * @var float
+	 */
+	public $revenue_total = 0.0;
+
+	/**
 	 * Create Rule from database row.
 	 *
 	 * @param object|array $data Database row.
@@ -204,6 +220,8 @@ class Rule {
 		$rule->end_date         = $data['end_date'] ?? null;
 		$rule->created_at       = $data['created_at'] ?? '';
 		$rule->updated_at       = $data['updated_at'] ?? '';
+		$rule->orders_count     = absint( $data['orders_count'] ?? 0 );
+		$rule->revenue_total    = floatval( $data['revenue_total'] ?? 0 );
 
 		return $rule;
 	}
@@ -294,6 +312,8 @@ class Rule {
 			'end_date'         => $this->end_date,
 			'created_at'       => $this->created_at,
 			'updated_at'       => $this->updated_at,
+			'orders_count'     => (int) $this->orders_count,
+			'revenue'          => (float) $this->revenue_total,
 		);
 	}
 

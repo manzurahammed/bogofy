@@ -19,7 +19,7 @@ class Migrator {
 	 *
 	 * @var string
 	 */
-	const DB_VERSION = '1.0.0';
+	const DB_VERSION = '1.1.0';
 
 	/**
 	 * Option name for storing DB version.
@@ -55,7 +55,25 @@ class Migrator {
 			self::migrate_to_1_0_0();
 		}
 
+		// Migration 1.1.0 - Add orders_count / revenue_total columns to bogo_rules.
+		if ( version_compare( $from_version, '1.1.0', '<' ) ) {
+			self::migrate_to_1_1_0();
+		}
+
 		// Future migrations can be added here.
+	}
+
+	/**
+	 * Migration to version 1.1.0.
+	 *
+	 * Adds the `orders_count` and `revenue_total` columns to the rules table.
+	 * Schema::create_tables() is idempotent (dbDelta), so re-running it simply
+	 * adds the new columns to the existing table.
+	 *
+	 * @return void
+	 */
+	private static function migrate_to_1_1_0() {
+		Schema::create_tables();
 	}
 
 	/**
