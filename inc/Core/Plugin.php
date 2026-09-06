@@ -14,9 +14,7 @@ use Bogofy\Cart\DiscountApplier;
 use Bogofy\Cart\EligibilityChecker;
 use Bogofy\Cart\FreeItemManager;
 use Bogofy\Frontend\ProductPage;
-use Bogofy\Frontend\CartDisplay;
 use Bogofy\Frontend\Assets;
-use Bogofy\Frontend\StoreApi;
 use Bogofy\Models\RuleRepository;
 use Bogofy\Orders\OrderTracker;
 use Bogofy\Database\Schema;
@@ -157,23 +155,9 @@ class Plugin {
 		);
 
 		$this->container->set(
-			CartDisplay::class,
-			function ( Container $c ) {
-				return new CartDisplay( $c->get( RuleRepository::class ) );
-			}
-		);
-
-		$this->container->set(
 			Assets::class,
 			function () {
 				return new Assets();
-			}
-		);
-
-		$this->container->set(
-			StoreApi::class,
-			function () {
-				return new StoreApi();
 			}
 		);
 	}
@@ -250,25 +234,14 @@ class Plugin {
 		$this->loader->register_action( 'woocommerce_checkout_create_order_line_item', $order_tracker, 'persist_line_meta', 20, 3 );
 		$this->loader->register_action( 'woocommerce_order_status_changed', $order_tracker, 'on_status_changed', 20, 4 );
 
-		// Storefront styles + block cart/checkout script.
+		// Storefront styles.
 		$assets = $this->container->get( Assets::class );
 		$this->loader->register_action( 'wp_enqueue_scripts', $assets, 'enqueue' );
-
-		// Expose BOGO data to the block cart/checkout via the Store API.
-		$store_api = $this->container->get( StoreApi::class );
-		$this->loader->register_action( 'woocommerce_blocks_loaded', $store_api, 'register' );
 
 		// Product page display.
 		$product_page = $this->container->get( ProductPage::class );
 		$this->loader->register_action( 'woocommerce_single_product_summary', $product_page, 'display_bogo_message', 25 );
 		// Anchor the loop strip to the image base (after the thumbnail, before the title).
 		$this->loader->register_action( 'woocommerce_before_shop_loop_item_title', $product_page, 'display_bogo_badge', 15 );
-
-		// Cart display.
-		$cart_display = $this->container->get( CartDisplay::class );
-		$this->loader->register_filter( 'woocommerce_cart_item_name', $cart_display, 'add_gift_details', 10, 2 );
-		$this->loader->register_filter( 'woocommerce_cart_item_class', $cart_display, 'add_item_class', 10, 2 );
-		$this->loader->register_filter( 'woocommerce_cart_item_price', $cart_display, 'modify_free_item_price_display', 10, 2 );
-		$this->loader->register_action( 'woocommerce_cart_totals_before_order_total', $cart_display, 'render_savings_row' );
 	}
 }

@@ -2,7 +2,7 @@
  * Bogofy storefront styles.
  *
  * Only styles the BOGO messaging/colour accents — the surrounding WooCommerce
- * layout (product summary, cart table, loop items) is left untouched.
+ * layout (product summary, loop items) is left untouched.
  */
 .bogofy-scope,
 .woocommerce {
@@ -81,104 +81,4 @@
 
 .bogo-loop-strip svg {
   display: block;
-}
-
-/* ── Cart free-item row + gift note ────────────────────── */
-tr.bogo-cart-item td,
-li.bogo-cart-item {
-  box-shadow: inset 3px 0 0 #10b981;
-  background: rgba(16, 185, 129, 0.04);
-}
-
-.bogo-free-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-left: 8px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: #10b981;
-  color: #062e22;
-  font-weight: 700;
-  font-size: 11px;
-  text-transform: uppercase;
-  vertical-align: middle;
-}
-
-.bogo-free-badge svg {
-  display: block;
-}
-
-.bogo-free-price {
-  color: #059669;
-  font-weight: 700;
-  text-decoration: none;
-}
-
-.bogo-gift-note {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 6px;
-  color: #6b7280;
-  font-size: 12.5px;
-  line-height: 1.4;
-}
-
-.bogo-gift-note strong {
-  color: #0c6b46;
-}
-
-.bogo-gift-note svg {
-  display: block;
-  flex-shrink: 0;
-  color: #059669;
-}
-
-/* ── Cart savings total row (classic) ──────────────────── */
-tr.bogo-savings-row th,
-tr.bogo-savings-row td {
-  color: #059669;
-  font-weight: 700;
-}
-
-/* ── Block cart (woocommerce/cart) ─────────────────────── */
-.wc-block-cart-items__row.bogo-cart-item {
-  background: rgba(16, 185, 129, 0.04);
-}
-
-.wc-block-cart-items__row.bogo-cart-item > td:first-child,
-.wc-block-cart-item.bogo-cart-item {
-  box-shadow: inset 3px 0 0 #10b981;
-}
-
-.bogo-cart-item .wc-block-components-product-name::after {
-  content: "FREE";
-  display: inline-block;
-  margin-left: 8px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: #10b981;
-  color: #062e22;
-  font-weight: 700;
-  font-size: 11px;
-  letter-spacing: 0.02em;
-  vertical-align: middle;
-}
-
-.bogo-cart-item .wc-block-cart-item__product::after {
-  content: "🎁 Auto-added free gift · removed if the qualifying item is removed";
-  display: block;
-  margin-top: 6px;
-  color: #6b7280;
-  font-size: 12.5px;
-  line-height: 1.4;
-}
-
-/* Block cart "Bogo savings" totals row */
-.bogo-savings-row .wc-block-components-totals-item__label,
-.bogo-savings-row .wc-block-components-totals-item__value,
-.bogo-savings-row__value {
-  color: #059669;
-  font-weight: 700;
 }

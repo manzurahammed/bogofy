@@ -32,17 +32,6 @@ class Assets {
 			array(),
 			$this->version( 'assets/css/storefront.css' )
 		);
-
-		// Block cart/checkout integration: only where the blocks are present.
-		if ( function_exists( 'is_cart' ) && ( is_cart() || is_checkout() ) ) {
-			wp_enqueue_script(
-				'bogofy-cart-blocks',
-				BOGO_PLUGIN_URL . 'assets/js/cart-blocks.js',
-				array( 'wc-blocks-checkout', 'wp-plugins', 'wp-element', 'wp-i18n' ),
-				$this->version( 'assets/js/cart-blocks.js' ),
-				true
-			);
-		}
 	}
 
 	/**
