@@ -1,7 +1,7 @@
 import React from "react";
 import { __ } from "@wordpress/i18n";
 import AppShell from "../components/Layout/AppShell";
-import { useCreateRuleWizard } from "../components/Rules/CreateWizard/useCreateRuleWizard";
+import { useCreateRuleWizard } from "@/components/Rules/CreateWizard/useCreateRuleWizard";
 import WizardHeader from "../components/Rules/CreateWizard/WizardHeader";
 import WizardActions from "../components/Rules/CreateWizard/WizardActions";
 import WizardSteps from "../components/Rules/CreateWizard/WizardSteps";

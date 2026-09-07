@@ -12,10 +12,11 @@ use Bogofy\Cart\CartHandler;
 /**
  * Class StoreApi
  *
- * Exposes BOGO data to the block cart/checkout via the WooCommerce Store API so
- * the client-side JS can accent the free-item row and render a "Bogo savings"
- * totals row. (The gift note lines are added via the woocommerce_get_item_data
- * filter, which the Store API also surfaces.)
+ * Exposes minimal, raw BOGO data to the block cart/checkout via the WooCommerce
+ * Store API: a per-item `is_free` flag (to accent the row) and the total savings
+ * as raw minor units + currency shape (for an informational "You saved" row).
+ * No pre-rendered HTML is sent. The gift note lines are added separately via the
+ * woocommerce_get_item_data filter, which the Store API also surfaces.
  */
 class StoreApi {
 
@@ -81,16 +82,24 @@ class StoreApi {
 	}
 
 	/**
-	 * Cart-level BOGO data (total savings).
+	 * Cart-level BOGO data.
+	 *
+	 * Returns the total savings as raw minor units plus the store's currency
+	 * shape, so the client can format it safely (no pre-rendered HTML).
 	 *
 	 * @return array
 	 */
 	public function cart_data() {
-		$savings = $this->get_cart_savings();
+		$savings                 = $this->get_cart_savings();
+		$decimals                = wc_get_price_decimals();
+		list( $prefix, $suffix ) = $this->currency_affixes();
 
 		return array(
-			'savings'      => $savings,
-			'savings_html' => $savings > 0 ? wc_price( $savings ) : '',
+			'savings_minor'       => (int) round( $savings * ( 10 ** $decimals ) ),
+			'currency_code'       => get_woocommerce_currency(),
+			'currency_minor_unit' => $decimals,
+			'currency_prefix'     => $prefix,
+			'currency_suffix'     => $suffix,
 		);
 	}
 
@@ -101,17 +110,54 @@ class StoreApi {
 	 */
 	public function cart_schema() {
 		return array(
-			'savings'      => array(
-				'description' => __( 'Total BOGO savings in the cart.', 'bogofy' ),
-				'type'        => 'number',
+			'savings_minor'       => array(
+				'description' => __( 'Total BOGO savings, in the currency minor unit.', 'bogofy' ),
+				'type'        => 'integer',
 				'readonly'    => true,
 			),
-			'savings_html' => array(
-				'description' => __( 'Formatted total BOGO savings.', 'bogofy' ),
+			'currency_code'       => array(
+				'description' => __( 'ISO currency code.', 'bogofy' ),
+				'type'        => 'string',
+				'readonly'    => true,
+			),
+			'currency_minor_unit' => array(
+				'description' => __( 'Number of decimals in the currency.', 'bogofy' ),
+				'type'        => 'integer',
+				'readonly'    => true,
+			),
+			'currency_prefix'     => array(
+				'description' => __( 'Text placed before the amount.', 'bogofy' ),
+				'type'        => 'string',
+				'readonly'    => true,
+			),
+			'currency_suffix'     => array(
+				'description' => __( 'Text placed after the amount.', 'bogofy' ),
 				'type'        => 'string',
 				'readonly'    => true,
 			),
 		);
+	}
+
+	/**
+	 * Currency prefix/suffix for the store's symbol position.
+	 *
+	 * @return array{0:string,1:string} [ prefix, suffix ].
+	 */
+	private function currency_affixes() {
+		$symbol = html_entity_decode( get_woocommerce_currency_symbol() );
+		$nbsp   = "\u{00A0}";
+
+		switch ( get_option( 'woocommerce_currency_pos' ) ) {
+			case 'right':
+				return array( '', $symbol );
+			case 'right_space':
+				return array( '', $nbsp . $symbol );
+			case 'left_space':
+				return array( $symbol . $nbsp, '' );
+			case 'left':
+			default:
+				return array( $symbol, '' );
+		}
 	}
 
 	/**

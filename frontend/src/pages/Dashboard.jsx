@@ -1,7 +1,7 @@
 import React, { useCallback } from "react";
 import { __ } from "@wordpress/i18n";
-import { useStats } from "../hooks/useSettings";
-import { useRules } from "../hooks/useRules";
+import { useStats } from "@/hooks/useSettings";
+import { useRules } from "@/hooks/useRules";
 import { PageLoader } from "../components/Shared/Loader";
 import AppShell from "../components/Layout/AppShell";
 import StatsGrid from "../components/Dashboard/StatsGrid";

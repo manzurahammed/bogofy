@@ -131,6 +131,26 @@ class RuleTest extends TestCase {
 	}
 
 	/**
+	 * Test the orders_count / revenue stat fields round-trip through the model.
+	 */
+	public function test_stat_fields_flow_through_from_db_and_to_array() {
+		$rule = Rule::from_db(
+			array(
+				'id'            => 7,
+				'orders_count'  => '5',
+				'revenue_total' => '123.45',
+			)
+		);
+
+		$this->assertSame( 5, $rule->orders_count );
+		$this->assertSame( 123.45, $rule->revenue_total );
+
+		$array = $rule->to_array();
+		$this->assertSame( 5, $array['orders_count'] );
+		$this->assertSame( 123.45, $array['revenue'] );
+	}
+
+	/**
 	 * Test to_array returns expected structure.
 	 */
 	public function test_to_array_returns_expected_structure() {
