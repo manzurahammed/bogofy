@@ -32,5 +32,7 @@ rm -f "$ZIP"
 rm -rf "$BUILD"
 
 echo "Built: $ZIP"
-echo "Contents:"
-unzip -l "$ZIP" | tail -n +2 | head -n 40
+echo "Contents (first 40 entries):"
+# `sed` reads all input (unlike `head`, which closes the pipe early and makes
+# `unzip` fail with SIGPIPE under `set -o pipefail`). The `|| true` is a guard.
+unzip -l "$ZIP" | sed -n '2,41p' || true

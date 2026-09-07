@@ -4,7 +4,7 @@ Tags: woocommerce, bogo, buy one get one, free gift, discount
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.0.0
+Stable tag: 2.1.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -128,6 +128,19 @@ Use the "Enable plugin" toggle on the Settings screen to switch all BOGO functio
 
 == Changelog ==
 
+= 2.1.0 =
+* New: **storefront offer messaging** — a BOGO notice on product pages and a "Buy 1 Get 1 Free" strip on shop and category product cards.
+* New: **Cart & Checkout Blocks gift styling** — the free gift line shows a FREE badge and the item it is linked to, plus a "You saved" total in the order summary.
+* New: **Settings toggle** to show or hide the cart gift styling (otherwise the default cart design is used).
+* New: **dashboard metrics** now show real "Bogofy orders" and "Discount given" totals, tracked per completed order.
+* New: **per-rule Orders and Revenue** on the rules list (replacing the Priority column), with friendly "Active since / Starts" dates and a **Scheduled** status.
+* Improved: rule wizard — step-back navigation and clickable steps; Save/Discard now appear only when there are unsaved changes.
+* Improved: admin notices no longer overlap the WordPress toolbar.
+* Fixed: **Buy X, Get X Discounted** now applies the configured percentage instead of a full 100% discount.
+* Fixed: free gifts are removed from the cart when a rule is deactivated, deleted, expires, or all rules are removed.
+* Fixed: overlapping discount rules no longer overwrite each other — the highest-priority rule wins per line.
+* Fixed: BOGO discounts now respect an existing sale price and no longer recompute on recalculation, keeping cart pricing and "You saved" accurate.
+
 = 2.0.0 =
 * New rule type: **Buy from Category, Get Free** — trigger a gift from any product in a chosen category.
 * New rule type: **Buy X, Get X Discounted** — give the extra items a percentage discount instead of fully free.
@@ -151,6 +164,9 @@ Use the "Enable plugin" toggle on the Settings screen to switch all BOGO functio
 * HPOS and Cart/Checkout Blocks compatibility.
 
 == Upgrade Notice ==
+
+= 2.1.0 =
+Adds storefront offer messaging and Cart & Checkout Blocks gift styling, dashboard usage metrics, and important cart-pricing fixes (discount percentage, sale-price handling, and stale-gift cleanup).
 
 = 2.0.0 =
 Major update: category targeting, percentage-discount and cross-category rule types, scheduling, priority, coupon-stacking control, and a redesigned rule wizard.
