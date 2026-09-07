@@ -9,70 +9,120 @@ namespace Bogofy\Frontend;
 
 use Bogofy\Admin\Settings;
 use Bogofy\Cart\CartHandler;
+use Bogofy\Models\Rule;
+use Bogofy\Models\RuleRepository;
 
 /**
  * Class CartDisplay
  *
- * Handles cart display modifications for BOGO items.
+ * Adds the BOGO gift note (which rule granted the item and what it is linked to)
+ * under free cart items. Because it hooks `woocommerce_get_item_data`, the notes
+ * surface in both the classic cart and the block cart (via the Store API).
  */
 class CartDisplay {
 
 	/**
-	 * Add BOGO label to cart item data.
+	 * Rule repository.
 	 *
-	 * @param array $item_data Cart item data.
+	 * @var RuleRepository
+	 */
+	private $repository;
+
+	/**
+	 * Constructor.
+	 *
+	 * @param RuleRepository $repository Rule repository.
+	 */
+	public function __construct( RuleRepository $repository ) {
+		$this->repository = $repository;
+	}
+
+	/**
+	 * Append the gift note lines to a free item's cart data.
+	 *
+	 * @param array $item_data Existing cart item data.
 	 * @param array $cart_item Cart item.
 	 *
 	 * @return array
 	 */
-	public function add_bogo_label( $item_data, $cart_item ) {
-		if ( CartHandler::is_bogo_item( $cart_item ) ) {
-			$label = Settings::get( 'free_item_label', __( 'FREE (Bogofy Deal)', 'bogofy' ) );
+	public function add_item_data( $item_data, $cart_item ) {
+		if ( ! Settings::is_enabled() || ! Settings::get( 'show_cart_gift' ) ) {
+			return $item_data;
+		}
 
-			$item_data[] = array(
-				'key'   => __( 'Offer', 'bogofy' ),
-				'value' => $label,
+		if ( ! CartHandler::is_bogo_item( $cart_item ) ) {
+			return $item_data;
+		}
+
+		$rule  = $this->get_rule( $cart_item );
+		$notes = array();
+
+		if ( $rule ) {
+			$notes[] = sprintf(
+				/* translators: %s: rule name */
+				esc_html__( '🎁 Your gift from %s', 'bogofy' ),
+				'<strong>' . esc_html( $rule->title ) . '</strong>'
 			);
 		}
+
+		$trigger = $rule ? $this->get_trigger_label( $rule ) : '';
+
+		$notes[] = $trigger
+			? sprintf(
+				/* translators: %s: trigger product/category name */
+				esc_html__( '🔒 Quantity linked to your %s · removed if that item goes', 'bogofy' ),
+				'<strong>' . esc_html( $trigger ) . '</strong>'
+			)
+			: esc_html__( '🔒 Auto-added gift · removed if the qualifying item is removed', 'bogofy' );
+
+		// Combine into a single entry so the block cart stacks them on their own
+		// lines instead of joining separate entries with " / ".
+		$item_data[] = array(
+			'key'     => '',
+			'value'   => implode( '<br>', $notes ),
+			'display' => '',
+		);
 
 		return $item_data;
 	}
 
 	/**
-	 * Modify price display for free items.
+	 * Get the rule that granted a cart item.
 	 *
-	 * @param string $price_html Price HTML.
-	 * @param array  $cart_item  Cart item.
+	 * @param array $cart_item Cart item.
+	 *
+	 * @return Rule|null
+	 */
+	private function get_rule( $cart_item ) {
+		if ( empty( $cart_item[ CartHandler::BOGO_RULE_KEY ] ) ) {
+			return null;
+		}
+
+		return $this->repository->get( (int) $cart_item[ CartHandler::BOGO_RULE_KEY ] );
+	}
+
+	/**
+	 * Human label for what a rule is triggered by (product or category name).
+	 *
+	 * @param Rule $rule Rule object.
 	 *
 	 * @return string
 	 */
-	public function modify_free_item_price_display( $price_html, $cart_item ) {
-		if ( ! CartHandler::is_bogo_item( $cart_item ) ) {
-			return $price_html;
+	private function get_trigger_label( Rule $rule ) {
+		if ( Rule::APPLY_SPECIFIC_CATEGORIES === $rule->apply_to && ! empty( $rule->category_ids ) ) {
+			$term = get_term( (int) $rule->category_ids[0], 'product_cat' );
+			if ( $term && ! is_wp_error( $term ) ) {
+				return $term->name;
+			}
 		}
 
-		$product        = $cart_item['data'];
-		$original_price = $product->get_regular_price();
-		$current_price  = $product->get_price();
-
-		// If free (price is 0).
-		if ( 0 === (int) $current_price ) {
-			return sprintf(
-				'<del>%s</del> <ins class="bogo-free-price">%s</ins>',
-				wc_price( $original_price ),
-				esc_html__( 'FREE', 'bogofy' )
-			);
+		if ( ! empty( $rule->buy_product_ids ) ) {
+			$product = wc_get_product( (int) $rule->buy_product_ids[0] );
+			if ( $product ) {
+				return $product->get_name();
+			}
 		}
 
-		// If discounted.
-		if ( $current_price < $original_price ) {
-			return sprintf(
-				'<del>%s</del> <ins>%s</ins>',
-				wc_price( $original_price ),
-				wc_price( $current_price )
-			);
-		}
-
-		return $price_html;
+		return '';
 	}
 }

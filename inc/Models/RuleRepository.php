@@ -323,6 +323,81 @@ class RuleRepository {
 	}
 
 	/**
+	 * Add one completed order (and its revenue) to a rule's running totals.
+	 *
+	 * @param int   $rule_id Rule ID.
+	 * @param float $revenue Base-price revenue to add.
+	 *
+	 * @return void
+	 */
+	public function add_order_stats( $rule_id, $revenue ) {
+		global $wpdb;
+
+		$table = $this->get_table();
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$wpdb->query(
+			$wpdb->prepare(
+				// $table is internally controlled.
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"UPDATE {$table} SET orders_count = orders_count + 1, revenue_total = revenue_total + %f WHERE id = %d",
+				(float) $revenue,
+				(int) $rule_id
+			)
+		);
+
+		$this->flush_cache();
+	}
+
+	/**
+	 * Roll back one completed order (and its revenue) from a rule's totals.
+	 *
+	 * Clamped at zero so totals never go negative if hooks fire unexpectedly.
+	 *
+	 * @param int   $rule_id Rule ID.
+	 * @param float $revenue Base-price revenue to subtract.
+	 *
+	 * @return void
+	 */
+	public function remove_order_stats( $rule_id, $revenue ) {
+		global $wpdb;
+
+		$table = $this->get_table();
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$wpdb->query(
+			$wpdb->prepare(
+				// $table is internally controlled.
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"UPDATE {$table} SET orders_count = GREATEST(0, orders_count - 1), revenue_total = GREATEST(0, revenue_total - %f) WHERE id = %d",
+				(float) $revenue,
+				(int) $rule_id
+			)
+		);
+
+		$this->flush_cache();
+	}
+
+	/**
+	 * Get aggregated usage totals across all rules (for the dashboard).
+	 *
+	 * @return array{orders:int,revenue:float} Summed order count and base-price revenue.
+	 */
+	public function get_totals() {
+		global $wpdb;
+
+		$table = $this->get_table();
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$row = $wpdb->get_row( "SELECT COALESCE(SUM(orders_count),0) AS orders, COALESCE(SUM(revenue_total),0) AS revenue FROM {$table}" );
+
+		return array(
+			'orders'  => $row ? (int) $row->orders : 0,
+			'revenue' => $row ? (float) $row->revenue : 0.0,
+		);
+	}
+
+	/**
 	 * Get active rules for cart processing.
 	 *
 	 * @return array Array of Rule objects.

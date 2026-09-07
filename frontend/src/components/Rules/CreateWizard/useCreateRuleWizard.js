@@ -73,6 +73,13 @@ export function useCreateRuleWizard() {
 
   const goPrev = useCallback(() => setStep((s) => Math.max(1, s - 1)), []);
 
+  // Allow jumping straight back to any earlier step (e.g. from the stepper).
+  // Going backward never needs validation; forward jumps are ignored.
+  const goToStep = useCallback(
+    (target) => setStep((s) => (target < s ? Math.max(1, target) : s)),
+    [],
+  );
+
   const submitRule = useCallback(
     async (status) => {
       if (!validate()) return;
@@ -121,6 +128,7 @@ export function useCreateRuleWizard() {
     errors,
     goNext,
     goPrev,
+    goToStep,
     submitRule,
     isPending: createRule.isPending,
   };

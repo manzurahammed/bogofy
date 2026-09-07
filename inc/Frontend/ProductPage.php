@@ -62,7 +62,7 @@ class ProductPage {
 	}
 
 	/**
-	 * Display BOGO badge on shop loop items.
+	 * Display BOGO strip on shop loop items (image footer band).
 	 *
 	 * @return void
 	 */
@@ -83,12 +83,16 @@ class ProductPage {
 			return;
 		}
 
-		// Display a simple badge.
-		echo '<span class="bogo-badge">' . esc_html__( 'BOGO Deal!', 'bogofy' ) . '</span>';
+		// Use the first applicable rule for the promotional strip label.
+		printf(
+			'<div class="bogo-loop-strip">%s<span>%s</span></div>',
+			self::gift_icon_svg( 14 ), // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static inline SVG.
+			esc_html( $this->get_badge_label( $rules[0] ) )
+		);
 	}
 
 	/**
-	 * Render product message for a rule.
+	 * Render the product-page notice box for a rule.
 	 *
 	 * @param Rule $rule Rule object.
 	 *
@@ -102,13 +106,49 @@ class ProductPage {
 		}
 
 		printf(
-			'<div class="bogo-offer-message">
-				<span class="bogo-offer-icon">%s</span>
-				<span class="bogo-offer-text">%s</span>
-			</div>',
-			'🎁',
-			wp_kses_post( $message )
+			'<div class="bogo-offer-message"><span class="bogo-offer-icon">%s</span><span class="bogo-offer-body"><span class="bogo-offer-title">%s</span><span class="bogo-offer-sub">%s</span></span></div>',
+			self::gift_icon_svg( 20 ), // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static inline SVG.
+			wp_kses_post( $message ),
+			esc_html__( 'Free item added automatically at checkout', 'bogofy' )
 		);
+	}
+
+	/**
+	 * Short promotional label for the shop-loop strip.
+	 *
+	 * @param Rule $rule Rule object.
+	 *
+	 * @return string
+	 */
+	private function get_badge_label( Rule $rule ) {
+		if ( Rule::TYPE_BUY_X_GET_X_DISCOUNTED === $rule->rule_type ) {
+			return sprintf(
+				/* translators: 1: buy quantity, 2: free quantity, 3: discount percentage */
+				__( 'Buy %1$d Get %2$d at %3$d%% off', 'bogofy' ),
+				$rule->buy_quantity,
+				$rule->free_quantity,
+				$rule->discount_value
+			);
+		}
+
+		return sprintf(
+			/* translators: 1: buy quantity, 2: free quantity */
+			__( 'Buy %1$d Get %2$d Free', 'bogofy' ),
+			$rule->buy_quantity,
+			$rule->free_quantity
+		);
+	}
+
+	/**
+	 * Inline gift icon SVG.
+	 *
+	 * @param int $size Icon size in pixels.
+	 *
+	 * @return string
+	 */
+	public static function gift_icon_svg( $size = 20 ) {
+		$size = (int) $size;
+		return '<svg width="' . $size . '" height="' . $size . '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 12 20 22 4 22 4 12"></polyline><rect x="2" y="7" width="20" height="5"></rect><line x1="12" y1="22" x2="12" y2="7"></line><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg>';
 	}
 
 	/**

@@ -63,7 +63,7 @@ export function Notification() {
   if (notifications.length === 0) return null;
 
   return (
-    <div className="bogo-fixed bogo-top-4 bogo-right-4 bogo-z-50 bogo-space-y-2">
+    <div className="bogo-notifications">
       {notifications.map((notification) => (
         <div
           key={notification.id}

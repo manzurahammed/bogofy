@@ -1,0 +1,149 @@
+/**
+ * Bogofy storefront styles.
+ *
+ * Only styles the BOGO messaging/colour accents — the surrounding WooCommerce
+ * layout (product summary, loop items) is left untouched.
+ */
+.bogofy-scope,
+.woocommerce {
+  --bogofy-green: #10b981;
+  --bogofy-green-strong: #059669;
+  --bogofy-ink: #0c6b46;
+  --bogofy-soft: #ecfdf5;
+  --bogofy-border: #a7f3d0;
+  --bogofy-muted: #6b7280;
+}
+
+/* ── Single product notice ─────────────────────────────── */
+.bogo-offer-message {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 14px 0;
+  padding: 14px 16px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-left: 4px solid #10b981;
+  border-radius: 12px;
+}
+
+.bogo-offer-icon {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  background: #fff;
+  border: 1px solid #a7f3d0;
+  border-radius: 10px;
+  color: #059669;
+}
+
+.bogo-offer-icon svg {
+  display: block;
+}
+
+.bogo-offer-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bogo-offer-title {
+  color: #0c6b46;
+  font-weight: 700;
+  font-size: 15px;
+  line-height: 1.3;
+}
+
+.bogo-offer-sub {
+  color: #6b7280;
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+/* ── Shop loop strip (image footer band) ───────────────── */
+.bogo-loop-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 0 0 10px;
+  padding: 7px 10px;
+  background: #10b981;
+  color: #062e22;
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.bogo-loop-strip svg {
+  display: block;
+}
+
+/* ── Block cart free-gift row (woocommerce/cart) ───────── */
+.wc-block-cart-items__row.bogo-cart-item {
+  background: linear-gradient(
+    90deg,
+    rgba(16, 185, 129, 0.1),
+    rgba(16, 185, 129, 0.02)
+  );
+}
+
+.wc-block-cart-items__row.bogo-cart-item > td:first-child,
+.wc-block-cart-item.bogo-cart-item {
+  box-shadow: inset 3px 0 0 #10b981;
+}
+
+/* FREE badge next to the product title. */
+.bogo-cart-item .wc-block-components-product-name::after {
+  content: "FREE";
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px 2px 22px;
+  border-radius: 999px;
+  background: #10b981
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23062e22' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 12 20 22 4 22 4 12'/%3E%3Crect x='2' y='7' width='20' height='5'/%3E%3Cline x1='12' y1='22' x2='12' y2='7'/%3E%3Cpath d='M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z'/%3E%3Cpath d='M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z'/%3E%3C/svg%3E")
+    no-repeat 6px center;
+  background-size: 12px 12px;
+  color: #062e22;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+/* Free price: green current price, hide the native "Save" badge. */
+.bogo-cart-item .wc-block-components-product-price__value {
+  color: #059669;
+  font-weight: 700;
+}
+
+.bogo-cart-item .wc-block-components-sale-badge {
+  display: none;
+}
+
+/* Gift note lines (from item_data). */
+.bogo-cart-item .wc-block-components-product-details {
+  margin-top: 6px;
+}
+
+.bogo-cart-item .wc-block-components-product-details__value {
+  color: #6b7280;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.bogo-cart-item .wc-block-components-product-details__value strong {
+  color: #0c6b46;
+}
+
+/* "Bogo savings" totals row. */
+.bogo-savings-row .wc-block-components-totals-item__label,
+.bogo-savings-row__value {
+  color: #059669;
+  font-weight: 700;
+}

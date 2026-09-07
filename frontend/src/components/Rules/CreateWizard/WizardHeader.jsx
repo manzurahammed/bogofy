@@ -2,7 +2,7 @@ import React from "react";
 import { __ } from "@wordpress/i18n";
 import Stepper from "./Stepper";
 
-function WizardHeader({ step }) {
+function WizardHeader({ step, onStepClick }) {
   return (
     <div
       className="bogo-row"
@@ -23,7 +23,7 @@ function WizardHeader({ step }) {
           )}
         </div>
       </div>
-      <Stepper active={step} />
+      <Stepper active={step} onStepClick={onStepClick} />
     </div>
   );
 }

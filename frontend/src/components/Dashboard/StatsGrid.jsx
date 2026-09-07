@@ -1,6 +1,8 @@
 import React, { useMemo } from "react";
 import { __, sprintf } from "@wordpress/i18n";
 
+const currencySymbol = window.bogoAdmin?.currencySymbol || "$";
+
 function buildKpis(stats) {
   return [
     /* translators: %d: total number of rules */
@@ -17,7 +19,7 @@ function buildKpis(stats) {
     {
       l: __("Discount given", "bogofy"),
       v: stats?.total_discount
-        ? `$${Number(stats.total_discount).toFixed(0)}`
+        ? `${currencySymbol}${Number(stats.total_discount).toLocaleString(undefined, { maximumFractionDigits: 0 })}`
         : "—",
       d: __("Total discounts issued", "bogofy"),
     },

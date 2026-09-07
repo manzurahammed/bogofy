@@ -267,6 +267,7 @@ class RestApi {
 		$rules = $this->repository->get_all( $args );
 		$total = $this->repository->get_count( $args );
 
+		// orders_count / revenue are read straight off each rule row.
 		$data = array();
 		foreach ( $rules as $rule ) {
 			$data[] = $rule->to_array();
@@ -540,18 +541,15 @@ class RestApi {
 		$active_rules = $this->repository->get_count( array( 'status' => Rule::STATUS_ACTIVE ) );
 		$total_rules  = $this->repository->get_count();
 
-		// Get orders with BOGO items (placeholder - would need order meta implementation).
-		$bogo_orders = 0;
-
-		// Get total discount value (placeholder - would need order meta implementation).
-		$total_discount = 0;
+		// Usage totals rolled up from the per-rule counters maintained on order completion.
+		$totals = $this->repository->get_totals();
 
 		return new WP_REST_Response(
 			array(
 				'active_rules'   => $active_rules,
 				'total_rules'    => $total_rules,
-				'bogo_orders'    => $bogo_orders,
-				'total_discount' => $total_discount,
+				'bogo_orders'    => $totals['orders'],
+				'total_discount' => $totals['revenue'],
 			),
 			200
 		);

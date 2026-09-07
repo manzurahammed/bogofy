@@ -18,6 +18,7 @@ function CreateRulePage() {
     errors,
     goNext,
     goPrev,
+    goToStep,
     submitRule,
     isPending,
   } = wizard;
@@ -34,7 +35,7 @@ function CreateRulePage() {
         />
       }
     >
-      <WizardHeader step={step} />
+      <WizardHeader step={step} onStepClick={goToStep} />
 
       {errors.title && step === 1 && (
         <div
@@ -55,7 +56,7 @@ function CreateRulePage() {
       <div className="bogo-wizard">
         <div className="bogo-col" style={{ gap: 16 }}>
           <WizardSteps wizard={wizard} />
-          {step < 3 && (
+          {step < 4 && (
             <WizardNav step={step} onPrev={goPrev} onNext={goNext} />
           )}
         </div>

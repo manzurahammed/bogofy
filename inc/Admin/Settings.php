@@ -32,6 +32,7 @@ class Settings {
 		'cart_notice_text'           => 'Congratulations! You got a free item with your purchase.',
 		'show_product_page_messages' => true,
 		'show_shop_badges'           => true,
+		'show_cart_gift'             => true,
 		'stack_with_coupons'         => true,
 	);
 
@@ -110,6 +111,10 @@ class Settings {
 
 		if ( isset( $settings['show_shop_badges'] ) ) {
 			$sanitized['show_shop_badges'] = (bool) $settings['show_shop_badges'];
+		}
+
+		if ( isset( $settings['show_cart_gift'] ) ) {
+			$sanitized['show_cart_gift'] = (bool) $settings['show_cart_gift'];
 		}
 
 		if ( isset( $settings['stack_with_coupons'] ) ) {
