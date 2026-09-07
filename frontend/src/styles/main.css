@@ -2,6 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Toast notifications — kept clear of (and above) the WordPress admin bar. */
+.bogo-notifications {
+  position: fixed;
+  top: calc(var(--wp-admin--admin-bar--height, 32px) + 16px);
+  right: 16px;
+  z-index: 99990;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 24rem;
+}
+
+@media screen and (max-width: 782px) {
+  .bogo-notifications {
+    top: calc(var(--wp-admin--admin-bar--height, 46px) + 16px);
+  }
+}
+
 /* ── BOGO Design System ── */
 .bogo-admin {
   --bg: #fafaf9;

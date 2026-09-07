@@ -61,6 +61,18 @@ function StorefrontBadgesSection({ formData, onToggle, onChange }) {
           />
         </SettingsRow>
         <SettingsRow
+          name={__("Show gift details in cart", "bogofy")}
+          desc={__(
+            "Style free gift rows with a badge, gift note and savings row. When off, the default cart design is used.",
+            "bogofy",
+          )}
+        >
+          <ToggleButton
+            on={formData.show_cart_gift}
+            onClick={() => onToggle("show_cart_gift")}
+          />
+        </SettingsRow>
+        <SettingsRow
           name={__("Free item label", "bogofy")}
           desc={__("Label shown next to free items in cart.", "bogofy")}
         >

@@ -12,12 +12,19 @@ use Bogofy\Admin\Settings;
 /**
  * Class Assets
  *
- * Enqueues the storefront stylesheet used for BOGO messaging.
+ * Enqueues the storefront stylesheet and the block cart/checkout script.
  */
 class Assets {
 
 	/**
-	 * Enqueue the storefront stylesheet.
+	 * Handle for the block cart/checkout script.
+	 *
+	 * @var string
+	 */
+	const CART_HANDLE = 'bogofy-cart-blocks';
+
+	/**
+	 * Enqueue the storefront stylesheet and, on the cart/checkout, the block script.
 	 *
 	 * @return void
 	 */
@@ -32,6 +39,22 @@ class Assets {
 			array(),
 			$this->version( 'assets/css/storefront.css' )
 		);
+
+		// Block cart/checkout integration: only where those blocks render and when
+		// the cart gift styling is enabled.
+		if (
+			Settings::get( 'show_cart_gift' )
+			&& function_exists( 'is_cart' )
+			&& ( is_cart() || is_checkout() )
+		) {
+			wp_enqueue_script(
+				self::CART_HANDLE,
+				BOGO_PLUGIN_URL . 'assets/build/cart-blocks.js',
+				array( 'wc-blocks-checkout', 'wp-plugins', 'wp-element', 'wp-i18n' ),
+				$this->version( 'assets/build/cart-blocks.js' ),
+				true
+			);
+		}
 	}
 
 	/**

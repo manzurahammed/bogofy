@@ -22,12 +22,18 @@ function SettingsPage() {
       "Congratulations! You got a free item with your purchase.",
     show_product_page_messages: true,
     show_shop_badges: true,
+    show_cart_gift: true,
     stack_with_coupons: true,
   });
 
   useEffect(() => {
     if (settings) setFormData(settings);
   }, [settings]);
+
+  // Only surface the Discard / Save actions when there are unsaved changes.
+  const isDirty =
+    !!settings &&
+    Object.keys(formData).some((key) => formData[key] !== settings[key]);
 
   const handleToggle = (name) => {
     setFormData((prev) => ({ ...prev, [name]: !prev[name] }));
@@ -74,26 +80,28 @@ function SettingsPage() {
     <AppShell
       crumb={["Bogofy", __("Settings", "bogofy")]}
       actions={
-        <>
-          <button
-            type="button"
-            className="bogo-button bogo-button--sm bogo-button--ghost"
-            onClick={() => setFormData(settings || formData)}
-          >
-            {__("Discard", "bogofy")}
-          </button>
-          <button
-            type="button"
-            className="bogo-button bogo-button--primary bogo-button--sm"
-            onClick={handleSubmit}
-            disabled={updateSettings.isPending}
-          >
-            <CheckIcon size={14} />
-            {updateSettings.isPending
-              ? __("Saving…", "bogofy")
-              : __("Save changes", "bogofy")}
-          </button>
-        </>
+        isDirty ? (
+          <>
+            <button
+              type="button"
+              className="bogo-button bogo-button--sm bogo-button--ghost"
+              onClick={() => setFormData(settings || formData)}
+            >
+              {__("Discard", "bogofy")}
+            </button>
+            <button
+              type="button"
+              className="bogo-button bogo-button--primary bogo-button--sm"
+              onClick={handleSubmit}
+              disabled={updateSettings.isPending}
+            >
+              <CheckIcon size={14} />
+              {updateSettings.isPending
+                ? __("Saving…", "bogofy")
+                : __("Save changes", "bogofy")}
+            </button>
+          </>
+        ) : null
       }
     >
       <div style={{ maxWidth: 760 }}>

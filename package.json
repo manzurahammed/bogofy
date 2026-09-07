@@ -5,7 +5,8 @@
   "private": true,
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && vite build --config vite.cart.config.js",
+    "build:cart": "vite build --config vite.cart.config.js",
     "preview": "vite preview",
     "test": "jest",
     "test:watch": "jest --watch",
