@@ -79,9 +79,6 @@ class Plugin {
 	/**
 	 * Register all plugin services in the container.
 	 *
-	 * This is the single place where the object graph is composed. Each service
-	 * is a shared instance resolved lazily on first use.
-	 *
 	 * @return void
 	 */
 	private function register_services() {

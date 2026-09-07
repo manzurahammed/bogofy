@@ -9,11 +9,6 @@ namespace Bogofy\Core;
 
 /**
  * Class Container
- *
- * A tiny dependency-injection container. Services are registered as factory
- * closures and resolved lazily as shared (singleton) instances, so the wiring
- * of the plugin lives in one place instead of being scattered across `new`
- * calls in each class.
  */
 class Container {
 

@@ -5,29 +5,29 @@ const currencySymbol = window.bogoAdmin?.currencySymbol || "$";
 
 function buildKpis(stats) {
   return [
-    /* translators: %d: total number of rules */
     {
-      l: __("Active rules", "bogofy"),
-      v: stats?.active_rules ?? "—",
-      d: sprintf(__("%d total rules", "bogofy"), stats?.total_rules ?? 0),
+      label: __("Active rules", "bogofy"),
+      value: stats?.active_rules ?? "—",
+      /* translators: %d: total number of rules */
+      delta: sprintf(__("%d total rules", "bogofy"), stats?.total_rules ?? 0),
     },
     {
-      l: __("Bogofy orders", "bogofy"),
-      v: stats?.bogo_orders ?? "—",
-      d: __("Orders with Bogofy applied", "bogofy"),
+      label: __("Bogofy orders", "bogofy"),
+      value: stats?.bogo_orders ?? "—",
+      delta: __("Orders with Bogofy applied", "bogofy"),
     },
     {
-      l: __("Discount given", "bogofy"),
-      v: stats?.total_discount
+      label: __("Discount given", "bogofy"),
+      value: stats?.total_discount
         ? `${currencySymbol}${Number(stats.total_discount).toLocaleString(undefined, { maximumFractionDigits: 0 })}`
         : "—",
-      d: __("Total discounts issued", "bogofy"),
+      delta: __("Total discounts issued", "bogofy"),
     },
-    /* translators: %d: number of currently active rules */
     {
-      l: __("Total rules", "bogofy"),
-      v: stats?.total_rules ?? "—",
-      d: sprintf(__("%d currently active", "bogofy"), stats?.active_rules ?? 0),
+      label: __("Total rules", "bogofy"),
+      value: stats?.total_rules ?? "—",
+      /* translators: %d: number of currently active rules */
+      delta: sprintf(__("%d currently active", "bogofy"), stats?.active_rules ?? 0),
     },
   ];
 }
@@ -37,11 +37,11 @@ function StatsGrid({ stats }) {
 
   return (
     <div className="bogo-kpi-grid">
-      {kpis.map((k, i) => (
-        <div key={i} className="bogo-kpi">
-          <div className="bogo-kpi__label">{k.l}</div>
-          <div className="bogo-kpi__value">{k.v}</div>
-          <div className="bogo-kpi__delta">{k.d}</div>
+      {kpis.map((kpi) => (
+        <div key={kpi.label} className="bogo-kpi">
+          <div className="bogo-kpi__label">{kpi.label}</div>
+          <div className="bogo-kpi__value">{kpi.value}</div>
+          <div className="bogo-kpi__delta">{kpi.delta}</div>
         </div>
       ))}
     </div>

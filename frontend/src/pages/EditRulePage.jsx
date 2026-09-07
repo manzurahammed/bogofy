@@ -1,12 +1,12 @@
 import React from "react";
 import PropTypes from "prop-types";
 import { __ } from "@wordpress/i18n";
-import { useRule, useUpdateRule } from "../hooks/useRules";
-import { useNotification } from "../hooks/useNotification";
-import { RuleForm } from "../components/Rules/RuleForm";
-import { PageLoader } from "../components/Shared/Loader";
+import { useRule, useUpdateRule } from "@/hooks/useRules";
+import { useNotification } from "@/hooks/useNotification";
+import { RuleForm } from "@/components/Rules/RuleForm";
+import { PageLoader } from "@/components/Shared/Loader";
 import AppShell from "../components/Layout/AppShell";
-import { CheckIcon } from "../components/Icons";
+import { CheckIcon } from "@/components/Icons";
 
 function EditRulePage({ ruleId }) {
   const { data: rule, isLoading, error: fetchError } = useRule(ruleId);

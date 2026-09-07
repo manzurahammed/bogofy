@@ -50,10 +50,6 @@ class DiscountApplier implements DiscountApplierInterface {
 	/**
 	 * Reconcile the free item lines for a rule (add / update / remove).
 	 *
-	 * Handles the rule types that grant an additional free item. The "discounted"
-	 * rule type does not add a line; it is priced during totals calculation via
-	 * {@see DiscountApplier::apply_discounted()}.
-	 *
 	 * @param \WC_Cart $cart           Cart object.
 	 * @param Rule     $rule           Rule object.
 	 * @param array    $eligible_items Eligible cart items.
@@ -83,17 +79,19 @@ class DiscountApplier implements DiscountApplierInterface {
 	 * @param \WC_Cart $cart           Cart object.
 	 * @param Rule     $rule           Rule object.
 	 * @param array    $eligible_items Eligible cart items.
+	 * @param array    $claimed        Cart item keys already discounted by a
+	 *                                 higher-priority rule.
 	 *
-	 * @return void
+	 * @return array The updated list of claimed cart item keys.
 	 */
-	public function apply_discounted( $cart, Rule $rule, $eligible_items ) {
+	public function apply_discounted( $cart, Rule $rule, $eligible_items, array $claimed = array() ) {
 		$free_quantity = $this->eligibility_checker->calculate_free_quantity( $eligible_items, $rule );
 
 		if ( $free_quantity <= 0 ) {
-			return;
+			return $claimed;
 		}
 
-		$this->apply_discount_to_cheapest( $cart, $rule, $eligible_items, $free_quantity );
+		return $this->apply_discount_to_cheapest( $cart, $rule, $eligible_items, $free_quantity, $claimed );
 	}
 
 	/**
@@ -128,10 +126,6 @@ class DiscountApplier implements DiscountApplierInterface {
 	/**
 	 * Add free copies of the cheapest eligible products.
 	 *
-	 * Used for "Buy X Get X Free" rules that apply to all products or categories,
-	 * where no specific free product is configured. A free duplicate of each eligible
-	 * product is added to the cart (cheapest first) until the free quantity is met.
-	 *
 	 * @param \WC_Cart $cart           Cart object.
 	 * @param Rule     $rule           Rule object.
 	 * @param array    $eligible_items Eligible cart items.
@@ -157,9 +151,7 @@ class DiscountApplier implements DiscountApplierInterface {
 			}
 
 			$product_id = $cart_item['variation_id'] ? $cart_item['variation_id'] : $cart_item['product_id'];
-
-			// Never grant more free units of a line than were purchased.
-			$free_qty = min( (int) $cart_item['quantity'], $remaining );
+			$free_qty   = min( (int) $cart_item['quantity'], $remaining );
 
 			if ( $free_qty <= 0 ) {
 				continue;
@@ -170,14 +162,11 @@ class DiscountApplier implements DiscountApplierInterface {
 			$remaining       -= $free_qty;
 		}
 
-		// Remove any previously-added free items for this rule that are no longer valid.
 		$this->free_item_manager->remove_rule_items_except( $cart, $rule->id, $free_added_ids );
 	}
 
 	/**
 	 * Reconcile the free item for a rule that grants a specific free product.
-	 *
-	 * Used by "Buy X Get Y Free" and "Buy from Category Get Free" rules.
 	 *
 	 * @param \WC_Cart $cart           Cart object.
 	 * @param Rule     $rule           Rule object.
@@ -193,70 +182,97 @@ class DiscountApplier implements DiscountApplierInterface {
 			return;
 		}
 
-		// Add the specified free product (first configured free product).
 		$free_product_id = (int) $rule->free_product_ids[0];
 		$this->free_item_manager->add_free_item( $cart, $free_product_id, $free_quantity, $rule );
-
-		// Drop any stale free lines for this rule (e.g. if the configured product changed).
 		$this->free_item_manager->remove_rule_items_except( $cart, $rule->id, array( $free_product_id ) );
 	}
 
 	/**
 	 * Apply discount to cheapest eligible items.
 	 *
+	 * Prices are calculated from each line's BOGO baseline (its effective,
+	 * sale-aware price), and lines already claimed by a higher-priority rule are
+	 * skipped so overlapping rules never overwrite each other.
+	 *
 	 * @param \WC_Cart $cart           Cart object.
 	 * @param Rule     $rule           Rule object.
 	 * @param array    $eligible_items Eligible cart items.
 	 * @param int      $discount_qty   Quantity to discount.
+	 * @param array    $claimed        Cart item keys already discounted.
 	 *
-	 * @return void
+	 * @return array The updated list of claimed cart item keys.
 	 */
-	private function apply_discount_to_cheapest( $cart, Rule $rule, $eligible_items, $discount_qty ) {
-		// Sort items by price (cheapest first).
+	private function apply_discount_to_cheapest( $cart, Rule $rule, $eligible_items, $discount_qty, array $claimed ) {
+		// Skip lines a higher-priority rule already claimed.
+		foreach ( array_keys( $eligible_items ) as $key ) {
+			if ( in_array( $key, $claimed, true ) ) {
+				unset( $eligible_items[ $key ] );
+			}
+		}
+
+		// Sort items by their baseline price (cheapest first).
 		uasort(
 			$eligible_items,
-			function ( $a, $b ) {
-				$price_a = $a['data']->get_price();
-				$price_b = $b['data']->get_price();
-				return $price_a <=> $price_b;
+			function ( $a, $b ) use ( $cart ) {
+				return $this->baseline( $cart, $a ) <=> $this->baseline( $cart, $b );
 			}
 		);
 
 		$remaining_discount = $discount_qty;
-		$discount_percent   = Rule::DISCOUNT_FREE === $rule->discount_type ? 100 : $rule->discount_value;
+
+		$discount_percent = (float) $rule->discount_value;
 
 		foreach ( $eligible_items as $cart_item_key => $cart_item ) {
 			if ( $remaining_discount <= 0 ) {
 				break;
 			}
 
-			$product        = $cart_item['data'];
-			$item_quantity  = $cart_item['quantity'];
-			$original_price = (float) $product->get_regular_price();
+			$product       = $cart_item['data'];
+			$item_quantity = $cart_item['quantity'];
+			$baseline      = $this->baseline( $cart, $cart_item );
 
-			// Calculate how many items to discount in this line.
 			$items_to_discount   = min( $item_quantity, $remaining_discount );
 			$remaining_discount -= $items_to_discount;
 
-			// Calculate discounted price.
-			$discount_amount  = ( $original_price * $discount_percent ) / 100;
-			$discounted_price = $original_price - $discount_amount;
+			$discount_amount  = ( $baseline * $discount_percent ) / 100;
+			$discounted_price = $baseline - $discount_amount;
 
-			// If discounting partial quantity, we need to split the line item.
+			// If discounting partial quantity, split via a weighted average price.
 			if ( $items_to_discount < $item_quantity ) {
-				// Calculate weighted average price.
 				$regular_qty = $item_quantity - $items_to_discount;
-				$total_price = ( $regular_qty * $original_price ) + ( $items_to_discount * $discounted_price );
-				$avg_price   = $total_price / $item_quantity;
-				$product->set_price( $avg_price );
+				$total_price = ( $regular_qty * $baseline ) + ( $items_to_discount * $discounted_price );
+				$product->set_price( $total_price / $item_quantity );
 			} else {
-				// All items in this line get discount.
 				$product->set_price( $discounted_price );
 			}
 
-			// Store discount info in cart item.
+			// Store discount info and claim the line.
 			$cart->cart_contents[ $cart_item_key ][ CartHandler::BOGO_DISCOUNT_KEY ] = $discount_amount * $items_to_discount;
 			$cart->cart_contents[ $cart_item_key ][ CartHandler::BOGO_RULE_KEY ]     = $rule->id;
+			$claimed[] = $cart_item_key;
 		}
+
+		return $claimed;
+	}
+
+	/**
+	 * The BOGO baseline (effective, sale-aware) price for a cart line.
+	 *
+	 * The totals hook resets every line to this baseline before discounting, so it
+	 * reflects the pre-promotion price even across repeated recalculations.
+	 *
+	 * @param \WC_Cart $cart      Cart object.
+	 * @param array    $cart_item Cart item.
+	 *
+	 * @return float
+	 */
+	private function baseline( $cart, $cart_item ) {
+		$key = isset( $cart_item['key'] ) ? $cart_item['key'] : null;
+
+		if ( $key && isset( $cart->cart_contents[ $key ][ CartHandler::BOGO_BASELINE_KEY ] ) ) {
+			return (float) $cart->cart_contents[ $key ][ CartHandler::BOGO_BASELINE_KEY ];
+		}
+
+		return (float) $cart_item['data']->get_price();
 	}
 }

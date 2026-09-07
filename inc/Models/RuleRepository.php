@@ -97,7 +97,6 @@ class RuleRepository {
 
 		$results = $wpdb->get_results(
 			$wpdb->prepare(
-				// $table, $where_clause, $orderby and $order are internally controlled / whitelisted above.
 				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				"SELECT * FROM {$table} WHERE {$where_clause} ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d",
 				$per_page,
@@ -416,7 +415,6 @@ class RuleRepository {
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$results = $wpdb->get_results(
 			$wpdb->prepare(
-				// $table is internally controlled.
 				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				"SELECT * FROM {$table}
 				WHERE status = %s

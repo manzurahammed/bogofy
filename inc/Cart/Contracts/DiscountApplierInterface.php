@@ -33,8 +33,10 @@ interface DiscountApplierInterface {
 	 * @param \WC_Cart $cart           Cart object.
 	 * @param Rule     $rule           Rule object.
 	 * @param array    $eligible_items Eligible cart items.
+	 * @param array    $claimed        Cart item keys already discounted by a
+	 *                                 higher-priority rule.
 	 *
-	 * @return void
+	 * @return array The updated list of claimed cart item keys.
 	 */
-	public function apply_discounted( $cart, Rule $rule, $eligible_items );
+	public function apply_discounted( $cart, Rule $rule, $eligible_items, array $claimed = array() );
 }

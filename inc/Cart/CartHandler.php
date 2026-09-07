@@ -42,6 +42,16 @@ class CartHandler {
 	const BOGO_DISCOUNT_KEY = '_bogo_discount';
 
 	/**
+	 * Cart item key for the BOGO baseline price.
+	 *
+	 * The line's effective (sale-aware) price before any BOGO promotion. All
+	 * promotions are calculated from this so recalculations never compound.
+	 *
+	 * @var string
+	 */
+	const BOGO_BASELINE_KEY = '_bogo_baseline';
+
+	/**
 	 * Rule repository.
 	 *
 	 * @var RuleRepository
@@ -99,14 +109,6 @@ class CartHandler {
 	/**
 	 * Reconcile BOGO free items in the cart.
 	 *
-	 * Adds, updates, or removes free item lines based on the currently eligible
-	 * cart contents. This runs on cart-mutation hooks (add to cart, remove, quantity
-	 * update) and when the cart is loaded from the session, so it never adds items
-	 * during totals calculation.
-	 *
-	 * Accepts (and ignores) any arguments so it can be attached directly to hooks
-	 * with differing signatures.
-	 *
 	 * @return void
 	 */
 	public function sync_free_items() {
@@ -130,11 +132,18 @@ class CartHandler {
 
 		$rules = $this->repository->get_active_rules();
 
-		if ( empty( $rules ) ) {
-			return;
-		}
-
 		$this->syncing = true;
+
+		// Reconcile existing BOGO lines against the active rules first, so gifts
+		// from rules that were deactivated, deleted, expired, or all removed are
+		// dropped even when there are no active rules left to process.
+		$active_rule_ids = array_map(
+			static function ( $rule ) {
+				return (int) $rule->id;
+			},
+			$rules
+		);
+		$this->free_item_manager->remove_items_for_inactive_rules( $cart, $active_rule_ids );
 
 		foreach ( $rules as $rule ) {
 			$eligible_items = $this->eligibility_checker->get_eligible_items( $cart, $rule );
@@ -153,10 +162,6 @@ class CartHandler {
 	/**
 	 * Apply BOGO prices during totals calculation.
 	 *
-	 * Only sets prices on items already in the cart. Free item lines are priced to
-	 * zero (or their configured discount) and "discounted" rule types reduce the
-	 * price of the cheapest eligible items. No items are added or removed here.
-	 *
 	 * @param \WC_Cart $cart Cart object.
 	 *
 	 * @return void
@@ -170,50 +175,68 @@ class CartHandler {
 			return;
 		}
 
-		$rules = $this->repository->get_active_rules();
-
-		if ( empty( $rules ) ) {
-			return;
-		}
-
-		// Index rules by ID for quick lookup when pricing free lines.
+		$rules    = $this->repository->get_active_rules();
 		$rule_map = array();
 		foreach ( $rules as $rule ) {
 			$rule_map[ (int) $rule->id ] = $rule;
 		}
 
-		// Price every free item line according to its owning rule.
+		// 1. Reset every line to its BOGO baseline (its effective, sale-aware price
+		// before any promotion) so repeated totals recalculations never compound.
+		foreach ( $cart->get_cart() as $cart_item_key => $cart_item ) {
+			if ( empty( $cart_item['data'] ) ) {
+				continue;
+			}
+
+			if ( ! isset( $cart->cart_contents[ $cart_item_key ][ self::BOGO_BASELINE_KEY ] ) ) {
+				$cart->cart_contents[ $cart_item_key ][ self::BOGO_BASELINE_KEY ] = (float) $cart_item['data']->get_price();
+			}
+
+			$cart_item['data']->set_price( (float) $cart->cart_contents[ $cart_item_key ][ self::BOGO_BASELINE_KEY ] );
+			unset( $cart->cart_contents[ $cart_item_key ][ self::BOGO_DISCOUNT_KEY ] );
+		}
+
+		// 2. Price the free gift lines from their baseline.
 		foreach ( $cart->get_cart() as $cart_item_key => $cart_item ) {
 			if ( ! self::is_bogo_item( $cart_item ) || ! isset( $cart_item[ self::BOGO_RULE_KEY ] ) ) {
 				continue;
 			}
 
 			$rule_id = (int) $cart_item[ self::BOGO_RULE_KEY ];
-
 			if ( isset( $rule_map[ $rule_id ] ) ) {
 				$this->free_item_manager->apply_free_price( $cart, $cart_item_key, $rule_map[ $rule_id ] );
 			}
 		}
 
-		// Apply "Buy X Get X Discounted" rules to existing eligible lines.
+		// 3. "Buy X Get X Discounted" rules: highest priority wins per line, so
+		// overlapping rules never overwrite each other. A single allocation pass
+		// processes rules in priority order and skips already-claimed lines.
+		$discounted_rules = array();
 		foreach ( $rules as $rule ) {
-			if ( \Bogofy\Models\Rule::TYPE_BUY_X_GET_X_DISCOUNTED !== $rule->rule_type ) {
-				continue;
+			if ( \Bogofy\Models\Rule::TYPE_BUY_X_GET_X_DISCOUNTED === $rule->rule_type ) {
+				$discounted_rules[] = $rule;
 			}
+		}
 
+		usort(
+			$discounted_rules,
+			static function ( $a, $b ) {
+				return (int) $a->priority <=> (int) $b->priority;
+			}
+		);
+
+		$claimed = array();
+		foreach ( $discounted_rules as $rule ) {
 			$eligible_items = $this->eligibility_checker->get_eligible_items( $cart, $rule );
 
 			if ( ! empty( $eligible_items ) ) {
-				$this->discount_applier->apply_discounted( $cart, $rule, $eligible_items );
+				$claimed = $this->discount_applier->apply_discounted( $cart, $rule, $eligible_items, $claimed );
 			}
 		}
 	}
 
 	/**
 	 * Handle add to cart event.
-	 *
-	 * Hooked to `woocommerce_add_to_cart`; the event arguments are not needed
-	 * because the free items are re-synced from the whole cart.
 	 *
 	 * @return void
 	 */

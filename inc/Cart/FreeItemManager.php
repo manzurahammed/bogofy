@@ -41,14 +41,13 @@ class FreeItemManager implements FreeItemManagerInterface {
 		$existing_key = $this->find_bogo_item( $cart, $product_id, $rule->id );
 
 		if ( $existing_key ) {
-			// Update quantity if different.
+			// Update quantity if different. Pricing happens later in the totals
+			// hook so the BOGO baseline is captured from the natural price first.
 			$current_qty = $cart->cart_contents[ $existing_key ]['quantity'];
 			if ( $current_qty !== $quantity ) {
 				$cart->cart_contents[ $existing_key ]['quantity'] = $quantity;
 			}
 
-			// Update price to free/discounted.
-			$this->apply_free_price( $cart, $existing_key, $rule );
 			return $existing_key;
 		}
 
@@ -76,10 +75,8 @@ class FreeItemManager implements FreeItemManagerInterface {
 			$cart_item_data
 		);
 
-		if ( $cart_item_key ) {
-			$this->apply_free_price( $cart, $cart_item_key, $rule );
-		}
-
+		// Pricing is applied in the totals hook (apply_bogo_prices) so the BOGO
+		// baseline is captured from the natural price first.
 		return $cart_item_key;
 	}
 
@@ -112,9 +109,6 @@ class FreeItemManager implements FreeItemManagerInterface {
 
 	/**
 	 * Remove BOGO items for a rule except for the given product IDs.
-	 *
-	 * Keeps free items whose product is still being granted and removes the rest,
-	 * so stale free lines are cleaned up when the eligible products change.
 	 *
 	 * @param \WC_Cart $cart             Cart object.
 	 * @param int      $rule_id          Rule ID.
@@ -183,6 +177,36 @@ class FreeItemManager implements FreeItemManagerInterface {
 	}
 
 	/**
+	 * Remove BOGO free lines whose owning rule is no longer active.
+	 *
+	 * Handles rules that were deactivated, deleted, expired, or removed entirely
+	 * (in which case $active_rule_ids is empty and every BOGO line is dropped).
+	 *
+	 * @param \WC_Cart $cart            Cart object.
+	 * @param int[]    $active_rule_ids IDs of the currently active rules.
+	 *
+	 * @return void
+	 */
+	public function remove_items_for_inactive_rules( $cart, array $active_rule_ids ) {
+		$active_rule_ids = array_map( 'intval', $active_rule_ids );
+		$items_to_remove = array();
+
+		foreach ( $cart->get_cart() as $cart_item_key => $cart_item ) {
+			if (
+				CartHandler::is_bogo_item( $cart_item ) &&
+				isset( $cart_item[ CartHandler::BOGO_RULE_KEY ] ) &&
+				! in_array( (int) $cart_item[ CartHandler::BOGO_RULE_KEY ], $active_rule_ids, true )
+			) {
+				$items_to_remove[] = $cart_item_key;
+			}
+		}
+
+		foreach ( $items_to_remove as $key ) {
+			$cart->remove_cart_item( $key );
+		}
+	}
+
+	/**
 	 * Generate unique BOGO cart item key.
 	 *
 	 * @param int $product_id Product ID.
@@ -234,16 +258,20 @@ class FreeItemManager implements FreeItemManagerInterface {
 			return;
 		}
 
-		$product        = $cart->cart_contents[ $cart_item_key ]['data'];
-		$original_price = (float) $product->get_regular_price();
+		$item = $cart->cart_contents[ $cart_item_key ];
+
+		// Discount from the BOGO baseline (the customer's effective price) so an
+		// existing sale price is respected and "You saved" is accurate.
+		$baseline = isset( $item[ CartHandler::BOGO_BASELINE_KEY ] )
+			? (float) $item[ CartHandler::BOGO_BASELINE_KEY ]
+			: (float) $item['data']->get_price();
 
 		if ( Rule::DISCOUNT_FREE === $rule->discount_type ) {
-			$product->set_price( 0 );
-			$cart->cart_contents[ $cart_item_key ][ CartHandler::BOGO_DISCOUNT_KEY ] = $original_price;
+			$item['data']->set_price( 0 );
+			$cart->cart_contents[ $cart_item_key ][ CartHandler::BOGO_DISCOUNT_KEY ] = $baseline;
 		} else {
-			$discount_amount = ( $original_price * $rule->discount_value ) / 100;
-			$new_price       = $original_price - $discount_amount;
-			$product->set_price( $new_price );
+			$discount_amount = ( $baseline * $rule->discount_value ) / 100;
+			$item['data']->set_price( $baseline - $discount_amount );
 			$cart->cart_contents[ $cart_item_key ][ CartHandler::BOGO_DISCOUNT_KEY ] = $discount_amount;
 		}
 	}

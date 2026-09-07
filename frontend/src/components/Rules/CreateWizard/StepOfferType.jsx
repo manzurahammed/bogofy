@@ -21,7 +21,15 @@ function StepOfferType({ formData, setFormData }) {
           <div
             key={t.value}
             className={`bogo-type-card${formData.rule_type === t.value ? " bogo-type-card--selected" : ""}`}
-            onClick={() => setFormData((p) => ({ ...p, rule_type: t.value }))}
+            onClick={() =>
+              setFormData((p) => ({
+                ...p,
+                rule_type: t.value,
+                // Discounted offers use a percentage; the rest give a free item.
+                discount_type:
+                  t.value === "buy_x_get_x_discounted" ? "percentage" : "free",
+              }))
+            }
           >
             <div className="bogo-type-card__visual">
               <div className="bogo-pkg">

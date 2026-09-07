@@ -12,22 +12,11 @@ use Bogofy\Models\RuleRepository;
 
 /**
  * Class OrderTracker
- *
- * Stamps the owning rule (and its base price) onto each BOGO order line item at
- * checkout, then folds the base-price revenue into each rule's running totals
- * once the order is completed (and rolls it back if it later leaves completed).
- *
- * Reading from the order line items — rather than the ephemeral cart — means the
- * data is durable: it survives the checkout→completion gap, manual status
- * changes, and can be recomputed/backfilled from the order at any time.
  */
 class OrderTracker {
 
 	/**
 	 * Order-item meta key holding the owning rule ID.
-	 *
-	 * Shares the value ('_bogo_rule_id') with the cart-item key so the two stay
-	 * in sync.
 	 *
 	 * @var string
 	 */
@@ -66,10 +55,6 @@ class OrderTracker {
 	/**
 	 * Stamp the owning rule and base price onto a BOGO order line item.
 	 *
-	 * Hooked to `woocommerce_checkout_create_order_line_item`. The base price is
-	 * the product's regular price, so it is unaffected by the discounted price the
-	 * BOGO engine sets during totals calculation.
-	 *
 	 * @param \WC_Order_Item_Product $item          Order line item.
 	 * @param string                 $cart_item_key Cart item key.
 	 * @param array                  $values        Cart item data.
@@ -93,10 +78,6 @@ class OrderTracker {
 
 	/**
 	 * Record or roll back rule stats as the order status changes.
-	 *
-	 * Hooked to `woocommerce_order_status_changed`. Stats are recorded only for
-	 * completed orders and removed if a completed order later leaves that status
-	 * (e.g. refunded or cancelled).
 	 *
 	 * @param int       $order_id Order ID.
 	 * @param string    $from     Previous status.
