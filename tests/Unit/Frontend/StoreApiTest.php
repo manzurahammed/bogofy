@@ -93,6 +93,8 @@ namespace Bogofy\Tests\Unit\Frontend {
 		 */
 		public function test_cart_data_returns_raw_savings_and_currency() {
 			Monkey\Functions\when( 'wc_get_price_decimals' )->justReturn( 2 );
+			Monkey\Functions\when( 'wc_get_price_decimal_separator' )->justReturn( '.' );
+			Monkey\Functions\when( 'wc_get_price_thousand_separator' )->justReturn( ',' );
 			Monkey\Functions\when( 'get_woocommerce_currency' )->justReturn( 'USD' );
 			Monkey\Functions\when( 'get_woocommerce_currency_symbol' )->justReturn( '$' );
 			Monkey\Functions\when( 'get_option' )->alias(

@@ -219,7 +219,8 @@ class DiscountApplier implements DiscountApplierInterface {
 		);
 
 		$remaining_discount = $discount_qty;
-		$discount_percent   = Rule::DISCOUNT_FREE === $rule->discount_type ? 100 : $rule->discount_value;
+
+		$discount_percent = (float) $rule->discount_value;
 
 		foreach ( $eligible_items as $cart_item_key => $cart_item ) {
 			if ( $remaining_discount <= 0 ) {
