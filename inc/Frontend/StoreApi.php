@@ -11,12 +11,6 @@ use Bogofy\Cart\CartHandler;
 
 /**
  * Class StoreApi
- *
- * Exposes minimal, raw BOGO data to the block cart/checkout via the WooCommerce
- * Store API: a per-item `is_free` flag (to accent the row) and the total savings
- * as raw minor units + currency shape (for an informational "You saved" row).
- * No pre-rendered HTML is sent. The gift note lines are added separately via the
- * woocommerce_get_item_data filter, which the Store API also surfaces.
  */
 class StoreApi {
 
@@ -95,11 +89,13 @@ class StoreApi {
 		list( $prefix, $suffix ) = $this->currency_affixes();
 
 		return array(
-			'savings_minor'       => (int) round( $savings * ( 10 ** $decimals ) ),
-			'currency_code'       => get_woocommerce_currency(),
-			'currency_minor_unit' => $decimals,
-			'currency_prefix'     => $prefix,
-			'currency_suffix'     => $suffix,
+			'savings_minor'               => (int) round( $savings * ( 10 ** $decimals ) ),
+			'currency_code'               => get_woocommerce_currency(),
+			'currency_minor_unit'         => $decimals,
+			'currency_prefix'             => $prefix,
+			'currency_suffix'             => $suffix,
+			'currency_decimal_separator'  => wc_get_price_decimal_separator(),
+			'currency_thousand_separator' => wc_get_price_thousand_separator(),
 		);
 	}
 
@@ -110,28 +106,38 @@ class StoreApi {
 	 */
 	public function cart_schema() {
 		return array(
-			'savings_minor'       => array(
+			'savings_minor'               => array(
 				'description' => __( 'Total BOGO savings, in the currency minor unit.', 'bogofy' ),
 				'type'        => 'integer',
 				'readonly'    => true,
 			),
-			'currency_code'       => array(
+			'currency_code'               => array(
 				'description' => __( 'ISO currency code.', 'bogofy' ),
 				'type'        => 'string',
 				'readonly'    => true,
 			),
-			'currency_minor_unit' => array(
+			'currency_minor_unit'         => array(
 				'description' => __( 'Number of decimals in the currency.', 'bogofy' ),
 				'type'        => 'integer',
 				'readonly'    => true,
 			),
-			'currency_prefix'     => array(
+			'currency_prefix'             => array(
 				'description' => __( 'Text placed before the amount.', 'bogofy' ),
 				'type'        => 'string',
 				'readonly'    => true,
 			),
-			'currency_suffix'     => array(
+			'currency_suffix'             => array(
 				'description' => __( 'Text placed after the amount.', 'bogofy' ),
+				'type'        => 'string',
+				'readonly'    => true,
+			),
+			'currency_decimal_separator'  => array(
+				'description' => __( 'Decimal separator.', 'bogofy' ),
+				'type'        => 'string',
+				'readonly'    => true,
+			),
+			'currency_thousand_separator' => array(
+				'description' => __( 'Thousand separator.', 'bogofy' ),
 				'type'        => 'string',
 				'readonly'    => true,
 			),
@@ -178,12 +184,15 @@ class StoreApi {
 				continue;
 			}
 
-			$product = $cart_item['data'];
-			$regular = (float) $product->get_regular_price();
-			$current = (float) $product->get_price();
+			// Save against the BOGO baseline (the customer's effective price before
+			// the promotion), so an existing sale price isn't double-counted.
+			$baseline = isset( $cart_item[ CartHandler::BOGO_BASELINE_KEY ] )
+				? (float) $cart_item[ CartHandler::BOGO_BASELINE_KEY ]
+				: (float) $cart_item['data']->get_regular_price();
+			$current  = (float) $cart_item['data']->get_price();
 
-			if ( $regular > $current ) {
-				$savings += ( $regular - $current ) * (int) $cart_item['quantity'];
+			if ( $baseline > $current ) {
+				$savings += ( $baseline - $current ) * (int) $cart_item['quantity'];
 			}
 		}
 

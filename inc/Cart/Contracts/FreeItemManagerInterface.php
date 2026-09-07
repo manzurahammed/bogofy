@@ -59,6 +59,16 @@ interface FreeItemManagerInterface {
 	public function cleanup_orphaned_items( $cart );
 
 	/**
+	 * Remove BOGO free lines whose owning rule is no longer active.
+	 *
+	 * @param \WC_Cart $cart            Cart object.
+	 * @param int[]    $active_rule_ids IDs of the currently active rules.
+	 *
+	 * @return void
+	 */
+	public function remove_items_for_inactive_rules( $cart, array $active_rule_ids );
+
+	/**
 	 * Apply the free/discounted price to a cart item line.
 	 *
 	 * @param \WC_Cart $cart          Cart object.

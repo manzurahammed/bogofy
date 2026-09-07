@@ -4,7 +4,6 @@
   "description": "WooCommerce Buy One Get One (BOGO) discount plugin",
   "private": true,
   "scripts": {
-    "dev": "vite",
     "build": "vite build && vite build --mode cart",
     "build:cart": "vite build --mode cart",
     "preview": "vite preview",

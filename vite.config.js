@@ -54,11 +54,6 @@ const appConfig = {
       },
     },
   },
-  server: {
-    port: 3001,
-    strictPort: false,
-    cors: true,
-  },
   resolve: {
     alias: {
       ...srcAlias,

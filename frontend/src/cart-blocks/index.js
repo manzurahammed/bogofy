@@ -42,9 +42,19 @@ const formatSavings = (bogo) => {
     currency_minor_unit: unit = 2,
     currency_prefix: prefix = "",
     currency_suffix: suffix = "",
+    currency_decimal_separator: decimal = ".",
+    currency_thousand_separator: thousand = ",",
   } = bogo;
-  const amount = (minor / 10 ** unit).toFixed(unit);
-  return `${prefix}${amount}${suffix}`;
+
+  const factor = 10 ** unit;
+  const abs = Math.abs(minor);
+  const whole = String(Math.floor(abs / factor)).replace(
+    /\B(?=(\d{3})+(?!\d))/g,
+    thousand,
+  );
+  const fraction = unit > 0 ? decimal + String(abs % factor).padStart(unit, "0") : "";
+
+  return `${minor < 0 ? "-" : ""}${prefix}${whole}${fraction}${suffix}`;
 };
 
 registerCheckoutFilters("bogofy", {

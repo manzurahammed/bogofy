@@ -64,15 +64,10 @@ class Admin {
 
 		$manifest_path = BOGO_PLUGIN_DIR . 'assets/build/.vite/manifest.json';
 
-		// Check if we're in development mode.
-		if ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG && file_exists( BOGO_PLUGIN_DIR . 'frontend/src/main.jsx' ) ) {
-			// Development mode - load from Vite dev server.
-			$this->enqueue_dev_scripts();
-		} elseif ( file_exists( $manifest_path ) ) {
-			// Production mode - load built assets.
+		if ( file_exists( $manifest_path ) ) {
 			$this->enqueue_production_scripts( $manifest_path );
 		} else {
-			// Fallback - try to load without manifest.
+			// Fallback - try to load without a manifest.
 			$this->enqueue_fallback_scripts();
 		}
 
@@ -90,36 +85,6 @@ class Admin {
 					: '$',
 			)
 		);
-	}
-
-	/**
-	 * Enqueue development scripts from Vite dev server.
-	 *
-	 * @return void
-	 */
-	private function enqueue_dev_scripts() {
-		// Vite client for HMR.
-		wp_enqueue_script(
-			'vite-client',
-			'http://localhost:3000/@vite/client',
-			array(),
-			null, // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion
-			true
-		);
-
-		// Main React app.
-		wp_enqueue_script(
-			'bogo-admin',
-			'http://localhost:3000/src/main.jsx',
-			array( 'vite-client', 'wp-i18n' ),
-			null, // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion
-			true
-		);
-
-		$this->set_translations();
-
-		// Add type="module" to script tags.
-		add_filter( 'script_loader_tag', array( $this, 'add_module_type' ), 10, 3 );
 	}
 
 	/**
@@ -240,7 +205,7 @@ class Admin {
 	 * @return string
 	 */
 	public function add_module_type( $tag, $handle ) {
-		if ( 'bogo-admin' === $handle || 'vite-client' === $handle ) {
+		if ( 'bogo-admin' === $handle ) {
 			$tag = str_replace( '<script ', '<script type="module" ', $tag );
 		}
 

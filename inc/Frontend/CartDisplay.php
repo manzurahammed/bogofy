@@ -75,8 +75,6 @@ class CartDisplay {
 			)
 			: esc_html__( '🔒 Auto-added gift · removed if the qualifying item is removed', 'bogofy' );
 
-		// Combine into a single entry so the block cart stacks them on their own
-		// lines instead of joining separate entries with " / ".
 		$item_data[] = array(
 			'key'     => '',
 			'value'   => implode( '<br>', $notes ),
