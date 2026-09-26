@@ -4,7 +4,7 @@ Tags: woocommerce, bogo, buy one get one, free gift, discount
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.1.0
+Stable tag: 2.1.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -128,6 +128,9 @@ Use the "Enable plugin" toggle on the Settings screen to switch all BOGO functio
 
 == Changelog ==
 
+= 2.1.1 =
+* Added: WooCommerce 11.1+ compatibility.
+
 = 2.1.0 =
 * New: **storefront offer messaging** — a BOGO notice on product pages and a "Buy 1 Get 1 Free" strip on shop and category product cards.
 * New: **Cart & Checkout Blocks gift styling** — the free gift line shows a FREE badge and the item it is linked to, plus a "You saved" total in the order summary.
@@ -164,6 +167,9 @@ Use the "Enable plugin" toggle on the Settings screen to switch all BOGO functio
 * HPOS and Cart/Checkout Blocks compatibility.
 
 == Upgrade Notice ==
+
+= 2.1.1 =
+Adds compatibility with WooCommerce 11.1+.
 
 = 2.1.0 =
 Adds storefront offer messaging and Cart & Checkout Blocks gift styling, dashboard usage metrics, and important cart-pricing fixes (discount percentage, sale-price handling, and stale-gift cleanup).

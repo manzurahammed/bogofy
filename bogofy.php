@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Bogofy – Buy One Get One for WooCommerce
  * Description:       Create Buy One Get One (BOGO) free-gift offers for WooCommerce. Add a free product to the cart automatically when customers buy qualifying items.
- * Version:           2.1.0
+ * Version:           2.1.1
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Requires Plugins:  woocommerce
@@ -13,7 +13,7 @@
  * Text Domain:       bogofy
  * Domain Path:       /languages
  * WC requires at least: 7.0
- * WC tested up to:   9.0
+ * WC tested up to:   11.1
  *
  * @package Bogofy
  */
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Plugin constants.
-define( 'BOGO_VERSION', '2.1.0' );
+define( 'BOGO_VERSION', '2.1.1' );
 define( 'BOGO_PLUGIN_FILE', __FILE__ );
 define( 'BOGO_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'BOGO_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
