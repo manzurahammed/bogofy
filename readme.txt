@@ -2,9 +2,9 @@
 Contributors: manzurahammed
 Tags: woocommerce, bogo, buy one get one, free gift, discount
 Requires at least: 6.0
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.1.1
+Stable tag: 2.1.2
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -127,6 +127,20 @@ Use the "Enable plugin" toggle on the Settings screen to switch all BOGO functio
 5. Settings screen for labels and display options.
 
 == Changelog ==
+
+= 2.1.2 =
+* Added: compatibility with WordPress 7.1, WooCommerce 11.2 and PHP 8.5.
+* Fixed: products in the cart now always use their current price. A price change no longer leaves a customer paying the old price.
+* Fixed: free gifts are removed from the cart when Bogofy is turned off in Settings, instead of being charged at full price.
+* Fixed: Buy X, Get X now gives a free copy of the product the customer bought, and honors a free quantity larger than the quantity bought.
+* Fixed: a gift that sold out, or that can't be supplied in full, no longer blocks checkout.
+* Fixed: removing one rule's gift could also drop another rule's gift from the cart.
+* Fixed: cart totals now recalculate when the classic cart's Update cart button is used.
+* Fixed: order stats are only credited to a rule that actually applied to the order.
+* Fixed: saving Settings without changes no longer shows an error.
+* Improved: gift quantities are locked in the Cart block, matching the classic cart.
+* Improved: stricter validation when saving rules, with clearer errors.
+* Improved: one less database query on every page load.
 
 = 2.1.1 =
 * Added: WooCommerce 11.1+ compatibility.

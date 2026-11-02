@@ -62,7 +62,9 @@ class ProductPageTest extends TestCase {
 
 		$page   = new ProductPage( $this->createMock( RuleRepository::class ) );
 		$method = new \ReflectionMethod( $page, 'get_badge_label' );
-		$method->setAccessible( true );
+		if ( PHP_VERSION_ID < 80100 ) {
+			$method->setAccessible( true );
+		}
 
 		$this->assertStringContainsString( $needle, $method->invoke( $page, $rule ) );
 	}

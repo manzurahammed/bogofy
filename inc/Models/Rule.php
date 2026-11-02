@@ -324,7 +324,7 @@ class Rule {
 	 */
 	public function validate() {
 		if ( empty( $this->title ) ) {
-			return new \WP_Error( 'invalid_title', __( 'Rule title is required.', 'bogofy' ) );
+			return self::invalid( 'invalid_title', __( 'Rule title is required.', 'bogofy' ) );
 		}
 
 		$valid_types = array(
@@ -335,24 +335,87 @@ class Rule {
 		);
 
 		if ( ! in_array( $this->rule_type, $valid_types, true ) ) {
-			return new \WP_Error( 'invalid_rule_type', __( 'Invalid rule type.', 'bogofy' ) );
+			return self::invalid( 'invalid_rule_type', __( 'Invalid rule type.', 'bogofy' ) );
+		}
+
+		if ( ! in_array( $this->status, array( self::STATUS_ACTIVE, self::STATUS_INACTIVE ), true ) ) {
+			return self::invalid( 'invalid_status', __( 'Invalid status.', 'bogofy' ) );
+		}
+
+		if ( ! in_array( $this->discount_type, array( self::DISCOUNT_FREE, self::DISCOUNT_PERCENTAGE ), true ) ) {
+			return self::invalid( 'invalid_discount_type', __( 'Invalid discount type.', 'bogofy' ) );
+		}
+
+		$valid_targets = array(
+			self::APPLY_SPECIFIC_PRODUCTS,
+			self::APPLY_SPECIFIC_CATEGORIES,
+			self::APPLY_ALL_PRODUCTS,
+		);
+
+		if ( ! in_array( $this->apply_to, $valid_targets, true ) ) {
+			return self::invalid( 'invalid_apply_to', __( 'Invalid product target.', 'bogofy' ) );
 		}
 
 		if ( $this->buy_quantity < 1 ) {
-			return new \WP_Error( 'invalid_buy_quantity', __( 'Buy quantity must be at least 1.', 'bogofy' ) );
+			return self::invalid( 'invalid_buy_quantity', __( 'Buy quantity must be at least 1.', 'bogofy' ) );
 		}
 
 		if ( $this->free_quantity < 1 ) {
-			return new \WP_Error( 'invalid_free_quantity', __( 'Free quantity must be at least 1.', 'bogofy' ) );
+			return self::invalid( 'invalid_free_quantity', __( 'Free quantity must be at least 1.', 'bogofy' ) );
 		}
 
 		if ( self::DISCOUNT_PERCENTAGE === $this->discount_type ) {
 			if ( $this->discount_value <= 0 || $this->discount_value > 100 ) {
-				return new \WP_Error( 'invalid_discount', __( 'Discount percentage must be between 1 and 100.', 'bogofy' ) );
+				return self::invalid( 'invalid_discount', __( 'Discount percentage must be between 1 and 100.', 'bogofy' ) );
 			}
 		}
 
+		$start = $this->start_date ? self::parse_date( $this->start_date ) : null;
+		$end   = $this->end_date ? self::parse_date( $this->end_date ) : null;
+
+		if ( false === $start || false === $end ) {
+			return self::invalid( 'invalid_date', __( 'Invalid start or end date.', 'bogofy' ) );
+		}
+
+		if ( $start && $end && $end < $start ) {
+			return self::invalid( 'invalid_date_range', __( 'End date must be after the start date.', 'bogofy' ) );
+		}
+
 		return true;
+	}
+
+	/**
+	 * Parse a date the DATETIME columns can store.
+	 *
+	 * Formatting the result back rejects overflow dates like 2026-02-30, and the
+	 * fixed formats reject relative text like "tomorrow" that strtotime() allows.
+	 *
+	 * @param string $value Date from the admin form or the database.
+	 *
+	 * @return int|false Timestamp, or false when the date is invalid.
+	 */
+	private static function parse_date( $value ) {
+		foreach ( array( 'Y-m-d\TH:i', 'Y-m-d\TH:i:s', 'Y-m-d H:i', 'Y-m-d H:i:s', 'Y-m-d' ) as $format ) {
+			$date = \DateTime::createFromFormat( '!' . $format, $value, new \DateTimeZone( 'UTC' ) );
+
+			if ( $date && $date->format( $format ) === $value ) {
+				return $date->getTimestamp();
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Build a validation error the REST API reports as a 400, not a 500.
+	 *
+	 * @param string $code    Error code.
+	 * @param string $message Error message.
+	 *
+	 * @return \WP_Error
+	 */
+	private static function invalid( $code, $message ) {
+		return new \WP_Error( $code, $message, array( 'status' => 400 ) );
 	}
 
 	/**

@@ -8,6 +8,7 @@
 namespace Bogofy\Tests\Unit\Admin;
 
 use Bogofy\Admin\Settings;
+use Brain\Monkey\Functions;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -56,5 +57,18 @@ class SettingsTest extends TestCase {
 		$out = Settings::sanitize( array( 'not_a_setting' => 'x' ) );
 
 		$this->assertArrayNotHasKey( 'not_a_setting', $out );
+	}
+
+	/**
+	 * Saving identical settings is a success, though update_option returns false.
+	 */
+	public function test_saving_unchanged_settings_succeeds() {
+		$stored = Settings::get_all();
+
+		Functions\when( 'get_option' )->justReturn( $stored );
+		Functions\when( 'update_option' )->justReturn( false );
+		Functions\when( 'maybe_serialize' )->alias( 'serialize' );
+
+		$this->assertTrue( Settings::update( array( 'enabled' => $stored['enabled'] ) ) );
 	}
 }

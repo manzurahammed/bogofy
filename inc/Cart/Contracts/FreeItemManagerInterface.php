@@ -50,15 +50,6 @@ interface FreeItemManagerInterface {
 	public function remove_rule_items_except( $cart, $rule_id, $keep_product_ids );
 
 	/**
-	 * Remove orphaned BOGO items whose triggering rule is no longer present.
-	 *
-	 * @param \WC_Cart $cart Cart object.
-	 *
-	 * @return void
-	 */
-	public function cleanup_orphaned_items( $cart );
-
-	/**
 	 * Remove BOGO free lines whose owning rule is no longer active.
 	 *
 	 * @param \WC_Cart $cart            Cart object.

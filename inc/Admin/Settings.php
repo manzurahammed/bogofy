@@ -80,6 +80,11 @@ class Settings {
 		$sanitized = self::sanitize( $new_settings );
 		$merged    = wp_parse_args( $sanitized, $current );
 
+		// update_option() returns false for an unchanged value, which is not a failure.
+		if ( maybe_serialize( get_option( self::OPTION_NAME ) ) === maybe_serialize( $merged ) ) {
+			return true;
+		}
+
 		return update_option( self::OPTION_NAME, $merged );
 	}
 

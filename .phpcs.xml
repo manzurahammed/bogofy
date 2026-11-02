@@ -59,6 +59,9 @@
         <exclude-pattern>*/uninstall.php</exclude-pattern>
     </rule>
 
+    <!-- Flag PHP syntax and functions outside the testVersion range below. -->
+    <rule ref="PHPCompatibilityWP"/>
+
     <!-- Show warnings in reports, but do not fail the build (exit 0) on warnings only. -->
     <config name="ignore_warnings_on_exit" value="1"/>
 
