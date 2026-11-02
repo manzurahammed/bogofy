@@ -111,15 +111,8 @@ class DiscountApplier implements DiscountApplierInterface {
 			return;
 		}
 
-		// For Buy X Get X with specific products, add a free copy of the configured product.
-		if ( Rule::APPLY_SPECIFIC_PRODUCTS === $rule->apply_to && ! empty( $rule->buy_product_ids ) ) {
-			$free_product_id = (int) $rule->buy_product_ids[0];
-			$this->free_item_manager->add_free_item( $cart, $free_product_id, $free_quantity, $rule );
-			return;
-		}
-
-		// For all products / categories, add free copies of the cheapest eligible products
-		// so the customer receives an additional free item rather than the purchased one becoming free.
+		// Add free copies of the cheapest eligible products the customer actually bought,
+		// so they receive an additional item rather than the purchased one becoming free.
 		$this->add_free_cheapest( $cart, $rule, $eligible_items, $free_quantity );
 	}
 
@@ -142,27 +135,31 @@ class DiscountApplier implements DiscountApplierInterface {
 			}
 		);
 
-		$remaining      = (int) $free_quantity;
-		$free_added_ids = array();
+		$remaining  = (int) $free_quantity;
+		$allocation = array();
 
 		foreach ( $eligible_items as $cart_item ) {
 			if ( $remaining <= 0 ) {
 				break;
 			}
 
-			$product_id = $cart_item['variation_id'] ? $cart_item['variation_id'] : $cart_item['product_id'];
+			$product_id = (int) ( $cart_item['variation_id'] ? $cart_item['variation_id'] : $cart_item['product_id'] );
 			$free_qty   = min( (int) $cart_item['quantity'], $remaining );
 
-			if ( $free_qty <= 0 ) {
-				continue;
-			}
-
-			$this->free_item_manager->add_free_item( $cart, $product_id, $free_qty, $rule );
-			$free_added_ids[] = (int) $product_id;
-			$remaining       -= $free_qty;
+			$allocation[ $product_id ] = ( $allocation[ $product_id ] ?? 0 ) + $free_qty;
+			$remaining                -= $free_qty;
 		}
 
-		$this->free_item_manager->remove_rule_items_except( $cart, $rule->id, $free_added_ids );
+		// "Buy 1 Get 2" can grant more than was bought; the cheapest product takes the rest.
+		if ( $remaining > 0 && ! empty( $allocation ) ) {
+			$allocation[ array_key_first( $allocation ) ] += $remaining;
+		}
+
+		foreach ( $allocation as $product_id => $quantity ) {
+			$this->free_item_manager->add_free_item( $cart, $product_id, $quantity, $rule );
+		}
+
+		$this->free_item_manager->remove_rule_items_except( $cart, $rule->id, array_keys( $allocation ) );
 	}
 
 	/**

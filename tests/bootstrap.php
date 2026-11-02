@@ -136,3 +136,24 @@ if ( ! class_exists( 'WP_Error' ) ) {
 		}
 	}
 }
+
+if ( ! class_exists( 'Bogo_Fake_Priced_Product' ) ) {
+	/**
+	 * Cart line product shared by the cart tests.
+	 */
+	class Bogo_Fake_Priced_Product {
+		public $price;
+
+		public function __construct( $price ) {
+			$this->price = $price;
+		}
+
+		public function get_price() {
+			return $this->price;
+		}
+
+		public function set_price( $price ) {
+			$this->price = $price;
+		}
+	}
+}

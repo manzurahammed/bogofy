@@ -117,7 +117,7 @@ class EligibilityChecker implements EligibilityCheckerInterface {
 		}
 
 		// Calculate how many "sets" of buy_quantity are in the cart.
-		$sets = floor( $total_quantity / $rule->buy_quantity );
+		$sets = (int) floor( $total_quantity / max( 1, $rule->buy_quantity ) );
 
 		// Calculate total free items.
 		$free_quantity = $sets * $rule->free_quantity;

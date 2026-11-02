@@ -28,17 +28,22 @@ class FreeItemManager implements FreeItemManagerInterface {
 	 * @return bool|string Cart item key or false on failure.
 	 */
 	public function add_free_item( $cart, $product_id, $quantity, Rule $rule ) {
-		$product = wc_get_product( $product_id );
+		$product_id   = (int) $product_id;
+		$product      = wc_get_product( $product_id );
+		$existing_key = $this->find_bogo_item( $cart, $product_id, (int) $rule->id );
+		$quantity     = $this->grantable_quantity( $cart, $product, (int) $quantity, $existing_key );
 
-		if ( ! $product || ! $product->is_in_stock() ) {
+		if ( $quantity < 1 ) {
+			// A gift that can no longer be supplied must not block checkout.
+			if ( $existing_key ) {
+				$cart->remove_cart_item( $existing_key );
+			}
+
 			return false;
 		}
 
 		// Generate unique cart item key for this BOGO item.
 		$bogo_key = $this->generate_bogo_key( $product_id, $rule->id );
-
-		// Check if we already have this free item in cart.
-		$existing_key = $this->find_bogo_item( $cart, $product_id, $rule->id );
 
 		if ( $existing_key ) {
 			// Update quantity if different. Pricing happens later in the totals
@@ -139,44 +144,6 @@ class FreeItemManager implements FreeItemManagerInterface {
 	}
 
 	/**
-	 * Cleanup orphaned BOGO items.
-	 *
-	 * @param \WC_Cart $cart Cart object.
-	 *
-	 * @return void
-	 */
-	public function cleanup_orphaned_items( $cart ) {
-		// Get list of rule IDs for items still in cart.
-		$active_rules = array();
-
-		foreach ( $cart->get_cart() as $cart_item ) {
-			if (
-				! CartHandler::is_bogo_item( $cart_item ) &&
-				isset( $cart_item[ CartHandler::BOGO_RULE_KEY ] )
-			) {
-				$active_rules[] = (int) $cart_item[ CartHandler::BOGO_RULE_KEY ];
-			}
-		}
-
-		// Remove BOGO items whose rules are no longer active.
-		$items_to_remove = array();
-
-		foreach ( $cart->get_cart() as $cart_item_key => $cart_item ) {
-			if (
-				CartHandler::is_bogo_item( $cart_item ) &&
-				isset( $cart_item[ CartHandler::BOGO_RULE_KEY ] ) &&
-				! in_array( (int) $cart_item[ CartHandler::BOGO_RULE_KEY ], $active_rules, true )
-			) {
-				$items_to_remove[] = $cart_item_key;
-			}
-		}
-
-		foreach ( $items_to_remove as $key ) {
-			$cart->remove_cart_item( $key );
-		}
-	}
-
-	/**
 	 * Remove BOGO free lines whose owning rule is no longer active.
 	 *
 	 * Handles rules that were deactivated, deleted, expired, or removed entirely
@@ -204,6 +171,41 @@ class FreeItemManager implements FreeItemManagerInterface {
 		foreach ( $items_to_remove as $key ) {
 			$cart->remove_cart_item( $key );
 		}
+	}
+
+	/**
+	 * How many units of a gift can actually be supplied.
+	 *
+	 * Other lines drawing on the same stock are deducted, which includes sibling
+	 * variations when the parent manages stock.
+	 *
+	 * @param \WC_Cart          $cart         Cart object.
+	 * @param \WC_Product|false $product      Product object.
+	 * @param int               $quantity     Requested quantity.
+	 * @param string|false      $existing_key Existing gift line key.
+	 *
+	 * @return int
+	 */
+	private function grantable_quantity( $cart, $product, $quantity, $existing_key ) {
+		if ( ! $product || $product->is_type( 'variable' ) || ! $product->is_purchasable() || ! $product->is_in_stock() ) {
+			return 0;
+		}
+
+		$max = (int) $product->get_max_purchase_quantity();
+
+		if ( $max < 0 ) {
+			return $quantity;
+		}
+
+		$stock_id = $product->get_stock_managed_by_id();
+
+		foreach ( $cart->get_cart() as $cart_item_key => $cart_item ) {
+			if ( $cart_item_key !== $existing_key && $cart_item['data']->get_stock_managed_by_id() === $stock_id ) {
+				$max -= (int) $cart_item['quantity'];
+			}
+		}
+
+		return min( $quantity, max( 0, $max ) );
 	}
 
 	/**

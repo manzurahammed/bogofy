@@ -91,8 +91,8 @@ class RuleRepository {
 		$order           = 'DESC' === strtoupper( $args['order'] ) ? 'DESC' : 'ASC';
 
 		// Pagination.
-		$per_page = absint( $args['per_page'] );
-		$page     = absint( $args['page'] );
+		$per_page = max( 1, absint( $args['per_page'] ) );
+		$page     = max( 1, absint( $args['page'] ) );
 		$offset   = ( $page - 1 ) * $per_page;
 
 		$results = $wpdb->get_results(
@@ -476,7 +476,7 @@ class RuleRepository {
 
 			case Rule::APPLY_SPECIFIC_CATEGORIES:
 				$product_categories = wp_get_post_terms( $product_id, 'product_cat', array( 'fields' => 'ids' ) );
-				return ! empty( array_intersect( $product_categories, $rule->category_ids ) );
+				return ! is_wp_error( $product_categories ) && ! empty( array_intersect( $product_categories, $rule->category_ids ) );
 
 			default:
 				return false;
