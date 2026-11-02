@@ -131,6 +131,36 @@ class RuleTest extends TestCase {
 	}
 
 	/**
+	 * Enum-like fields reject values outside their allowed set.
+	 */
+	public function test_validate_rejects_unknown_enum_values() {
+		foreach ( array( 'status', 'discount_type', 'apply_to' ) as $field ) {
+			$rule          = new Rule();
+			$rule->title   = 'Rule';
+			$rule->$field  = 'nonsense';
+
+			$this->assertInstanceOf( \WP_Error::class, $rule->validate(), $field );
+		}
+	}
+
+	/**
+	 * Dates must parse, and a rule cannot end before it starts.
+	 */
+	public function test_validate_rejects_bad_dates() {
+		$rule             = new Rule();
+		$rule->title      = 'Rule';
+		$rule->start_date = 'not a date';
+		$this->assertInstanceOf( \WP_Error::class, $rule->validate() );
+
+		$rule->start_date = '2026-12-01T10:00';
+		$rule->end_date   = '2026-11-01T10:00';
+		$this->assertInstanceOf( \WP_Error::class, $rule->validate() );
+
+		$rule->end_date = '2026-12-02T10:00';
+		$this->assertTrue( $rule->validate() );
+	}
+
+	/**
 	 * Test the orders_count / revenue stat fields round-trip through the model.
 	 */
 	public function test_stat_fields_flow_through_from_db_and_to_array() {

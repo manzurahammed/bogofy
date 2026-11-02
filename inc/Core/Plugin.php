@@ -19,7 +19,6 @@ use Bogofy\Frontend\CartDisplay;
 use Bogofy\Frontend\StoreApi;
 use Bogofy\Models\RuleRepository;
 use Bogofy\Orders\OrderTracker;
-use Bogofy\Database\Schema;
 use Bogofy\Database\Migrator;
 
 /**
@@ -70,7 +69,7 @@ class Plugin {
 		$this->container = new Container();
 
 		$this->register_services();
-		$this->maybe_create_tables();
+		Migrator::run();
 		$this->define_admin_hooks();
 		$this->define_public_hooks();
 		$this->loader->run();
@@ -176,33 +175,6 @@ class Plugin {
 	}
 
 	/**
-	 * Check if database tables exist and create if needed.
-	 *
-	 * @return void
-	 */
-	private function maybe_create_tables() {
-		global $wpdb;
-		$table_name = $wpdb->prefix . 'bogo_rules';
-
-		// Check if table exists.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$table_exists = $wpdb->get_var(
-			$wpdb->prepare(
-				'SHOW TABLES LIKE %s',
-				$table_name
-			)
-		);
-
-		if ( $table_exists !== $table_name ) {
-			Schema::create_tables();
-		}
-
-		// Apply pending schema migrations (e.g. new tables/columns) on upgrade,
-		// so existing installs don't require a manual deactivate/reactivate.
-		Migrator::run();
-	}
-
-	/**
 	 * Register all admin-related hooks.
 	 *
 	 * @return void
@@ -229,10 +201,10 @@ class Plugin {
 
 		// Reconcile free item lines on cart mutations and on each cart load (never during totals calc).
 		$this->loader->register_action( 'woocommerce_add_to_cart', $cart_handler, 'on_add_to_cart', 20, 6 );
-		$this->loader->register_action( 'woocommerce_cart_item_removed', $cart_handler, 'on_cart_item_removed', 20, 2 );
+		$this->loader->register_action( 'woocommerce_cart_item_removed', $cart_handler, 'sync_free_items', 20 );
 		$this->loader->register_action( 'woocommerce_cart_item_restored', $cart_handler, 'sync_free_items', 20 );
 		$this->loader->register_action( 'woocommerce_after_cart_item_quantity_update', $cart_handler, 'sync_free_items', 20 );
-		$this->loader->register_action( 'woocommerce_update_cart_action_cart_updated', $cart_handler, 'on_cart_updated', 20, 1 );
+		$this->loader->register_filter( 'woocommerce_update_cart_action_cart_updated', $cart_handler, 'on_cart_updated', 20, 1 );
 		$this->loader->register_action( 'woocommerce_cart_loaded_from_session', $cart_handler, 'sync_free_items', 20 );
 		$this->loader->register_action( 'woocommerce_check_cart_items', $cart_handler, 'sync_free_items', 20 );
 
@@ -240,6 +212,8 @@ class Plugin {
 		$this->loader->register_action( 'woocommerce_before_calculate_totals', $cart_handler, 'apply_bogo_prices', 10, 1 );
 
 		$this->loader->register_filter( 'woocommerce_cart_item_quantity', $cart_handler, 'filter_cart_item_quantity', 10, 3 );
+		$this->loader->register_filter( 'woocommerce_store_api_product_quantity_editable', $cart_handler, 'filter_quantity_editable', 10, 3 );
+		$this->loader->register_filter( 'woocommerce_get_cart_item_from_session', $cart_handler, 'clean_session_item', 10, 1 );
 
 		// Order tracking: stamp rule + base price onto BOGO line items at checkout,
 		// then record/roll back each rule's totals as the order status changes.

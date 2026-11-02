@@ -11,6 +11,8 @@ namespace {
 		class Bogo_Fake_Cart {
 			public $contents;
 			public $removed = array();
+			public $added   = array();
+			public $cart_contents = array();
 
 			public function __construct( $contents = array() ) {
 				$this->contents = $contents;
@@ -24,6 +26,35 @@ namespace {
 				$this->removed[] = $key;
 				unset( $this->contents[ $key ] );
 			}
+
+			public function add_to_cart( $product_id, $quantity ) {
+				$this->added[ $product_id ] = $quantity;
+				return 'new_key';
+			}
+		}
+	}
+
+	if ( ! class_exists( 'Bogo_Fake_Gift_Product' ) ) {
+		class Bogo_Fake_Gift_Product {
+			public $in_stock = true;
+			public $max      = -1;
+			public $type     = 'simple';
+
+			public function is_in_stock() {
+				return $this->in_stock;
+			}
+
+			public function is_purchasable() {
+				return true;
+			}
+
+			public function is_type( $type ) {
+				return $type === $this->type;
+			}
+
+			public function get_max_purchase_quantity() {
+				return $this->max;
+			}
 		}
 	}
 }
@@ -32,6 +63,8 @@ namespace Bogofy\Tests\Unit\Cart {
 
 	use Bogofy\Cart\CartHandler;
 	use Bogofy\Cart\FreeItemManager;
+	use Bogofy\Models\Rule;
+	use Brain\Monkey\Functions;
 	use PHPUnit\Framework\TestCase;
 
 	/**
@@ -100,6 +133,79 @@ namespace Bogofy\Tests\Unit\Cart {
 			$this->assertContains( 'gift_a', $cart->removed );
 			$this->assertContains( 'gift_b', $cart->removed );
 			$this->assertArrayHasKey( 'normal', $cart->contents );
+		}
+
+		/**
+		 * Build a rule with an ID.
+		 *
+		 * @return Rule
+		 */
+		private function make_rule() {
+			$rule     = new Rule();
+			$rule->id = 5;
+
+			return $rule;
+		}
+
+		/**
+		 * A gift that sold out is dropped, so it cannot block checkout.
+		 */
+		public function test_out_of_stock_gift_line_is_removed() {
+			$product           = new \Bogo_Fake_Gift_Product();
+			$product->in_stock = false;
+			Functions\when( 'wc_get_product' )->justReturn( $product );
+
+			$cart = new \Bogo_Fake_Cart(
+				array(
+					'gift' => array(
+						'product_id'               => 7,
+						'variation_id'             => 0,
+						'quantity'                 => 1,
+						CartHandler::BOGO_ITEM_KEY => true,
+						CartHandler::BOGO_RULE_KEY => 5,
+					),
+				)
+			);
+
+			$this->assertFalse( ( new FreeItemManager() )->add_free_item( $cart, 7, 1, $this->make_rule() ) );
+			$this->assertSame( array( 'gift' ), $cart->removed );
+		}
+
+		/**
+		 * The gift shares stock with paid lines of the same product.
+		 */
+		public function test_gift_quantity_is_capped_by_remaining_stock() {
+			$product      = new \Bogo_Fake_Gift_Product();
+			$product->max = 4;
+			Functions\when( 'wc_get_product' )->justReturn( $product );
+
+			$cart = new \Bogo_Fake_Cart(
+				array(
+					'paid' => array(
+						'product_id'   => 7,
+						'variation_id' => 0,
+						'quantity'     => 3,
+					),
+				)
+			);
+
+			( new FreeItemManager() )->add_free_item( $cart, 7, 3, $this->make_rule() );
+
+			$this->assertSame( array( 7 => 1 ), $cart->added );
+		}
+
+		/**
+		 * A variable parent cannot be added without a variation, so it is skipped.
+		 */
+		public function test_variable_parent_is_not_added() {
+			$product       = new \Bogo_Fake_Gift_Product();
+			$product->type = 'variable';
+			Functions\when( 'wc_get_product' )->justReturn( $product );
+
+			$cart = new \Bogo_Fake_Cart();
+
+			$this->assertFalse( ( new FreeItemManager() )->add_free_item( $cart, 7, 1, $this->make_rule() ) );
+			$this->assertSame( array(), $cart->added );
 		}
 	}
 }

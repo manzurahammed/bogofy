@@ -222,11 +222,18 @@ class RestApi {
 		return array(
 			'page'     => array(
 				'default'           => 1,
+				'type'              => 'integer',
+				'minimum'           => 1,
 				'sanitize_callback' => 'absint',
+				'validate_callback' => 'rest_validate_request_arg',
 			),
 			'per_page' => array(
 				'default'           => 20,
+				'type'              => 'integer',
+				'minimum'           => 1,
+				'maximum'           => 100,
 				'sanitize_callback' => 'absint',
+				'validate_callback' => 'rest_validate_request_arg',
 			),
 			'status'   => array(
 				'default'           => '',

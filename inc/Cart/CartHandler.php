@@ -112,10 +112,6 @@ class CartHandler {
 	 * @return void
 	 */
 	public function sync_free_items() {
-		if ( ! Settings::is_enabled() ) {
-			return;
-		}
-
 		if ( is_admin() && ! defined( 'DOING_AJAX' ) ) {
 			return;
 		}
@@ -130,7 +126,9 @@ class CartHandler {
 			return;
 		}
 
-		$rules = $this->repository->get_active_rules();
+		// With the plugin off nothing prices the gifts, so they must leave the cart
+		// rather than be charged at full price.
+		$rules = Settings::is_enabled() ? $this->repository->get_active_rules() : array();
 
 		$this->syncing = true;
 
@@ -194,6 +192,11 @@ class CartHandler {
 
 			$cart_item['data']->set_price( (float) $cart->cart_contents[ $cart_item_key ][ self::BOGO_BASELINE_KEY ] );
 			unset( $cart->cart_contents[ $cart_item_key ][ self::BOGO_DISCOUNT_KEY ] );
+
+			// Paid lines are re-claimed below; a stale claim would misattribute the order.
+			if ( ! self::is_bogo_item( $cart_item ) ) {
+				unset( $cart->cart_contents[ $cart_item_key ][ self::BOGO_RULE_KEY ] );
+			}
 		}
 
 		// 2. Price the free gift lines from their baseline.
@@ -245,40 +248,49 @@ class CartHandler {
 	}
 
 	/**
-	 * Handle cart item removed event.
+	 * Reconcile free items after the classic cart form is submitted.
 	 *
-	 * @param string   $cart_item_key Removed item key.
-	 * @param \WC_Cart $cart          Cart object.
-	 *
-	 * @return void
-	 */
-	public function on_cart_item_removed( $cart_item_key, $cart ) {
-		if ( ! Settings::is_enabled() ) {
-			return;
-		}
-
-		// Remove any free items whose triggering products are no longer present.
-		$this->free_item_manager->cleanup_orphaned_items( $cart );
-
-		// Re-evaluate rules against the remaining cart contents.
-		$this->sync_free_items();
-	}
-
-	/**
-	 * Handle cart updated event.
+	 * WooCommerce recalculates totals only when this filter returns truthy.
 	 *
 	 * @param bool $cart_updated Whether cart was updated.
 	 *
-	 * @return void
+	 * @return bool
 	 */
 	public function on_cart_updated( $cart_updated ) {
-		if ( ! Settings::is_enabled() ) {
-			return;
-		}
-
 		if ( $cart_updated ) {
 			$this->sync_free_items();
 		}
+
+		return $cart_updated;
+	}
+
+	/**
+	 * Drop per-request pricing state from a cart item restored from the session.
+	 *
+	 * The baseline must come from the product's current price; a stored one would
+	 * keep charging the old price after the product price changes.
+	 *
+	 * @param array $cart_item Cart item restored from the session.
+	 *
+	 * @return array
+	 */
+	public function clean_session_item( $cart_item ) {
+		unset( $cart_item[ self::BOGO_BASELINE_KEY ], $cart_item[ self::BOGO_DISCOUNT_KEY ] );
+
+		return $cart_item;
+	}
+
+	/**
+	 * Lock the quantity of free items in the block cart.
+	 *
+	 * @param bool        $editable  Whether the quantity is editable.
+	 * @param \WC_Product $product   Product object.
+	 * @param array       $cart_item Cart item, when the Store API provides one.
+	 *
+	 * @return bool
+	 */
+	public function filter_quantity_editable( $editable, $product = null, $cart_item = array() ) {
+		return self::is_bogo_item( $cart_item ) ? false : $editable;
 	}
 
 	/**
