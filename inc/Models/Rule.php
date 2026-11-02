@@ -370,8 +370,8 @@ class Rule {
 			}
 		}
 
-		$start = $this->start_date ? strtotime( $this->start_date ) : null;
-		$end   = $this->end_date ? strtotime( $this->end_date ) : null;
+		$start = $this->start_date ? self::parse_date( $this->start_date ) : null;
+		$end   = $this->end_date ? self::parse_date( $this->end_date ) : null;
 
 		if ( false === $start || false === $end ) {
 			return self::invalid( 'invalid_date', __( 'Invalid start or end date.', 'bogofy' ) );
@@ -382,6 +382,28 @@ class Rule {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Parse a date the DATETIME columns can store.
+	 *
+	 * Formatting the result back rejects overflow dates like 2026-02-30, and the
+	 * fixed formats reject relative text like "tomorrow" that strtotime() allows.
+	 *
+	 * @param string $value Date from the admin form or the database.
+	 *
+	 * @return int|false Timestamp, or false when the date is invalid.
+	 */
+	private static function parse_date( $value ) {
+		foreach ( array( 'Y-m-d\TH:i', 'Y-m-d\TH:i:s', 'Y-m-d H:i', 'Y-m-d H:i:s', 'Y-m-d' ) as $format ) {
+			$date = \DateTime::createFromFormat( '!' . $format, $value, new \DateTimeZone( 'UTC' ) );
+
+			if ( $date && $date->format( $format ) === $value ) {
+				return $date->getTimestamp();
+			}
+		}
+
+		return false;
 	}
 
 	/**

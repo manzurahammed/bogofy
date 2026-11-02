@@ -31,7 +31,7 @@ class FreeItemManager implements FreeItemManagerInterface {
 		$product_id   = (int) $product_id;
 		$product      = wc_get_product( $product_id );
 		$existing_key = $this->find_bogo_item( $cart, $product_id, (int) $rule->id );
-		$quantity     = $this->grantable_quantity( $cart, $product, $product_id, (int) $quantity, $existing_key );
+		$quantity     = $this->grantable_quantity( $cart, $product, (int) $quantity, $existing_key );
 
 		if ( $quantity < 1 ) {
 			// A gift that can no longer be supplied must not block checkout.
@@ -176,17 +176,17 @@ class FreeItemManager implements FreeItemManagerInterface {
 	/**
 	 * How many units of a gift can actually be supplied.
 	 *
-	 * Stock is shared with paid lines of the same product, so those are deducted.
+	 * Other lines drawing on the same stock are deducted, which includes sibling
+	 * variations when the parent manages stock.
 	 *
 	 * @param \WC_Cart          $cart         Cart object.
 	 * @param \WC_Product|false $product      Product object.
-	 * @param int               $product_id   Product or variation ID.
 	 * @param int               $quantity     Requested quantity.
 	 * @param string|false      $existing_key Existing gift line key.
 	 *
 	 * @return int
 	 */
-	private function grantable_quantity( $cart, $product, $product_id, $quantity, $existing_key ) {
+	private function grantable_quantity( $cart, $product, $quantity, $existing_key ) {
 		if ( ! $product || $product->is_type( 'variable' ) || ! $product->is_purchasable() || ! $product->is_in_stock() ) {
 			return 0;
 		}
@@ -197,10 +197,10 @@ class FreeItemManager implements FreeItemManagerInterface {
 			return $quantity;
 		}
 
-		foreach ( $cart->get_cart() as $cart_item_key => $cart_item ) {
-			$item_product_id = $cart_item['variation_id'] ? $cart_item['variation_id'] : $cart_item['product_id'];
+		$stock_id = $product->get_stock_managed_by_id();
 
-			if ( $cart_item_key !== $existing_key && (int) $item_product_id === $product_id ) {
+		foreach ( $cart->get_cart() as $cart_item_key => $cart_item ) {
+			if ( $cart_item_key !== $existing_key && $cart_item['data']->get_stock_managed_by_id() === $stock_id ) {
 				$max -= (int) $cart_item['quantity'];
 			}
 		}

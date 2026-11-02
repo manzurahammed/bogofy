@@ -161,6 +161,32 @@ class RuleTest extends TestCase {
 	}
 
 	/**
+	 * Text strtotime() accepts must not reach the DATETIME columns.
+	 */
+	public function test_validate_rejects_dates_the_database_cannot_store() {
+		$rule        = new Rule();
+		$rule->title = 'Rule';
+
+		foreach ( array( 'tomorrow', '+1 week', '2026-02-30', '2026-13-01 10:00:00' ) as $date ) {
+			$rule->start_date = $date;
+			$this->assertInstanceOf( \WP_Error::class, $rule->validate(), $date );
+		}
+	}
+
+	/**
+	 * The admin form and the database formats are both accepted.
+	 */
+	public function test_validate_accepts_form_and_database_dates() {
+		$rule        = new Rule();
+		$rule->title = 'Rule';
+
+		foreach ( array( '2026-12-01T10:00', '2026-12-01 10:00', '2026-12-01 10:00:00', '2026-12-01' ) as $date ) {
+			$rule->start_date = $date;
+			$this->assertTrue( $rule->validate(), $date );
+		}
+	}
+
+	/**
 	 * Test the orders_count / revenue stat fields round-trip through the model.
 	 */
 	public function test_stat_fields_flow_through_from_db_and_to_array() {

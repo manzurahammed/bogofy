@@ -39,6 +39,15 @@ namespace {
 			public $in_stock = true;
 			public $max      = -1;
 			public $type     = 'simple';
+			public $stock_id = 7;
+
+			public function __construct( $stock_id = 7 ) {
+				$this->stock_id = $stock_id;
+			}
+
+			public function get_stock_managed_by_id() {
+				return $this->stock_id;
+			}
 
 			public function is_in_stock() {
 				return $this->in_stock;
@@ -185,6 +194,7 @@ namespace Bogofy\Tests\Unit\Cart {
 						'product_id'   => 7,
 						'variation_id' => 0,
 						'quantity'     => 3,
+						'data'         => new \Bogo_Fake_Gift_Product( 7 ),
 					),
 				)
 			);
@@ -192,6 +202,37 @@ namespace Bogofy\Tests\Unit\Cart {
 			( new FreeItemManager() )->add_free_item( $cart, 7, 3, $this->make_rule() );
 
 			$this->assertSame( array( 7 => 1 ), $cart->added );
+		}
+
+		/**
+		 * Sibling variations draw on the parent's stock, so a paid variation counts
+		 * against a gift of a different variation.
+		 */
+		public function test_gift_quantity_counts_sibling_variations_sharing_parent_stock() {
+			$gift      = new \Bogo_Fake_Gift_Product( 100 );
+			$gift->max = 4;
+			Functions\when( 'wc_get_product' )->justReturn( $gift );
+
+			$cart = new \Bogo_Fake_Cart(
+				array(
+					'paid_sibling' => array(
+						'product_id'   => 100,
+						'variation_id' => 101,
+						'quantity'     => 2,
+						'data'         => new \Bogo_Fake_Gift_Product( 100 ),
+					),
+					'unrelated'    => array(
+						'product_id'   => 200,
+						'variation_id' => 0,
+						'quantity'     => 5,
+						'data'         => new \Bogo_Fake_Gift_Product( 200 ),
+					),
+				)
+			);
+
+			( new FreeItemManager() )->add_free_item( $cart, 102, 3, $this->make_rule() );
+
+			$this->assertSame( array( 102 => 2 ), $cart->added );
 		}
 
 		/**
