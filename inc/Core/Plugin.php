@@ -206,7 +206,8 @@ class Plugin {
 		$this->loader->register_action( 'woocommerce_after_cart_item_quantity_update', $cart_handler, 'sync_free_items', 20 );
 		$this->loader->register_filter( 'woocommerce_update_cart_action_cart_updated', $cart_handler, 'on_cart_updated', 20, 1 );
 		$this->loader->register_action( 'woocommerce_cart_loaded_from_session', $cart_handler, 'sync_free_items', 20 );
-		$this->loader->register_action( 'woocommerce_check_cart_items', $cart_handler, 'sync_free_items', 20 );
+		// Priority 0 so gifts are reconciled before WooCommerce checks stock at 1.
+		$this->loader->register_action( 'woocommerce_check_cart_items', $cart_handler, 'sync_free_items', 0 );
 
 		// Price free/discounted items during totals calculation only.
 		$this->loader->register_action( 'woocommerce_before_calculate_totals', $cart_handler, 'apply_bogo_prices', 10, 1 );

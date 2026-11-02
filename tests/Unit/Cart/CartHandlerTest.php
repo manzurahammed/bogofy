@@ -102,6 +102,28 @@ namespace Bogofy\Tests\Unit\Cart {
 		}
 
 		/**
+		 * With the plugin off a session claim would credit an order the rule didn't
+		 * discount, so it goes, while the gift line keeps its rule until sync drops it.
+		 */
+		public function test_totals_drop_paid_claims_when_plugin_disabled() {
+			Functions\when( 'get_option' )->justReturn( array( 'enabled' => false ) );
+
+			$cart                = new \WC_Cart();
+			$cart->cart_contents = array(
+				'paid' => array( CartHandler::BOGO_RULE_KEY => 5 ),
+				'gift' => array(
+					CartHandler::BOGO_ITEM_KEY => true,
+					CartHandler::BOGO_RULE_KEY => 5,
+				),
+			);
+
+			$this->make_handler()->apply_bogo_prices( $cart );
+
+			$this->assertArrayNotHasKey( CartHandler::BOGO_RULE_KEY, $cart->cart_contents['paid'] );
+			$this->assertArrayHasKey( CartHandler::BOGO_RULE_KEY, $cart->cart_contents['gift'] );
+		}
+
+		/**
 		 * The baseline must not survive in the session, or a customer keeps paying
 		 * an old price after the product price changes.
 		 */

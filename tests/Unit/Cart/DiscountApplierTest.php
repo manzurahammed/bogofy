@@ -112,6 +112,29 @@ class DiscountApplierTest extends TestCase {
 	}
 
 	/**
+	 * "Any" variations pass on the attributes the customer chose.
+	 */
+	public function test_buy_x_get_x_passes_the_chosen_attributes() {
+		$received = null;
+		$line     = $this->line( 20, 1, 15.0 );
+
+		$line['variation'] = array( 'attribute_size' => 'L' );
+
+		$manager = Mockery::mock( FreeItemManagerInterface::class );
+		$manager->shouldReceive( 'remove_rule_items_except' );
+		$manager->shouldReceive( 'add_free_item' )->andReturnUsing(
+			function ( $cart, $product_id, $quantity, $rule, $variation ) use ( &$received ) {
+				$received = $variation;
+				return 'key';
+			}
+		);
+
+		( new DiscountApplier( new EligibilityChecker(), $manager ) )->sync( new \stdClass(), $this->rule( 1, 1, array( 20 ) ), array( 'a' => $line ) );
+
+		$this->assertSame( array( 'attribute_size' => 'L' ), $received );
+	}
+
+	/**
 	 * "Buy 1 Get 2" grants the full free quantity, even above the bought quantity.
 	 */
 	public function test_free_quantity_may_exceed_purchased_quantity() {

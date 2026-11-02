@@ -137,6 +137,7 @@ class DiscountApplier implements DiscountApplierInterface {
 
 		$remaining  = (int) $free_quantity;
 		$allocation = array();
+		$variations = array();
 
 		foreach ( $eligible_items as $cart_item ) {
 			if ( $remaining <= 0 ) {
@@ -148,6 +149,9 @@ class DiscountApplier implements DiscountApplierInterface {
 
 			$allocation[ $product_id ] = ( $allocation[ $product_id ] ?? 0 ) + $free_qty;
 			$remaining                -= $free_qty;
+
+			// "Any" variations only know their attributes from the purchased line.
+			$variations[ $product_id ] = $variations[ $product_id ] ?? ( $cart_item['variation'] ?? array() );
 		}
 
 		// "Buy 1 Get 2" can grant more than was bought; the cheapest product takes the rest.
@@ -156,7 +160,7 @@ class DiscountApplier implements DiscountApplierInterface {
 		}
 
 		foreach ( $allocation as $product_id => $quantity ) {
-			$this->free_item_manager->add_free_item( $cart, $product_id, $quantity, $rule );
+			$this->free_item_manager->add_free_item( $cart, $product_id, $quantity, $rule, $variations[ $product_id ] );
 		}
 
 		$this->free_item_manager->remove_rule_items_except( $cart, $rule->id, array_keys( $allocation ) );

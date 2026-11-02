@@ -166,6 +166,14 @@ class CartHandler {
 	 */
 	public function apply_bogo_prices( $cart ) {
 		if ( ! Settings::is_enabled() ) {
+			// Nothing is discounted now, so a claim from the session would credit
+			// the rule with an order it didn't apply to.
+			foreach ( $cart->get_cart() as $cart_item_key => $cart_item ) {
+				if ( ! self::is_bogo_item( $cart_item ) ) {
+					unset( $cart->cart_contents[ $cart_item_key ][ self::BOGO_RULE_KEY ] );
+				}
+			}
+
 			return;
 		}
 
