@@ -23,10 +23,11 @@ interface FreeItemManagerInterface {
 	 * @param int      $product_id Product ID to add.
 	 * @param int      $quantity   Quantity to add.
 	 * @param Rule     $rule       Rule object.
+	 * @param array    $variation   Chosen attributes, for "Any" variations.
 	 *
 	 * @return bool|string Cart item key or false on failure.
 	 */
-	public function add_free_item( $cart, $product_id, $quantity, Rule $rule );
+	public function add_free_item( $cart, $product_id, $quantity, Rule $rule, $variation = array() );
 
 	/**
 	 * Remove all BOGO items for a specific rule.

@@ -24,14 +24,23 @@ class FreeItemManager implements FreeItemManagerInterface {
 	 * @param int      $product_id  Product ID to add.
 	 * @param int      $quantity    Quantity to add.
 	 * @param Rule     $rule        Rule object.
+	 * @param array    $variation   Chosen attributes, for "Any" variations.
 	 *
 	 * @return bool|string Cart item key or false on failure.
 	 */
-	public function add_free_item( $cart, $product_id, $quantity, Rule $rule ) {
+	public function add_free_item( $cart, $product_id, $quantity, Rule $rule, $variation = array() ) {
 		$product_id   = (int) $product_id;
 		$product      = wc_get_product( $product_id );
 		$existing_key = $this->find_bogo_item( $cart, $product_id, (int) $rule->id );
-		$quantity     = $this->grantable_quantity( $cart, $product, (int) $quantity, $existing_key );
+
+		if ( $product && $product->is_type( 'variation' ) ) {
+			$variation = array_merge( $product->get_variation_attributes(), $variation );
+		}
+
+		// An "Any" variation with no chosen value can't be added to the cart.
+		$quantity = in_array( '', $variation, true )
+			? 0
+			: $this->grantable_quantity( $cart, $product, (int) $quantity, $existing_key );
 
 		if ( $quantity < 1 ) {
 			// A gift that can no longer be supplied must not block checkout.
@@ -64,13 +73,13 @@ class FreeItemManager implements FreeItemManagerInterface {
 		);
 
 		$variation_id = 0;
-		$variation    = array();
 
 		if ( $product->is_type( 'variation' ) ) {
 			$variation_id = $product_id;
 			$product_id   = $product->get_parent_id();
-			$variation    = $product->get_variation_attributes();
 		}
+
+		$notices = wc_get_notices();
 
 		$cart_item_key = $cart->add_to_cart(
 			$product_id,
@@ -79,6 +88,12 @@ class FreeItemManager implements FreeItemManagerInterface {
 			$variation,
 			$cart_item_data
 		);
+
+		// WooCommerce reports a failed add as an error, which would stop checkout
+		// for the paid items. A gift the store can't supply must not do that.
+		if ( ! $cart_item_key ) {
+			wc_set_notices( $notices );
+		}
 
 		// Pricing is applied in the totals hook (apply_bogo_prices) so the BOGO
 		// baseline is captured from the natural price first.
@@ -177,7 +192,8 @@ class FreeItemManager implements FreeItemManagerInterface {
 	 * How many units of a gift can actually be supplied.
 	 *
 	 * Other lines drawing on the same stock are deducted, which includes sibling
-	 * variations when the parent manages stock.
+	 * variations when the parent manages stock, and so is stock held for other
+	 * customers' pending orders, which WooCommerce counts at checkout.
 	 *
 	 * @param \WC_Cart          $cart         Cart object.
 	 * @param \WC_Product|false $product      Product object.
@@ -197,6 +213,7 @@ class FreeItemManager implements FreeItemManagerInterface {
 			return $quantity;
 		}
 
+		$max     -= wc_get_held_stock_quantity( $product, $this->current_order_id() );
 		$stock_id = $product->get_stock_managed_by_id();
 
 		foreach ( $cart->get_cart() as $cart_item_key => $cart_item ) {
@@ -206,6 +223,23 @@ class FreeItemManager implements FreeItemManagerInterface {
 		}
 
 		return min( $quantity, max( 0, $max ) );
+	}
+
+	/**
+	 * The customer's own pending order, whose held stock is theirs to use.
+	 *
+	 * @return int
+	 */
+	private function current_order_id() {
+		$session = WC()->session;
+
+		if ( ! $session ) {
+			return 0;
+		}
+
+		$order_id = absint( $session->get( 'order_awaiting_payment' ) );
+
+		return $order_id ? $order_id : absint( $session->get( 'store_api_draft_order', 0 ) );
 	}
 
 	/**

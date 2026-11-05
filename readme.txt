@@ -4,7 +4,7 @@ Tags: woocommerce, bogo, buy one get one, free gift, discount
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.1.2
+Stable tag: 2.1.3
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -128,6 +128,15 @@ Use the "Enable plugin" toggle on the Settings screen to switch all BOGO functio
 
 == Changelog ==
 
+= 2.1.3 =
+* Fixed: a gift can no longer block checkout when a Buy X, Get X rule uses an "Any" variation. The free copy now keeps the options the customer chose.
+* Fixed: a gift that can't be added to the cart no longer shows an error that stops checkout.
+* Fixed: gifts now allow for stock held by other customers' pending orders, so held stock can't block checkout.
+* Fixed: order stats are no longer credited to a rule when Bogofy was turned off before checkout.
+* Fixed: the gift note in the cart now names the product the customer bought, not the first product in the rule.
+* Developer: `FreeItemManagerInterface::add_free_item()` gains an optional `$variation` parameter.
+* Developer: 2.1.2 removed `FreeItemManagerInterface::cleanup_orphaned_items()` and `CartHandler::on_cart_item_removed()`.
+
 = 2.1.2 =
 * Added: compatibility with WordPress 7.1, WooCommerce 11.2 and PHP 8.5.
 * Fixed: products in the cart now always use their current price. A price change no longer leaves a customer paying the old price.
@@ -181,6 +190,9 @@ Use the "Enable plugin" toggle on the Settings screen to switch all BOGO functio
 * HPOS and Cart/Checkout Blocks compatibility.
 
 == Upgrade Notice ==
+
+= 2.1.3 =
+Fixes cases where a free gift could block checkout. Recommended for all stores.
 
 = 2.1.1 =
 Adds compatibility with WooCommerce 11.1+.
