@@ -204,12 +204,18 @@ jobs:
             "$PLUGIN_SLUG/tests/" \
             "$PLUGIN_SLUG/bin/" \
             "$PLUGIN_SLUG/phpunit.xml" \
+            "$PLUGIN_SLUG/.claude/" \
             "$PLUGIN_SLUG/.distignore" ; do
             if unzip -l "$ZIP" | grep -q "$pattern"; then
               echo "::error::Development file leaked into package: $pattern"
               exit 1
             fi
           done
+          # Agent skills and instructions must never ship, wherever they sit.
+          if unzip -Z1 "$ZIP" | grep -iE '(^|/)(SKILL\.md|CLAUDE\.md|AGENTS\.md|THIRD_PARTY_NOTICES\.md)$|/\.agents/'; then
+            echo "::error::Agent skill or instruction file leaked into package"
+            exit 1
+          fi
           # These MUST be present (runtime requirements).
           for pattern in \
             "$PLUGIN_SLUG/bogofy.php" \

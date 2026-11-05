@@ -65,6 +65,8 @@ class CartDisplayTest extends TestCase {
 		$rule->apply_to        = Rule::APPLY_SPECIFIC_PRODUCTS;
 		$rule->buy_product_ids = array( 10 );
 
+		$this->stub_cart_with_paid_product( 10 );
+
 		$cart_item = array(
 			CartHandler::BOGO_ITEM_KEY => true,
 			CartHandler::BOGO_RULE_KEY => 3,
@@ -76,6 +78,73 @@ class CartDisplayTest extends TestCase {
 		$this->assertStringContainsString( 'My Rule', $out[0]['value'] );
 		$this->assertStringContainsString( 'Trigger Product', $out[0]['value'] );
 		$this->assertStringContainsString( '<br>', $out[0]['value'] );
+	}
+
+	/**
+	 * The note names the product in the cart, not the rule's first product.
+	 */
+	public function test_gift_note_names_the_product_that_was_bought() {
+		Monkey\Functions\when( 'wc_get_product' )->alias(
+			function ( $product_id ) {
+				return new class( $product_id ) {
+					private $id;
+
+					public function __construct( $id ) {
+						$this->id = $id;
+					}
+
+					public function get_name() {
+						return 'Product ' . $this->id;
+					}
+				};
+			}
+		);
+
+		$rule                  = new Rule();
+		$rule->title           = 'My Rule';
+		$rule->apply_to        = Rule::APPLY_SPECIFIC_PRODUCTS;
+		$rule->buy_product_ids = array( 10, 20 );
+
+		$this->stub_cart_with_paid_product( 20 );
+
+		$out = $this->display_with_rule( $rule )->add_item_data(
+			array(),
+			array(
+				CartHandler::BOGO_ITEM_KEY => true,
+				CartHandler::BOGO_RULE_KEY => 3,
+			)
+		);
+
+		$this->assertStringContainsString( 'Product 20', $out[0]['value'] );
+		$this->assertStringNotContainsString( 'Product 10', $out[0]['value'] );
+	}
+
+	/**
+	 * Stub a cart holding one paid line.
+	 *
+	 * @param int $product_id Product ID.
+	 *
+	 * @return void
+	 */
+	private function stub_cart_with_paid_product( $product_id ) {
+		$cart = new class( $product_id ) {
+			private $product_id;
+
+			public function __construct( $product_id ) {
+				$this->product_id = $product_id;
+			}
+
+			public function get_cart() {
+				return array(
+					'paid' => array(
+						'product_id'   => $this->product_id,
+						'variation_id' => 0,
+					),
+				);
+			}
+		};
+
+		Monkey\Functions\when( 'WC' )->justReturn( (object) array( 'cart' => $cart ) );
 	}
 
 	/**

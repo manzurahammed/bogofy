@@ -114,13 +114,34 @@ class CartDisplay {
 			}
 		}
 
-		if ( ! empty( $rule->buy_product_ids ) ) {
-			$product = wc_get_product( (int) $rule->buy_product_ids[0] );
+		$bought = $this->get_bought_product_ids();
+
+		foreach ( $rule->buy_product_ids as $product_id ) {
+			$product = in_array( (int) $product_id, $bought, true ) ? wc_get_product( (int) $product_id ) : false;
 			if ( $product ) {
 				return $product->get_name();
 			}
 		}
 
 		return '';
+	}
+
+	/**
+	 * IDs of the products and variations on the paid cart lines.
+	 *
+	 * @return int[]
+	 */
+	private function get_bought_product_ids() {
+		$ids  = array();
+		$cart = WC()->cart;
+
+		foreach ( $cart ? $cart->get_cart() : array() as $cart_item ) {
+			if ( ! CartHandler::is_bogo_item( $cart_item ) ) {
+				$ids[] = (int) $cart_item['product_id'];
+				$ids[] = (int) $cart_item['variation_id'];
+			}
+		}
+
+		return $ids;
 	}
 }
