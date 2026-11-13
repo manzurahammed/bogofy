@@ -3,6 +3,7 @@ import { __ } from "@wordpress/i18n";
 import {
   useRules,
   useDeleteRule,
+  useDuplicateRule,
   useUpdateRuleStatus,
 } from "../../../hooks/useRules";
 import { useNotification } from "../../../hooks/useNotification";
@@ -35,6 +36,7 @@ export function useRulesManager() {
   });
 
   const deleteRule = useDeleteRule();
+  const duplicateRule = useDuplicateRule();
   const updateStatus = useUpdateRuleStatus();
   const { success, error: showError } = useNotification();
 
@@ -53,6 +55,18 @@ export function useRulesManager() {
       }
     },
     [updateStatus, success, showError],
+  );
+
+  const duplicate = useCallback(
+    async (ruleId) => {
+      try {
+        await duplicateRule.mutateAsync(ruleId);
+        success(__("Rule duplicated. The copy is inactive.", "bogofy"));
+      } catch {
+        showError(__("Failed to duplicate rule", "bogofy"));
+      }
+    },
+    [duplicateRule, success, showError],
   );
 
   const confirmDelete = useCallback(async () => {
@@ -93,6 +107,7 @@ export function useRulesManager() {
     deleteModal,
     liveCount,
     toggleStatus,
+    duplicate,
     confirmDelete,
     openDelete,
     closeDelete,

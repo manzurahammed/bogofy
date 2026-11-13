@@ -250,4 +250,64 @@ class RuleTest extends TestCase {
 		$rule->rule_type = 'buy_x_get_y';
 		$this->assertEquals( 'Buy X Get Y Free', $rule->get_type_label() );
 	}
+
+	/**
+	 * Test duplicating a rule gives an inactive, unsaved copy with fresh stats.
+	 */
+	public function test_duplicate_returns_inactive_copy() {
+		$rule                   = new Rule();
+		$rule->id               = 7;
+		$rule->title            = 'Summer Sale';
+		$rule->status           = Rule::STATUS_ACTIVE;
+		$rule->buy_quantity     = 2;
+		$rule->buy_product_ids  = array( 1, 2 );
+		$rule->free_product_ids = array( 3 );
+		$rule->orders_count     = 12;
+		$rule->revenue_total    = 340.5;
+		$rule->created_at       = '2026-01-01 00:00:00';
+
+		$copy = $rule->duplicate();
+
+		$this->assertSame( 0, $copy->id );
+		$this->assertSame( 'Summer Sale (copy)', $copy->title );
+		$this->assertSame( Rule::STATUS_INACTIVE, $copy->status );
+		$this->assertSame( 0, $copy->orders_count );
+		$this->assertSame( 0.0, $copy->revenue_total );
+		$this->assertSame( '', $copy->created_at );
+		$this->assertSame( 2, $copy->buy_quantity );
+		$this->assertSame( array( 1, 2 ), $copy->buy_product_ids );
+		$this->assertSame( array( 3 ), $copy->free_product_ids );
+
+		// The original is untouched.
+		$this->assertSame( 7, $rule->id );
+		$this->assertSame( Rule::STATUS_ACTIVE, $rule->status );
+		$this->assertSame( 12, $rule->orders_count );
+	}
+
+	/**
+	 * Test a long title is shortened to fit the column and keeps the copy marker.
+	 */
+	public function test_duplicate_truncates_long_title_and_keeps_marker() {
+		$rule        = new Rule();
+		$rule->title = str_repeat( 'a', 255 );
+
+		$title = $rule->duplicate()->title;
+
+		$this->assertSame( 255, mb_strlen( $title ) );
+		$this->assertStringEndsWith( ' (copy)', $title );
+	}
+
+	/**
+	 * Test a long non-ASCII title is cut on a character boundary.
+	 */
+	public function test_duplicate_truncates_multibyte_title_safely() {
+		$rule        = new Rule();
+		$rule->title = str_repeat( 'é', 255 );
+
+		$title = $rule->duplicate()->title;
+
+		$this->assertTrue( mb_check_encoding( $title, 'UTF-8' ) );
+		$this->assertSame( 255, mb_strlen( $title ) );
+		$this->assertStringEndsWith( ' (copy)', $title );
+	}
 }

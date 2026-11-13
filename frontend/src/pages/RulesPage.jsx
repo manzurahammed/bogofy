@@ -28,6 +28,7 @@ function RulesPage() {
     deleteModal,
     liveCount,
     toggleStatus,
+    duplicate,
     confirmDelete,
     openDelete,
     closeDelete,
@@ -106,6 +107,7 @@ function RulesPage() {
               key={rule.id}
               rule={rule}
               onEdit={handleEdit}
+              onDuplicate={duplicate}
               onDelete={openDelete}
               onToggle={toggleStatus}
             />
