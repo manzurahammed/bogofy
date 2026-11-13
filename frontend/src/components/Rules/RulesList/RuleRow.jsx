@@ -1,6 +1,6 @@
 import React, { memo } from "react";
 import { __, sprintf } from "@wordpress/i18n";
-import { GiftIcon, EditIcon, TrashIcon } from "../../Icons";
+import { GiftIcon, EditIcon, CopyIcon, TrashIcon } from "../../Icons";
 
 const ruleTypeLabels = {
   buy_x_get_x: __("Buy X Get X Free", "bogofy"),
@@ -115,7 +115,7 @@ function StatColumn({ label, value }) {
   );
 }
 
-function RuleRow({ rule, onEdit, onDelete, onToggle }) {
+function RuleRow({ rule, onEdit, onDuplicate, onDelete, onToggle }) {
   const { statusClass, statusLabel, meta, isActive } = getRuleState(rule);
 
   return (
@@ -190,6 +190,13 @@ function RuleRow({ rule, onEdit, onDelete, onToggle }) {
           title={__("Edit", "bogofy")}
         >
           <EditIcon size={13} />
+        </button>
+        <button
+          className="bogo-button bogo-button--sm bogo-button--ghost"
+          onClick={() => onDuplicate(rule.id)}
+          title={__("Duplicate", "bogofy")}
+        >
+          <CopyIcon size={13} />
         </button>
         <button
           className="bogo-button bogo-button--sm bogo-button--ghost"

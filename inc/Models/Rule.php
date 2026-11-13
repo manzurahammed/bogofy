@@ -261,6 +261,35 @@ class Rule {
 	}
 
 	/**
+	 * Build an unsaved copy of this rule.
+	 *
+	 * The copy starts inactive so it can't stack with the original on a live
+	 * store before the merchant edits it. Order stats stay with the original.
+	 *
+	 * @since 2.2.0
+	 *
+	 * @return Rule
+	 */
+	public function duplicate() {
+		$copy = clone $this;
+
+		$copy->id            = 0;
+		$copy->status        = self::STATUS_INACTIVE;
+		$copy->orders_count  = 0;
+		$copy->revenue_total = 0.0;
+		$copy->created_at    = '';
+		$copy->updated_at    = '';
+
+		/* translators: %s: title of the rule being duplicated */
+		$title = sprintf( __( '%s (copy)', 'bogofy' ), $this->title );
+
+		// The title column is VARCHAR(255).
+		$copy->title = function_exists( 'mb_substr' ) ? mb_substr( $title, 0, 255 ) : substr( $title, 0, 255 );
+
+		return $copy;
+	}
+
+	/**
 	 * Convert rule to array for database storage.
 	 *
 	 * @return array
