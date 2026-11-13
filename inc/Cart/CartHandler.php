@@ -228,10 +228,13 @@ class CartHandler {
 				continue;
 			}
 
-			$options = array();
+			// Offer only gifts that could replace this line right now, so a pick
+			// never comes back as an error. The current gift always stays listed.
+			$selected = self::gift_product_id( $cart_item );
+			$options  = array();
 			foreach ( $rule->gift_product_ids() as $gift_id ) {
 				$product = wc_get_product( $gift_id );
-				if ( $product && ! $product->is_type( 'variable' ) && $product->is_purchasable() && $product->is_in_stock() ) {
+				if ( $product && ( $gift_id === $selected || $this->free_item_manager->can_supply( $cart, $gift_id, array( $cart_item_key ) ) ) ) {
 					$options[] = array(
 						'id'   => $gift_id,
 						'name' => $product->get_name(),
@@ -244,7 +247,7 @@ class CartHandler {
 					'rule_id'       => $rule_id,
 					'rule_title'    => $rule->title,
 					'cart_item_key' => $cart_item_key,
-					'selected'      => self::gift_product_id( $cart_item ),
+					'selected'      => $selected,
 					'options'       => $options,
 				);
 			}

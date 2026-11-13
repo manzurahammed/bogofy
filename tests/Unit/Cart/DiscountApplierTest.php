@@ -350,6 +350,29 @@ class DiscountApplierTest extends TestCase {
 	}
 
 	/**
+	 * The replaced gift's line is passed on so its stock is reused, and it stays
+	 * in the cart when the new gift can't be added.
+	 */
+	public function test_switch_reuses_the_replaced_gift_and_keeps_it_on_failure() {
+		$replacing = null;
+		$manager   = Mockery::mock( FreeItemManagerInterface::class );
+		$manager->shouldReceive( 'add_free_item' )->andReturnUsing(
+			function ( $cart, $product_id, $quantity, $rule, $variation, $keys ) use ( &$replacing ) {
+				$replacing = $keys;
+				return false;
+			}
+		);
+		$manager->shouldNotReceive( 'remove_rule_items_except' );
+
+		$cart    = $this->gift_cart( array( 'gift_30' => $this->gift_line( 30, 1 ) ) );
+		$applier = new DiscountApplier( new EligibilityChecker(), $manager );
+
+		$this->assertFalse( $applier->switch_gift( $cart, $this->gift_rule( array( 30, 40 ) ), 40 ) );
+		$this->assertSame( array( 'gift_30' ), $replacing );
+		$this->assertSame( array( 'gift_30' ), array_keys( $cart->cart_contents ) );
+	}
+
+	/**
 	 * A chosen gift that can't be supplied falls back to the next gift.
 	 */
 	public function test_unavailable_choice_falls_back_to_next_gift() {

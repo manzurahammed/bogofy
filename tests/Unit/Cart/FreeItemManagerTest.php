@@ -329,6 +329,74 @@ namespace Bogofy\Tests\Unit\Cart {
 		}
 
 		/**
+		 * Swapping a gift for a sibling variation reuses the replaced gift's stock.
+		 */
+		public function test_replacement_gift_reuses_the_replaced_gift_stock() {
+			$gift      = new \Bogo_Fake_Gift_Product( 100 );
+			$gift->max = 1;
+			Functions\when( 'wc_get_product' )->justReturn( $gift );
+
+			$old_gift = array(
+				'product_id'               => 100,
+				'variation_id'             => 101,
+				'quantity'                 => 1,
+				'data'                     => new \Bogo_Fake_Gift_Product( 100 ),
+				CartHandler::BOGO_ITEM_KEY => true,
+				CartHandler::BOGO_RULE_KEY => 5,
+			);
+
+			// Counted against the new gift, the last unit is already taken.
+			$blocked = new \Bogo_Fake_Cart( array( 'old_gift' => $old_gift ) );
+			$this->assertFalse( ( new FreeItemManager() )->add_free_item( $blocked, 102, 1, $this->make_rule() ) );
+			$this->assertSame( array(), $blocked->removed );
+
+			$cart = new \Bogo_Fake_Cart( array( 'old_gift' => $old_gift ) );
+			( new FreeItemManager() )->add_free_item( $cart, 102, 1, $this->make_rule(), array(), array( 'old_gift' ) );
+
+			$this->assertSame( array( 102 => 1 ), $cart->added );
+		}
+
+		/**
+		 * A gift whose stock paid lines already use can't be offered.
+		 */
+		public function test_can_supply_allows_for_stock_used_by_other_lines() {
+			$gift      = new \Bogo_Fake_Gift_Product( 7 );
+			$gift->max = 2;
+			Functions\when( 'wc_get_product' )->justReturn( $gift );
+
+			$cart = new \Bogo_Fake_Cart(
+				array(
+					'paid' => array(
+						'product_id'   => 7,
+						'variation_id' => 0,
+						'quantity'     => 2,
+						'data'         => new \Bogo_Fake_Gift_Product( 7 ),
+					),
+				)
+			);
+
+			$this->assertFalse( ( new FreeItemManager() )->can_supply( $cart, 7 ) );
+
+			$gift->max = 3;
+			$this->assertTrue( ( new FreeItemManager() )->can_supply( $cart, 7 ) );
+		}
+
+		/**
+		 * An "Any" variation can't be offered, since it would always be rejected.
+		 */
+		public function test_can_supply_rejects_any_variation_without_a_value() {
+			$gift             = new \Bogo_Fake_Gift_Product();
+			$gift->type       = 'variation';
+			$gift->attributes = array( 'attribute_size' => '' );
+			Functions\when( 'wc_get_product' )->justReturn( $gift );
+
+			$this->assertFalse( ( new FreeItemManager() )->can_supply( new \Bogo_Fake_Cart(), 7 ) );
+
+			$gift->attributes = array( 'attribute_size' => 'L' );
+			$this->assertTrue( ( new FreeItemManager() )->can_supply( new \Bogo_Fake_Cart(), 7 ) );
+		}
+
+		/**
 		 * The error from a failed add must not reach checkout.
 		 */
 		public function test_failed_add_restores_the_notices() {

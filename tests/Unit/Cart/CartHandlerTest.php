@@ -173,6 +173,65 @@ namespace Bogofy\Tests\Unit\Cart {
 		}
 
 		/**
+		 * The picker only offers gifts that could replace the current one, and
+		 * always keeps the current gift listed.
+		 */
+		public function test_gift_choices_skip_gifts_that_cannot_be_supplied() {
+			$rule                   = new \Bogofy\Models\Rule();
+			$rule->id               = 5;
+			$rule->title            = 'Pick a gift';
+			$rule->rule_type        = \Bogofy\Models\Rule::TYPE_BUY_X_GET_Y;
+			$rule->free_product_ids = array( 30, 40, 50 );
+
+			$repository = Mockery::mock( RuleRepository::class );
+			$repository->shouldReceive( 'get_active_rules' )->andReturn( array( $rule ) );
+
+			$checks  = array();
+			$manager = Mockery::mock( \Bogofy\Cart\Contracts\FreeItemManagerInterface::class );
+			$manager->shouldReceive( 'can_supply' )->andReturnUsing(
+				function ( $cart, $product_id, $replacing ) use ( &$checks ) {
+					$checks[ $product_id ] = $replacing;
+					return 50 === $product_id;
+				}
+			);
+
+			Functions\when( 'wc_get_product' )->alias(
+				function ( $id ) {
+					return new class( $id ) {
+						private $id;
+
+						public function __construct( $id ) {
+							$this->id = $id;
+						}
+
+						public function get_name() {
+							return 'Gift ' . $this->id;
+						}
+					};
+				}
+			);
+
+			$gift = array(
+				'product_id'               => 30,
+				'variation_id'             => 0,
+				'quantity'                 => 1,
+				CartHandler::BOGO_ITEM_KEY => true,
+				CartHandler::BOGO_RULE_KEY => 5,
+			);
+			$cart                = new \WC_Cart( array( 'gift' => $gift ) );
+			$cart->cart_contents = array( 'gift' => $gift );
+
+			$checker = new EligibilityChecker();
+			$handler = new CartHandler( $repository, $checker, new DiscountApplier( $checker, $manager ), $manager );
+			$choices = $handler->get_gift_choices( $cart );
+
+			$this->assertCount( 1, $choices );
+			$this->assertSame( 30, $choices[0]['selected'] );
+			$this->assertSame( array( 30, 50 ), array_column( $choices[0]['options'], 'id' ) );
+			$this->assertSame( array( 'gift' ), $checks[40] );
+		}
+
+		/**
 		 * Gift quantities are locked in the block cart, as in the classic cart.
 		 */
 		public function test_store_api_locks_gift_quantity() {

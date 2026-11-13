@@ -226,10 +226,12 @@ class DiscountApplier implements DiscountApplierInterface {
 			return false;
 		}
 
-		$quantity = 0;
-		foreach ( $cart->get_cart() as $cart_item ) {
+		$quantity  = 0;
+		$replacing = array();
+		foreach ( $cart->get_cart() as $key => $cart_item ) {
 			if ( $this->is_rule_gift( $cart_item, $rule ) ) {
-				$quantity += (int) $cart_item['quantity'];
+				$quantity   += (int) $cart_item['quantity'];
+				$replacing[] = $key;
 			}
 		}
 
@@ -238,7 +240,9 @@ class DiscountApplier implements DiscountApplierInterface {
 			return false;
 		}
 
-		$cart_item_key = $this->free_item_manager->add_free_item( $cart, $product_id, $quantity, $rule );
+		// The old gift's stock is freed by the swap, so it doesn't count against
+		// the new one; the old line stays if the new gift can't be added.
+		$cart_item_key = $this->free_item_manager->add_free_item( $cart, $product_id, $quantity, $rule, array(), $replacing );
 
 		if ( ! $cart_item_key ) {
 			return false;
