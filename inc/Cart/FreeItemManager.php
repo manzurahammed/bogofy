@@ -217,7 +217,10 @@ class FreeItemManager implements FreeItemManagerInterface {
 	 * @return void
 	 */
 	private function remove_gift( $cart, $cart_item_key, $rule_id ) {
-		$cart->remove_cart_item( $cart_item_key );
+		// A listener may already have removed this line; announce each removal once.
+		if ( ! $cart->remove_cart_item( $cart_item_key ) ) {
+			return;
+		}
 
 		/**
 		 * Fires after Bogofy removes a gift line from the cart.

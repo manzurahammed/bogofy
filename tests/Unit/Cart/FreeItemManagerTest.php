@@ -25,8 +25,14 @@ namespace {
 			}
 
 			public function remove_cart_item( $key ) {
+				if ( ! isset( $this->contents[ $key ] ) ) {
+					return false;
+				}
+
 				$this->removed[] = $key;
 				unset( $this->contents[ $key ] );
+
+				return true;
 			}
 
 			public function add_to_cart( $product_id, $quantity, $variation_id = 0, $variation = array() ) {
@@ -442,6 +448,28 @@ namespace Bogofy\Tests\Unit\Cart {
 			( new FreeItemManager() )->remove_rule_items( $cart, 5 );
 
 			$this->assertSame( array( 'gift_a' ), $cart->removed );
+		}
+
+		/**
+		 * A queued line a listener already removed is not announced by Bogofy.
+		 */
+		public function test_line_removed_by_a_listener_is_not_announced() {
+			$cart = $this->make_cart();
+
+			Actions\expectDone( 'bogofy_gift_removed' )
+				->once()
+				->with( 'gift_a', 5 )
+				->whenHappen(
+					function ( $cart_item_key ) use ( $cart ) {
+						if ( 'gift_a' === $cart_item_key ) {
+							$cart->remove_cart_item( 'gift_b' );
+						}
+					}
+				);
+
+			( new FreeItemManager() )->remove_items_for_inactive_rules( $cart, array() );
+
+			$this->assertSame( array( 'gift_a', 'gift_b' ), $cart->removed );
 		}
 	}
 }

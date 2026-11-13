@@ -251,6 +251,41 @@ namespace Bogofy\Tests\Unit\Cart {
 		}
 
 		/**
+		 * A veto that changes without a gift sync (e.g. a coupon applied over AJAX)
+		 * still removes the gift before totals are calculated.
+		 */
+		public function test_totals_remove_gifts_of_a_vetoed_rule() {
+			Functions\when( 'get_option' )->justReturn( array( 'enabled' => true ) );
+
+			$rule                = $this->make_rule( Rule::TYPE_BUY_X_GET_X );
+			$cart                = new \WC_Cart();
+			$cart->cart_contents = array(
+				'paid' => array(
+					'product_id'   => 1,
+					'variation_id' => 0,
+					'quantity'     => 1,
+					'data'         => new \Bogo_Fake_Priced_Product( 20 ),
+				),
+				'gift' => array(
+					'product_id'               => 1,
+					'variation_id'             => 0,
+					'quantity'                 => 1,
+					'data'                     => new \Bogo_Fake_Priced_Product( 20 ),
+					CartHandler::BOGO_ITEM_KEY => true,
+					CartHandler::BOGO_RULE_KEY => 5,
+				),
+			);
+
+			Filters\expectApplied( 'bogofy_rule_is_eligible' )->once()->andReturn( false );
+			Actions\expectDone( 'bogofy_gift_removed' )->once()->with( 'gift', 5 );
+
+			$this->make_handler( array( $rule ) )->apply_bogo_prices( $cart );
+
+			$this->assertArrayNotHasKey( 'gift', $cart->cart_contents );
+			$this->assertArrayHasKey( 'paid', $cart->cart_contents );
+		}
+
+		/**
 		 * WooCommerce uses the return value of this filter to recalculate totals.
 		 */
 		public function test_on_cart_updated_returns_filter_value() {
