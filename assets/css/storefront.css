@@ -147,3 +147,45 @@
   color: #059669;
   font-weight: 700;
 }
+
+/* ── "Add N more" cart nudges (classic + block cart) ───── */
+.bogo-nudge-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.bogo-nudge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-left: 4px solid #10b981;
+  border-radius: 10px;
+  color: #0c6b46;
+}
+
+.bogo-nudge-list .bogo-nudge {
+  margin: 0;
+}
+
+.bogo-nudge__icon {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  color: #059669;
+}
+
+.bogo-nudge__icon svg {
+  display: block;
+}
+
+.bogo-nudge__text {
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1.4;
+}

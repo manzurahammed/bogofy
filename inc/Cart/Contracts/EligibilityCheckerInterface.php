@@ -48,6 +48,18 @@ interface EligibilityCheckerInterface {
 	public function calculate_free_quantity( $eligible_items, Rule $rule );
 
 	/**
+	 * Work out what the next partly-met set of a rule would unlock.
+	 *
+	 * @since 2.2.0
+	 *
+	 * @param array $eligible_items Eligible cart items.
+	 * @param Rule  $rule           Rule object.
+	 *
+	 * @return array{remaining:int,free_qty:int}|null Null when there is nothing to nudge towards.
+	 */
+	public function get_next_unlock( $eligible_items, Rule $rule );
+
+	/**
 	 * Check if a rule is currently active (within its date range).
 	 *
 	 * @param Rule $rule Rule object.

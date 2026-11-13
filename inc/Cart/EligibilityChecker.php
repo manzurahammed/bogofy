@@ -131,6 +131,53 @@ class EligibilityChecker implements EligibilityCheckerInterface {
 	}
 
 	/**
+	 * Work out what the next partly-met set of a rule would unlock.
+	 *
+	 * Uses the same set math as calculate_free_quantity(): with a "buy 2" rule and
+	 * 3 eligible items, 1 more item completes the next set. Returns null when the
+	 * cart has no eligible items, sits exactly on a set boundary, or the rule's
+	 * max free quantity is already reached.
+	 *
+	 * @since 2.2.0
+	 *
+	 * @param array $eligible_items Eligible cart items.
+	 * @param Rule  $rule           Rule object.
+	 *
+	 * @return array{remaining:int,free_qty:int}|null
+	 */
+	public function get_next_unlock( $eligible_items, Rule $rule ) {
+		$total_quantity = 0;
+
+		foreach ( $eligible_items as $cart_item ) {
+			$total_quantity += (int) $cart_item['quantity'];
+		}
+
+		$buy_quantity = max( 1, (int) $rule->buy_quantity );
+		$into_set     = $total_quantity % $buy_quantity;
+
+		if ( 0 === $total_quantity || 0 === $into_set ) {
+			return null;
+		}
+
+		// The next set unlocks free_quantity items, capped by what the max still allows.
+		$free_quantity = (int) $rule->free_quantity;
+
+		if ( null !== $rule->max_free_qty ) {
+			$headroom      = (int) $rule->max_free_qty - $this->calculate_free_quantity( $eligible_items, $rule );
+			$free_quantity = min( $free_quantity, $headroom );
+		}
+
+		if ( $free_quantity < 1 ) {
+			return null;
+		}
+
+		return array(
+			'remaining' => $buy_quantity - $into_set,
+			'free_qty'  => $free_quantity,
+		);
+	}
+
+	/**
 	 * Check if rule is currently active (within date range).
 	 *
 	 * @param Rule $rule Rule object.
