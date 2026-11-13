@@ -120,6 +120,20 @@ class EligibilityCheckerTest extends TestCase {
 	}
 
 	/**
+	 * Discounted rules only discount items in the cart, so the promise is capped.
+	 */
+	public function test_next_unlock_for_discounted_rule_capped_by_cart_size() {
+		// Buy 2 get 3 discounted, 1 item: at 2 items only 2 can be discounted.
+		$rule            = $this->rule( 2, 3 );
+		$rule->rule_type = Rule::TYPE_BUY_X_GET_X_DISCOUNTED;
+
+		$unlock = ( new EligibilityChecker() )->get_next_unlock( $this->items( 1 ), $rule );
+
+		$this->assertSame( 1, $unlock['remaining'] );
+		$this->assertSame( 2, $unlock['free_qty'] );
+	}
+
+	/**
 	 * A cart with no eligible items gets no nudge.
 	 */
 	public function test_no_next_unlock_when_not_eligible() {

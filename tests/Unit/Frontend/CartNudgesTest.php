@@ -58,15 +58,15 @@ namespace Bogofy\Tests\Unit\Frontend {
 		}
 
 		/**
-		 * Build nudges backed by a repository returning the given rule.
+		 * Build nudges backed by a repository returning the given rules.
 		 *
-		 * @param Rule $rule Active rule.
+		 * @param Rule ...$rules Active rules.
 		 *
 		 * @return CartNudges
 		 */
-		private function nudges( Rule $rule ) {
+		private function nudges( Rule ...$rules ) {
 			$repo = $this->createMock( RuleRepository::class );
-			$repo->method( 'get_active_rules' )->willReturn( array( $rule ) );
+			$repo->method( 'get_active_rules' )->willReturn( $rules );
 
 			return new CartNudges( $repo, new EligibilityChecker() );
 		}
@@ -138,6 +138,71 @@ namespace Bogofy\Tests\Unit\Frontend {
 			$messages = $this->nudges( $this->rule( Rule::TYPE_BUY_X_GET_X_DISCOUNTED ) )->get_messages( $this->cart( 1 ) );
 
 			$this->assertSame( array( 'Add 2 more items to get 1 at 50% off!' ), $messages );
+		}
+
+		/**
+		 * A percentage reward is not called free, and keeps decimal percentages.
+		 */
+		public function test_percentage_reward_is_not_called_free() {
+			$rule                 = $this->rule();
+			$rule->discount_type  = Rule::DISCOUNT_PERCENTAGE;
+			$rule->discount_value = 12.5;
+
+			$this->assertSame(
+				array( 'Add 2 more items to get 1 at 12.5% off!' ),
+				$this->nudges( $rule )->get_messages( $this->cart( 1 ) )
+			);
+		}
+
+		/**
+		 * A Buy X Get Y gift that cannot be added is not advertised.
+		 */
+		public function test_no_message_when_gift_product_unavailable() {
+			$rule                   = $this->rule( Rule::TYPE_BUY_X_GET_Y );
+			$rule->free_product_ids = array( 99 );
+
+			$in_stock = true;
+			Functions\when( 'wc_get_product' )->alias(
+				function () use ( &$in_stock ) {
+					return new class( $in_stock ) {
+						private $in_stock;
+
+						public function __construct( $in_stock ) {
+							$this->in_stock = $in_stock;
+						}
+
+						public function is_purchasable() {
+							return true;
+						}
+
+						public function is_in_stock() {
+							return $this->in_stock;
+						}
+					};
+				}
+			);
+
+			$this->assertCount( 1, $this->nudges( $rule )->get_messages( $this->cart( 1 ) ) );
+
+			$in_stock = false;
+			$this->assertSame( array(), $this->nudges( $rule )->get_messages( $this->cart( 1 ) ) );
+		}
+
+		/**
+		 * Overlapping discounted rules: only the highest-priority one is advertised.
+		 */
+		public function test_overlapping_discounted_rules_advertise_highest_priority_only() {
+			$low                 = $this->rule( Rule::TYPE_BUY_X_GET_X_DISCOUNTED );
+			$low->priority       = 20;
+			$low->discount_value = 10;
+
+			$high           = $this->rule( Rule::TYPE_BUY_X_GET_X_DISCOUNTED );
+			$high->priority = 5;
+
+			$this->assertSame(
+				array( 'Add 2 more items to get 1 at 50% off!' ),
+				$this->nudges( $low, $high )->get_messages( $this->cart( 1 ) )
+			);
 		}
 
 		/**

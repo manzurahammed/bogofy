@@ -136,7 +136,8 @@ class EligibilityChecker implements EligibilityCheckerInterface {
 	 * Uses the same set math as calculate_free_quantity(): with a "buy 2" rule and
 	 * 3 eligible items, 1 more item completes the next set. Returns null when the
 	 * cart has no eligible items, sits exactly on a set boundary, or the rule's
-	 * max free quantity is already reached.
+	 * max free quantity is already reached. For discounted rules the unlocked
+	 * quantity is limited to items that will actually be in the cart.
 	 *
 	 * @since 2.2.0
 	 *
@@ -159,20 +160,27 @@ class EligibilityChecker implements EligibilityCheckerInterface {
 			return null;
 		}
 
-		// The next set unlocks free_quantity items, capped by what the max still allows.
-		$free_quantity = (int) $rule->free_quantity;
+		$remaining    = $buy_quantity - $into_set;
+		$current_free = $this->calculate_free_quantity( $eligible_items, $rule );
+		$next_total   = $total_quantity + $remaining;
+		$next_free    = $this->calculate_free_quantity( array( array( 'quantity' => $next_total ) ), $rule );
 
-		if ( null !== $rule->max_free_qty ) {
-			$headroom      = (int) $rule->max_free_qty - $this->calculate_free_quantity( $eligible_items, $rule );
-			$free_quantity = min( $free_quantity, $headroom );
+		// Discounted rules discount the bought items themselves, so they can never
+		// discount more items than are in the cart.
+		if ( Rule::TYPE_BUY_X_GET_X_DISCOUNTED === $rule->rule_type ) {
+			$current_free = min( $current_free, $total_quantity );
+			$next_free    = min( $next_free, $next_total );
 		}
+
+		// What the next set adds, already capped by max_free_qty.
+		$free_quantity = $next_free - $current_free;
 
 		if ( $free_quantity < 1 ) {
 			return null;
 		}
 
 		return array(
-			'remaining' => $buy_quantity - $into_set,
+			'remaining' => $remaining,
 			'free_qty'  => $free_quantity,
 		);
 	}

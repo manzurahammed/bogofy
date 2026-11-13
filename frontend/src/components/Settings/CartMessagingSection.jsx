@@ -2,11 +2,13 @@ import React from "react";
 import { __ } from "@wordpress/i18n";
 import SettingsRow from "./SettingsRow";
 
-function ToggleButton({ on, onClick }) {
+function ToggleButton({ on, onClick, label }) {
   return (
     <button
       type="button"
       className={`bogo-toggle${on ? " bogo-toggle--on" : ""}`}
+      aria-label={label}
+      aria-pressed={!!on}
       onClick={onClick}
     />
   );
@@ -49,6 +51,7 @@ function CartMessagingSection({ formData, onToggle, onChange }) {
           <ToggleButton
             on={formData.show_cart_nudges}
             onClick={() => onToggle("show_cart_nudges")}
+            label={__("Show “add more” nudges in cart", "bogofy")}
           />
         </SettingsRow>
         <SettingsRow
