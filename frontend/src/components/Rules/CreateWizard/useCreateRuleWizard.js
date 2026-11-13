@@ -4,6 +4,7 @@ import { useCreateRule } from "../../../hooks/useRules";
 import { useNotification } from "../../../hooks/useNotification";
 import { goToAdmin } from "../../../utils/navigation";
 import { defaultData } from "./constants";
+import { validateConditions, conditionsToPayload } from "../CartConditions";
 
 /**
  * Encapsulates all state and behaviour for the create-rule wizard.
@@ -60,20 +61,8 @@ export function useCreateRuleWizard() {
     ) {
       errs.discount_value = __("Enter a discount between 1 and 100", "bogofy");
     }
-    const { min_subtotal: minSubtotal, min_items: minItems } =
-      formData.conditions;
-    if (step >= 3 && minSubtotal !== "" && !(Number(minSubtotal) >= 0)) {
-      errs.min_subtotal = __("Minimum subtotal cannot be negative", "bogofy");
-    }
-    if (
-      step >= 3 &&
-      minItems !== "" &&
-      !(Number.isInteger(Number(minItems)) && Number(minItems) >= 0)
-    ) {
-      errs.min_items = __(
-        "Minimum items must be a whole number, 0 or more",
-        "bogofy",
-      );
+    if (step >= 3) {
+      Object.assign(errs, validateConditions(formData.conditions));
     }
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -113,13 +102,11 @@ export function useCreateRuleWizard() {
           : null,
         start_date: formData.start_date || null,
         end_date: formData.end_date || null,
-        conditions: {
-          min_subtotal: Number(formData.conditions.min_subtotal) || 0,
-          min_items: Number(formData.conditions.min_items) || 0,
-          excluded_product_ids: selectedExcludedProducts.map((p) => p.id),
-          excluded_category_ids: selectedExcludedCategories.map((c) => c.id),
-          exclude_sale_items: !!formData.conditions.exclude_sale_items,
-        },
+        conditions: conditionsToPayload(
+          formData.conditions,
+          selectedExcludedProducts,
+          selectedExcludedCategories,
+        ),
       };
       try {
         await createRule.mutateAsync(data);

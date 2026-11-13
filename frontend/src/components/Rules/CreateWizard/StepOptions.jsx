@@ -1,7 +1,6 @@
 import React from "react";
 import { __ } from "@wordpress/i18n";
-import { ProductSearch } from "../../Shared/ProductSearch";
-import { CategorySearch } from "../../Shared/CategorySearch";
+import { CartConditions } from "../CartConditions";
 
 // Step 3: Options (discount, limits, cart conditions, scheduling, message)
 function StepOptions({
@@ -14,12 +13,6 @@ function StepOptions({
   errors,
 }) {
   const set = (key, value) => setFormData((p) => ({ ...p, [key]: value }));
-  const conditions = formData.conditions || {};
-  const setCondition = (key, value) =>
-    setFormData((p) => ({
-      ...p,
-      conditions: { ...p.conditions, [key]: value },
-    }));
   const isDiscounted = formData.rule_type === "buy_x_get_x_discounted";
 
   return (
@@ -110,90 +103,15 @@ function StepOptions({
           )}
         </div>
 
-        <div className="bogo-row" style={{ gap: 10, marginTop: 16 }}>
-          <label className="bogo-form-label" style={{ margin: 0 }}>
-            {__("Minimum subtotal", "bogofy")}
-          </label>
-          <input
-            type="number"
-            className="bogo-form-input"
-            style={{ width: 90, textAlign: "center" }}
-            min="0"
-            step="0.01"
-            placeholder="0"
-            value={conditions.min_subtotal}
-            onChange={(e) => setCondition("min_subtotal", e.target.value)}
-          />
-          <span style={{ color: "var(--muted)", fontSize: 12 }}>
-            {__("before BOGO discounts · blank = none", "bogofy")}
-          </span>
-        </div>
-        {errors.min_subtotal && (
-          <div className="bogo-form-error">{errors.min_subtotal}</div>
-        )}
-
-        <div className="bogo-row" style={{ gap: 10, marginTop: 14 }}>
-          <label className="bogo-form-label" style={{ margin: 0 }}>
-            {__("Minimum items", "bogofy")}
-          </label>
-          <input
-            type="number"
-            className="bogo-form-input"
-            style={{ width: 90, textAlign: "center" }}
-            min="0"
-            step="1"
-            placeholder="0"
-            value={conditions.min_items}
-            onChange={(e) => setCondition("min_items", e.target.value)}
-          />
-          <span style={{ color: "var(--muted)", fontSize: 12 }}>
-            {__("items in cart · blank = none", "bogofy")}
-          </span>
-        </div>
-        {errors.min_items && (
-          <div className="bogo-form-error">{errors.min_items}</div>
-        )}
-
-        <div style={{ marginTop: 16 }}>
-          <label className="bogo-form-label">
-            {__("Excluded products", "bogofy")}
-          </label>
-          <ProductSearch
-            selectedProducts={selectedExcludedProducts}
-            onChange={setSelectedExcludedProducts}
-            placeholder={__("Search for products to exclude…", "bogofy")}
-          />
-        </div>
-
-        <div style={{ marginTop: 14 }}>
-          <label className="bogo-form-label">
-            {__("Excluded categories", "bogofy")}
-          </label>
-          <CategorySearch
-            selectedCategories={selectedExcludedCategories}
-            onChange={setSelectedExcludedCategories}
-            placeholder={__("Search for categories to exclude…", "bogofy")}
-          />
-        </div>
-
-        <div className="bogo-row" style={{ gap: 10, marginTop: 16 }}>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={!!conditions.exclude_sale_items}
-            aria-label={__("Exclude sale items", "bogofy")}
-            className={`bogo-toggle${conditions.exclude_sale_items ? " bogo-toggle--on" : ""}`}
-            onClick={() =>
-              setCondition("exclude_sale_items", !conditions.exclude_sale_items)
-            }
-          />
-          <span className="bogo-form-label" style={{ margin: 0 }}>
-            {__("Exclude sale items", "bogofy")}
-          </span>
-          <span style={{ color: "var(--muted)", fontSize: 12 }}>
-            {__("products on sale don't count or get the offer", "bogofy")}
-          </span>
-        </div>
+        <CartConditions
+          conditions={formData.conditions}
+          onChange={(conditions) => set("conditions", conditions)}
+          selectedExcludedProducts={selectedExcludedProducts}
+          setSelectedExcludedProducts={setSelectedExcludedProducts}
+          selectedExcludedCategories={selectedExcludedCategories}
+          setSelectedExcludedCategories={setSelectedExcludedCategories}
+          errors={errors}
+        />
       </div>
 
       <div className="bogo-wizard__card">

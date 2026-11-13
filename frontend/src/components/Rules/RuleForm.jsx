@@ -4,6 +4,13 @@ import clsx from "clsx";
 import { __ } from "@wordpress/i18n";
 import { ProductSearch } from "../Shared/ProductSearch";
 import { CategorySearch } from "../Shared/CategorySearch";
+import {
+  CartConditions,
+  emptyConditions,
+  conditionsToForm,
+  conditionsToPayload,
+  validateConditions,
+} from "./CartConditions";
 import { get } from "../../services/api";
 
 /**
@@ -75,6 +82,7 @@ const defaultFormData = {
   priority: 10,
   start_date: "",
   end_date: "",
+  conditions: emptyConditions,
 };
 
 export function RuleForm({
@@ -87,6 +95,10 @@ export function RuleForm({
   const [selectedBuyProducts, setSelectedBuyProducts] = useState([]);
   const [selectedFreeProducts, setSelectedFreeProducts] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState([]);
+  const [selectedExcludedProducts, setSelectedExcludedProducts] = useState([]);
+  const [selectedExcludedCategories, setSelectedExcludedCategories] = useState(
+    [],
+  );
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
@@ -99,6 +111,7 @@ export function RuleForm({
           ? initialData.start_date.slice(0, 16)
           : "",
         end_date: initialData.end_date ? initialData.end_date.slice(0, 16) : "",
+        conditions: conditionsToForm(initialData.conditions),
       });
 
       // Resolve saved IDs to real product/category names.
@@ -117,6 +130,16 @@ export function RuleForm({
         initialData.category_ids,
         "Category",
       ).then(setSelectedCategories);
+      hydrateItems(
+        "/products/search",
+        initialData.conditions?.excluded_product_ids,
+        "Product",
+      ).then(setSelectedExcludedProducts);
+      hydrateItems(
+        "/categories/search",
+        initialData.conditions?.excluded_category_ids,
+        "Category",
+      ).then(setSelectedExcludedCategories);
     }
   }, [initialData]);
 
@@ -167,6 +190,7 @@ export function RuleForm({
     ) {
       newErrors.free_products = __("Select the free product", "bogofy");
     }
+    Object.assign(newErrors, validateConditions(formData.conditions));
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -186,6 +210,11 @@ export function RuleForm({
         : null,
       start_date: formData.start_date || null,
       end_date: formData.end_date || null,
+      conditions: conditionsToPayload(
+        formData.conditions,
+        selectedExcludedProducts,
+        selectedExcludedCategories,
+      ),
     };
 
     onSubmit(data);
@@ -442,6 +471,30 @@ export function RuleForm({
             )}
           </div>
         )}
+      </div>
+
+      {/* Cart Conditions */}
+      <div className="bogo-card bogo-p-6">
+        <h3 className="bogo-text-lg bogo-font-semibold bogo-text-gray-900 bogo-mb-4">
+          {__("Cart Conditions (Optional)", "bogofy")}
+        </h3>
+        <p className="bogo-text-sm bogo-text-gray-500">
+          {__(
+            "Only apply the offer to carts that meet these conditions. Excluded products never count toward the offer or receive it.",
+            "bogofy",
+          )}
+        </p>
+        <CartConditions
+          conditions={formData.conditions}
+          onChange={(conditions) =>
+            setFormData((prev) => ({ ...prev, conditions }))
+          }
+          selectedExcludedProducts={selectedExcludedProducts}
+          setSelectedExcludedProducts={setSelectedExcludedProducts}
+          selectedExcludedCategories={selectedExcludedCategories}
+          setSelectedExcludedCategories={setSelectedExcludedCategories}
+          errors={errors}
+        />
       </div>
 
       {/* Scheduling */}
