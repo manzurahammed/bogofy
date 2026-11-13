@@ -25,8 +25,14 @@ namespace {
 			}
 
 			public function remove_cart_item( $key ) {
+				if ( ! isset( $this->contents[ $key ] ) ) {
+					return false;
+				}
+
 				$this->removed[] = $key;
 				unset( $this->contents[ $key ] );
+
+				return true;
 			}
 
 			public function add_to_cart( $product_id, $quantity, $variation_id = 0, $variation = array() ) {
@@ -85,6 +91,7 @@ namespace Bogofy\Tests\Unit\Cart {
 	use Bogofy\Cart\CartHandler;
 	use Bogofy\Cart\FreeItemManager;
 	use Bogofy\Models\Rule;
+	use Brain\Monkey\Actions;
 	use Brain\Monkey\Functions;
 	use PHPUnit\Framework\TestCase;
 
@@ -362,6 +369,107 @@ namespace Bogofy\Tests\Unit\Cart {
 
 			$this->assertFalse( ( new FreeItemManager() )->add_free_item( $cart, 7, 1, $this->make_rule() ) );
 			$this->assertSame( array(), $cart->added );
+		}
+
+		/**
+		 * Adding a new gift line announces it with the gift and its rule.
+		 */
+		public function test_new_gift_fires_added_action() {
+			Functions\when( 'wc_get_product' )->justReturn( new \Bogo_Fake_Gift_Product() );
+
+			$rule = $this->make_rule();
+
+			Actions\expectDone( 'bogofy_gift_added' )->once()->with( 'new_key', 7, 2, $rule );
+			Actions\expectDone( 'bogofy_gift_removed' )->never();
+
+			$this->assertSame( 'new_key', ( new FreeItemManager() )->add_free_item( new \Bogo_Fake_Cart(), 7, 2, $rule ) );
+		}
+
+		/**
+		 * Re-syncing an existing gift line's quantity is not an add.
+		 */
+		public function test_existing_gift_quantity_change_fires_no_action() {
+			Functions\when( 'wc_get_product' )->justReturn( new \Bogo_Fake_Gift_Product() );
+
+			$cart                = new \Bogo_Fake_Cart(
+				array(
+					'gift' => array(
+						'product_id'               => 7,
+						'variation_id'             => 0,
+						'quantity'                 => 1,
+						'data'                     => new \Bogo_Fake_Gift_Product( 99 ),
+						CartHandler::BOGO_ITEM_KEY => true,
+						CartHandler::BOGO_RULE_KEY => 5,
+					),
+				)
+			);
+			$cart->cart_contents = $cart->contents;
+
+			Actions\expectDone( 'bogofy_gift_added' )->never();
+			Actions\expectDone( 'bogofy_gift_removed' )->never();
+
+			$this->assertSame( 'gift', ( new FreeItemManager() )->add_free_item( $cart, 7, 3, $this->make_rule() ) );
+			$this->assertSame( 3, $cart->cart_contents['gift']['quantity'] );
+		}
+
+		/**
+		 * A failed add is not announced.
+		 */
+		public function test_failed_add_fires_no_action() {
+			Functions\when( 'wc_get_product' )->justReturn( new \Bogo_Fake_Gift_Product() );
+
+			$cart             = new \Bogo_Fake_Cart();
+			$cart->add_result = false;
+
+			Actions\expectDone( 'bogofy_gift_added' )->never();
+
+			$this->assertFalse( ( new FreeItemManager() )->add_free_item( $cart, 7, 1, $this->make_rule() ) );
+		}
+
+		/**
+		 * Each removed gift line is announced with the rule that granted it.
+		 */
+		public function test_removed_gifts_fire_removed_action() {
+			Actions\expectDone( 'bogofy_gift_removed' )->once()->with( 'gift_b', 7 );
+
+			$cart = $this->make_cart();
+			( new FreeItemManager() )->remove_items_for_inactive_rules( $cart, array( 5 ) );
+
+			$this->assertSame( array( 'gift_b' ), $cart->removed );
+		}
+
+		/**
+		 * Removing a rule's gifts announces only that rule's lines.
+		 */
+		public function test_remove_rule_items_fires_removed_action() {
+			Actions\expectDone( 'bogofy_gift_removed' )->once()->with( 'gift_a', 5 );
+
+			$cart = $this->make_cart();
+			( new FreeItemManager() )->remove_rule_items( $cart, 5 );
+
+			$this->assertSame( array( 'gift_a' ), $cart->removed );
+		}
+
+		/**
+		 * A queued line a listener already removed is not announced by Bogofy.
+		 */
+		public function test_line_removed_by_a_listener_is_not_announced() {
+			$cart = $this->make_cart();
+
+			Actions\expectDone( 'bogofy_gift_removed' )
+				->once()
+				->with( 'gift_a', 5 )
+				->whenHappen(
+					function ( $cart_item_key ) use ( $cart ) {
+						if ( 'gift_a' === $cart_item_key ) {
+							$cart->remove_cart_item( 'gift_b' );
+						}
+					}
+				);
+
+			( new FreeItemManager() )->remove_items_for_inactive_rules( $cart, array() );
+
+			$this->assertSame( array( 'gift_a', 'gift_b' ), $cart->removed );
 		}
 	}
 }

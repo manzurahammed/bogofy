@@ -146,7 +146,7 @@ class CartHandler {
 		foreach ( $rules as $rule ) {
 			$eligible_items = $this->eligibility_checker->get_eligible_items( $cart, $rule );
 
-			if ( ! empty( $eligible_items ) ) {
+			if ( $this->is_rule_eligible( $cart, $rule, $eligible_items ) ) {
 				$this->discount_applier->sync( $cart, $rule, $eligible_items );
 			} else {
 				// Remove free items for this rule if no longer eligible.
@@ -183,9 +183,24 @@ class CartHandler {
 
 		$rules    = $this->repository->get_active_rules();
 		$rule_map = array();
+		$eligible = array();
+		$syncing  = $this->syncing;
+
+		// The eligibility filter can veto on state that changes without a gift
+		// sync, such as an applied coupon, so a vetoed rule's gifts go here too.
+		// The flag stops the removal hook from re-entering the sync.
+		$this->syncing = true;
 		foreach ( $rules as $rule ) {
-			$rule_map[ (int) $rule->id ] = $rule;
+			$eligible_items = $this->eligibility_checker->get_eligible_items( $cart, $rule );
+
+			if ( $this->is_rule_eligible( $cart, $rule, $eligible_items ) ) {
+				$rule_map[ (int) $rule->id ] = $rule;
+				$eligible[ (int) $rule->id ] = $eligible_items;
+			} else {
+				$this->free_item_manager->remove_rule_items( $cart, (int) $rule->id );
+			}
 		}
+		$this->syncing = $syncing;
 
 		// 1. Reset every line to its BOGO baseline (its effective, sale-aware price
 		// before any promotion) so repeated totals recalculations never compound.
@@ -223,7 +238,7 @@ class CartHandler {
 		// overlapping rules never overwrite each other. A single allocation pass
 		// processes rules in priority order and skips already-claimed lines.
 		$discounted_rules = array();
-		foreach ( $rules as $rule ) {
+		foreach ( $rule_map as $rule ) {
 			if ( \Bogofy\Models\Rule::TYPE_BUY_X_GET_X_DISCOUNTED === $rule->rule_type ) {
 				$discounted_rules[] = $rule;
 			}
@@ -238,12 +253,34 @@ class CartHandler {
 
 		$claimed = array();
 		foreach ( $discounted_rules as $rule ) {
-			$eligible_items = $this->eligibility_checker->get_eligible_items( $cart, $rule );
-
-			if ( ! empty( $eligible_items ) ) {
-				$claimed = $this->discount_applier->apply_discounted( $cart, $rule, $eligible_items, $claimed );
-			}
+			$claimed = $this->discount_applier->apply_discounted( $cart, $rule, $eligible[ (int) $rule->id ], $claimed );
 		}
+	}
+
+	/**
+	 * Whether a rule applies to the cart, after developer overrides.
+	 *
+	 * @param \WC_Cart            $cart           Cart object.
+	 * @param \Bogofy\Models\Rule $rule           Rule object.
+	 * @param array               $eligible_items Eligible cart items.
+	 *
+	 * @return bool
+	 */
+	private function is_rule_eligible( $cart, $rule, $eligible_items ) {
+		/**
+		 * Filters whether a rule applies to the cart.
+		 *
+		 * Return false to veto a rule (its gifts are removed and it discounts
+		 * nothing) or true to force it. A forced rule with no qualifying items
+		 * earns no free units unless `bogofy_free_quantity` grants some.
+		 *
+		 * @since 2.2.0
+		 *
+		 * @param bool                $eligible Whether any cart item qualifies for the rule.
+		 * @param \Bogofy\Models\Rule $rule     Rule object.
+		 * @param \WC_Cart            $cart     Cart object.
+		 */
+		return (bool) apply_filters( 'bogofy_rule_is_eligible', ! empty( $eligible_items ), $rule, $cart );
 	}
 
 	/**

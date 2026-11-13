@@ -127,7 +127,21 @@ class EligibilityChecker implements EligibilityCheckerInterface {
 			$free_quantity = $rule->max_free_qty;
 		}
 
-		return $free_quantity;
+		/**
+		 * Filters how many free units a rule grants.
+		 *
+		 * Applied after the rule's maximum, so a filter may exceed it. Negative
+		 * results are treated as zero.
+		 *
+		 * @since 2.2.0
+		 *
+		 * @param int   $free_quantity  Free units earned by the cart.
+		 * @param Rule  $rule           Rule object.
+		 * @param array $eligible_items Eligible cart items, keyed by cart item key.
+		 */
+		$free_quantity = apply_filters( 'bogofy_free_quantity', $free_quantity, $rule, $eligible_items );
+
+		return max( 0, (int) $free_quantity );
 	}
 
 	/**

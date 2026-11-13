@@ -11,6 +11,7 @@ use Bogofy\Cart\Contracts\FreeItemManagerInterface;
 use Bogofy\Cart\DiscountApplier;
 use Bogofy\Cart\EligibilityChecker;
 use Bogofy\Models\Rule;
+use Brain\Monkey\Filters;
 use Mockery;
 use PHPUnit\Framework\TestCase;
 
@@ -169,5 +170,31 @@ class DiscountApplierTest extends TestCase {
 
 		$this->assertSame( 2, $checker->calculate_free_quantity( array( array( 'quantity' => 2 ) ), $this->rule( 1, 1, array() ) ) );
 		$this->assertSame( 2, $checker->calculate_free_quantity( array( array( 'quantity' => 2 ) ), $this->rule( 0, 1, array() ) ) );
+	}
+
+	/**
+	 * Developers can change the free quantity, and the gift follows it.
+	 */
+	public function test_free_quantity_filter_changes_the_granted_quantity() {
+		$rule  = $this->rule( 2, 1, array( 10 ) );
+		$items = array( 'a' => $this->line( 10, 2, 5 ) );
+
+		Filters\expectApplied( 'bogofy_free_quantity' )
+			->once()
+			->with( 1, $rule, $items )
+			->andReturn( '3' );
+
+		$this->assertSame( array( 10 => 3 ), $this->granted( $rule, $items ) );
+	}
+
+	/**
+	 * A negative filtered quantity grants nothing rather than a negative line.
+	 */
+	public function test_negative_filtered_free_quantity_is_zero() {
+		Filters\expectApplied( 'bogofy_free_quantity' )->once()->andReturn( -4 );
+
+		$checker = new EligibilityChecker();
+
+		$this->assertSame( 0, $checker->calculate_free_quantity( array( array( 'quantity' => 2 ) ), $this->rule( 1, 1, array() ) ) );
 	}
 }
