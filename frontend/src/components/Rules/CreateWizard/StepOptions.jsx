@@ -1,8 +1,17 @@
 import React from "react";
 import { __ } from "@wordpress/i18n";
+import { CartConditions } from "../CartConditions";
 
-// Step 3: Options (discount, limits, scheduling, message)
-function StepOptions({ formData, setFormData, errors }) {
+// Step 3: Options (discount, limits, cart conditions, scheduling, message)
+function StepOptions({
+  formData,
+  setFormData,
+  selectedExcludedProducts,
+  setSelectedExcludedProducts,
+  selectedExcludedCategories,
+  setSelectedExcludedCategories,
+  errors,
+}) {
   const set = (key, value) => setFormData((p) => ({ ...p, [key]: value }));
   const isDiscounted = formData.rule_type === "buy_x_get_x_discounted";
 
@@ -80,6 +89,33 @@ function StepOptions({ formData, setFormData, errors }) {
 
       <div className="bogo-wizard__card">
         <div className="bogo-wizard__title">
+          {__("Cart conditions", "bogofy")}{" "}
+          <span
+            style={{ color: "var(--muted)", fontWeight: 400, fontSize: 13 }}
+          >
+            {__("· optional", "bogofy")}
+          </span>
+        </div>
+        <div className="bogo-wizard__subtitle">
+          {__(
+            "Only apply the offer to carts that meet these conditions. Excluded products never count toward the offer or receive it.",
+            "bogofy",
+          )}
+        </div>
+
+        <CartConditions
+          conditions={formData.conditions}
+          onChange={(conditions) => set("conditions", conditions)}
+          selectedExcludedProducts={selectedExcludedProducts}
+          setSelectedExcludedProducts={setSelectedExcludedProducts}
+          selectedExcludedCategories={selectedExcludedCategories}
+          setSelectedExcludedCategories={setSelectedExcludedCategories}
+          errors={errors}
+        />
+      </div>
+
+      <div className="bogo-wizard__card">
+        <div className="bogo-wizard__title">
           {__("Schedule", "bogofy")}{" "}
           <span
             style={{ color: "var(--muted)", fontWeight: 400, fontSize: 13 }}
@@ -110,7 +146,9 @@ function StepOptions({ formData, setFormData, errors }) {
             />
           </div>
           <div>
-            <label className="bogo-form-label">{__("End date", "bogofy")}</label>
+            <label className="bogo-form-label">
+              {__("End date", "bogofy")}
+            </label>
             <input
               type="datetime-local"
               className="bogo-form-input"
@@ -137,7 +175,10 @@ function StepOptions({ formData, setFormData, errors }) {
           className="bogo-form-input"
           style={{ marginTop: 12, minHeight: 72, resize: "vertical" }}
           rows="3"
-          placeholder={__("e.g., Buy {buy_qty}, Get {free_qty} FREE!", "bogofy")}
+          placeholder={__(
+            "e.g., Buy {buy_qty}, Get {free_qty} FREE!",
+            "bogofy",
+          )}
           value={formData.message_template}
           onChange={(e) => set("message_template", e.target.value)}
         />

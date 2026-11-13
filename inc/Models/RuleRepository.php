@@ -174,7 +174,7 @@ class RuleRepository {
 		$result = $wpdb->insert(
 			$this->get_table(),
 			$rule->to_db_array(),
-			array( '%s', '%s', '%s', '%d', '%d', '%s', '%f', '%s', '%s', '%s', '%s', '%d', '%s', '%d', '%s', '%s' )
+			array( '%s', '%s', '%s', '%d', '%d', '%s', '%f', '%s', '%s', '%s', '%s', '%d', '%s', '%d', '%s', '%s', '%s' )
 		);
 
 		if ( false === $result ) {
@@ -200,7 +200,7 @@ class RuleRepository {
 			$this->get_table(),
 			$rule->to_db_array(),
 			array( 'id' => $rule->id ),
-			array( '%s', '%s', '%s', '%d', '%d', '%s', '%f', '%s', '%s', '%s', '%s', '%d', '%s', '%d', '%s', '%s' ),
+			array( '%s', '%s', '%s', '%d', '%d', '%s', '%f', '%s', '%s', '%s', '%s', '%d', '%s', '%d', '%s', '%s', '%s' ),
 			array( '%d' )
 		);
 
@@ -461,6 +461,8 @@ class RuleRepository {
 	/**
 	 * Check if a rule applies to a product.
 	 *
+	 * Products the rule excludes get no offer message or badge.
+	 *
 	 * @param Rule $rule       Rule object.
 	 * @param int  $product_id Product ID.
 	 *
@@ -469,17 +471,50 @@ class RuleRepository {
 	private function rule_applies_to_product( Rule $rule, $product_id ) {
 		switch ( $rule->apply_to ) {
 			case Rule::APPLY_ALL_PRODUCTS:
-				return true;
+				$targeted = true;
+				break;
 
 			case Rule::APPLY_SPECIFIC_PRODUCTS:
-				return in_array( $product_id, $rule->buy_product_ids, true );
+				$targeted = in_array( $product_id, $rule->buy_product_ids, true );
+				break;
 
 			case Rule::APPLY_SPECIFIC_CATEGORIES:
 				$product_categories = wp_get_post_terms( $product_id, 'product_cat', array( 'fields' => 'ids' ) );
-				return ! is_wp_error( $product_categories ) && ! empty( array_intersect( $product_categories, $rule->category_ids ) );
+				$targeted           = ! is_wp_error( $product_categories ) && ! empty( array_intersect( $product_categories, $rule->category_ids ) );
+				break;
 
 			default:
-				return false;
+				$targeted = false;
 		}
+
+		return $targeted && ! $this->rule_excludes_product( $rule, $product_id );
+	}
+
+	/**
+	 * Check if a rule's exclusions rule out a product.
+	 *
+	 * @param Rule $rule       Rule object.
+	 * @param int  $product_id Product ID.
+	 *
+	 * @return bool
+	 */
+	private function rule_excludes_product( Rule $rule, $product_id ) {
+		if ( ! $rule->has_exclusions() ) {
+			return false;
+		}
+
+		$category_ids = array();
+		if ( ! empty( $rule->conditions['excluded_category_ids'] ) ) {
+			$terms        = wp_get_post_terms( $product_id, 'product_cat', array( 'fields' => 'ids' ) );
+			$category_ids = is_wp_error( $terms ) ? array() : $terms;
+		}
+
+		$on_sale = false;
+		if ( $rule->conditions['exclude_sale_items'] && function_exists( 'wc_get_product' ) ) {
+			$product = wc_get_product( $product_id );
+			$on_sale = $product && $product->is_on_sale();
+		}
+
+		return $rule->excludes_product( array( $product_id ), $category_ids, $on_sale );
 	}
 }

@@ -36,12 +36,19 @@ function StepReview({
   selectedBuyProducts,
   selectedFreeProducts,
   selectedCategories = [],
+  selectedExcludedProducts = [],
+  selectedExcludedCategories = [],
   onLaunch,
   onDraft,
   isLoading,
 }) {
   const isCategoryTrigger = formData.apply_to === "specific_categories";
   const isDiscounted = formData.rule_type === "buy_x_get_x_discounted";
+  const conditions = formData.conditions || {};
+  const excludedNames = [
+    ...selectedExcludedProducts,
+    ...selectedExcludedCategories,
+  ].map((item) => item.name);
   const giftLabel = isDiscounted
     ? /* translators: %d: discount percentage */
       sprintf(__("%d%% off", "bogofy"), formData.discount_value)
@@ -158,7 +165,9 @@ function StepReview({
         <ReviewBlock title={__("Options", "bogofy")} step="3">
           <div style={{ color: "var(--muted)", fontSize: 12, lineHeight: 1.6 }}>
             {/* translators: %d: priority */}
-            <div>{sprintf(__("Priority: %d", "bogofy"), formData.priority)}</div>
+            <div>
+              {sprintf(__("Priority: %d", "bogofy"), formData.priority)}
+            </div>
             <div>
               {formData.max_free_qty
                 ? /* translators: %s: max free items */
@@ -175,6 +184,38 @@ function StepReview({
                   )
                 : __("Always on", "bogofy")}
             </div>
+          </div>
+        </ReviewBlock>
+
+        <ReviewBlock title={__("Cart conditions", "bogofy")} step="3">
+          <div style={{ color: "var(--muted)", fontSize: 12, lineHeight: 1.6 }}>
+            <div>
+              {Number(conditions.min_subtotal) > 0
+                ? /* translators: %s: minimum cart subtotal */
+                  sprintf(
+                    __("Min. subtotal: %s", "bogofy"),
+                    conditions.min_subtotal,
+                  )
+                : __("Min. subtotal: none", "bogofy")}
+            </div>
+            <div>
+              {Number(conditions.min_items) > 0
+                ? /* translators: %s: minimum number of items */
+                  sprintf(__("Min. items: %s", "bogofy"), conditions.min_items)
+                : __("Min. items: none", "bogofy")}
+            </div>
+            <div>
+              {excludedNames.length > 0
+                ? /* translators: %s: comma-separated excluded products and categories */
+                  sprintf(
+                    __("Excludes: %s", "bogofy"),
+                    excludedNames.join(", "),
+                  )
+                : __("Excludes: nothing", "bogofy")}
+            </div>
+            {conditions.exclude_sale_items && (
+              <div>{__("Sale items excluded", "bogofy")}</div>
+            )}
           </div>
         </ReviewBlock>
       </div>

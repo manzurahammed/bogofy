@@ -4,6 +4,7 @@ import { useCreateRule } from "../../../hooks/useRules";
 import { useNotification } from "../../../hooks/useNotification";
 import { goToAdmin } from "../../../utils/navigation";
 import { defaultData } from "./constants";
+import { validateConditions, conditionsToPayload } from "../CartConditions";
 
 /**
  * Encapsulates all state and behaviour for the create-rule wizard.
@@ -16,6 +17,10 @@ export function useCreateRuleWizard() {
   const [selectedBuyProducts, setSelectedBuyProducts] = useState([]);
   const [selectedFreeProducts, setSelectedFreeProducts] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState([]);
+  const [selectedExcludedProducts, setSelectedExcludedProducts] = useState([]);
+  const [selectedExcludedCategories, setSelectedExcludedCategories] = useState(
+    [],
+  );
   const [errors, setErrors] = useState({});
 
   const createRule = useCreateRule();
@@ -56,6 +61,9 @@ export function useCreateRuleWizard() {
     ) {
       errs.discount_value = __("Enter a discount between 1 and 100", "bogofy");
     }
+    if (step >= 3) {
+      Object.assign(errs, validateConditions(formData.conditions));
+    }
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }, [
@@ -94,6 +102,11 @@ export function useCreateRuleWizard() {
           : null,
         start_date: formData.start_date || null,
         end_date: formData.end_date || null,
+        conditions: conditionsToPayload(
+          formData.conditions,
+          selectedExcludedProducts,
+          selectedExcludedCategories,
+        ),
       };
       try {
         await createRule.mutateAsync(data);
@@ -109,6 +122,8 @@ export function useCreateRuleWizard() {
       selectedBuyProducts,
       selectedFreeProducts,
       selectedCategories,
+      selectedExcludedProducts,
+      selectedExcludedCategories,
       createRule,
       success,
       error,
@@ -125,6 +140,10 @@ export function useCreateRuleWizard() {
     setSelectedFreeProducts,
     selectedCategories,
     setSelectedCategories,
+    selectedExcludedProducts,
+    setSelectedExcludedProducts,
+    selectedExcludedCategories,
+    setSelectedExcludedCategories,
     errors,
     goNext,
     goPrev,

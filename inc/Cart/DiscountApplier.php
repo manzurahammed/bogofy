@@ -184,8 +184,35 @@ class DiscountApplier implements DiscountApplierInterface {
 		}
 
 		$free_product_id = (int) $rule->free_product_ids[0];
+
+		// An excluded gift is never granted, and any copy already in the cart goes.
+		if ( $this->is_gift_excluded( $free_product_id, $rule ) ) {
+			$this->free_item_manager->remove_rule_items( $cart, $rule->id );
+			return;
+		}
+
 		$this->free_item_manager->add_free_item( $cart, $free_product_id, $free_quantity, $rule );
 		$this->free_item_manager->remove_rule_items_except( $cart, $rule->id, array( $free_product_id ) );
+	}
+
+	/**
+	 * Check whether the rule's exclusions rule out its gift product.
+	 *
+	 * @param int  $product_id Gift product or variation ID.
+	 * @param Rule $rule       Rule object.
+	 *
+	 * @return bool
+	 */
+	private function is_gift_excluded( $product_id, Rule $rule ) {
+		if ( ! $rule->has_exclusions() ) {
+			return false;
+		}
+
+		$product   = function_exists( 'wc_get_product' ) ? wc_get_product( $product_id ) : null;
+		$product   = $product ? $product : null;
+		$parent_id = $product && $product->get_parent_id() ? (int) $product->get_parent_id() : $product_id;
+
+		return $this->eligibility_checker->is_product_excluded( $product_id, $parent_id, $rule, $product );
 	}
 
 	/**

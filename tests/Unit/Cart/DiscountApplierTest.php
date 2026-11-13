@@ -12,6 +12,7 @@ use Bogofy\Cart\DiscountApplier;
 use Bogofy\Cart\EligibilityChecker;
 use Bogofy\Models\Rule;
 use Brain\Monkey\Filters;
+use Brain\Monkey\Functions;
 use Mockery;
 use PHPUnit\Framework\TestCase;
 
@@ -196,5 +197,75 @@ class DiscountApplierTest extends TestCase {
 		$checker = new EligibilityChecker();
 
 		$this->assertSame( 0, $checker->calculate_free_quantity( array( array( 'quantity' => 2 ) ), $this->rule( 1, 1, array() ) ) );
+	}
+
+	/**
+	 * Sync a Buy X Get Y rule whose gift is product 50 and report what happened.
+	 *
+	 * @param array $conditions Rule conditions.
+	 * @param bool  $on_sale    Whether the gift is on sale.
+	 *
+	 * @return array{granted:array,removed:bool}
+	 */
+	private function sync_gift( array $conditions, $on_sale = false ) {
+		$gift = Mockery::mock();
+		$gift->shouldReceive( 'get_parent_id' )->andReturn( 0 );
+		$gift->shouldReceive( 'is_on_sale' )->andReturn( $on_sale );
+		Functions\when( 'wc_get_product' )->justReturn( $gift );
+		Functions\when( 'is_wp_error' )->justReturn( false );
+		Functions\when( 'wp_get_post_terms' )->justReturn( array( 3 ) );
+
+		$rule = Rule::from_request(
+			array(
+				'title'            => 'Gift',
+				'rule_type'        => Rule::TYPE_BUY_X_GET_Y,
+				'apply_to'         => Rule::APPLY_ALL_PRODUCTS,
+				'free_product_ids' => array( 50 ),
+				'conditions'       => $conditions,
+			)
+		);
+		$rule->id = 5;
+
+		$result  = array(
+			'granted' => array(),
+			'removed' => false,
+		);
+		$manager = Mockery::mock( FreeItemManagerInterface::class );
+		$manager->shouldReceive( 'remove_rule_items_except' );
+		$manager->shouldReceive( 'remove_rule_items' )->andReturnUsing(
+			function () use ( &$result ) {
+				$result['removed'] = true;
+			}
+		);
+		$manager->shouldReceive( 'add_free_item' )->andReturnUsing(
+			function ( $cart, $product_id, $quantity ) use ( &$result ) {
+				$result['granted'][ $product_id ] = $quantity;
+				return 'key';
+			}
+		);
+
+		( new DiscountApplier( new EligibilityChecker(), $manager ) )->sync( new \stdClass(), $rule, array( $this->line( 10, 1, 5 ) ) );
+
+		return $result;
+	}
+
+	/**
+	 * A gift the rule excludes (by product, category, or sale) is never granted.
+	 */
+	public function test_excluded_gift_is_not_granted() {
+		$this->assertSame( array( 50 => 1 ), $this->sync_gift( array( 'excluded_product_ids' => array( 99 ) ) )['granted'] );
+
+		foreach (
+			array(
+				array( array( 'excluded_product_ids' => array( 50 ) ), false ),
+				array( array( 'excluded_category_ids' => array( 3 ) ), false ),
+				array( array( 'exclude_sale_items' => true ), true ),
+			) as $case
+		) {
+			$result = $this->sync_gift( $case[0], $case[1] );
+
+			$this->assertSame( array(), $result['granted'] );
+			$this->assertTrue( $result['removed'] );
+		}
 	}
 }

@@ -191,6 +191,23 @@ class Rule {
 	public $revenue_total = 0.0;
 
 	/**
+	 * Cart conditions the rule needs before it applies.
+	 *
+	 * Keys: min_subtotal (float), min_items (int), excluded_product_ids (int[]),
+	 * excluded_category_ids (int[]), exclude_sale_items (bool). Stored as one
+	 * JSON column so later conditions don't need schema changes.
+	 *
+	 * @var array
+	 */
+	public $conditions = array(
+		'min_subtotal'          => 0.0,
+		'min_items'             => 0,
+		'excluded_product_ids'  => array(),
+		'excluded_category_ids' => array(),
+		'exclude_sale_items'    => false,
+	);
+
+	/**
 	 * Create Rule from database row.
 	 *
 	 * @param object|array $data Database row.
@@ -222,6 +239,7 @@ class Rule {
 		$rule->updated_at       = $data['updated_at'] ?? '';
 		$rule->orders_count     = absint( $data['orders_count'] ?? 0 );
 		$rule->revenue_total    = floatval( $data['revenue_total'] ?? 0 );
+		$rule->conditions       = self::normalize_conditions( self::decode_json( $data['conditions'] ?? '' ) );
 
 		return $rule;
 	}
@@ -256,6 +274,7 @@ class Rule {
 		$rule->priority         = absint( $data['priority'] ?? 10 );
 		$rule->start_date       = ! empty( $data['start_date'] ) ? sanitize_text_field( $data['start_date'] ) : null;
 		$rule->end_date         = ! empty( $data['end_date'] ) ? sanitize_text_field( $data['end_date'] ) : null;
+		$rule->conditions       = self::normalize_conditions( (array) ( $data['conditions'] ?? array() ) );
 
 		return $rule;
 	}
@@ -314,6 +333,7 @@ class Rule {
 			'priority'         => $this->priority,
 			'start_date'       => $this->start_date,
 			'end_date'         => $this->end_date,
+			'conditions'       => wp_json_encode( $this->conditions ),
 		);
 	}
 
@@ -345,6 +365,7 @@ class Rule {
 			'updated_at'       => $this->updated_at,
 			'orders_count'     => (int) $this->orders_count,
 			'revenue'          => (float) $this->revenue_total,
+			'conditions'       => $this->conditions,
 		);
 	}
 
@@ -412,6 +433,14 @@ class Rule {
 			return self::invalid( 'invalid_date_range', __( 'End date must be after the start date.', 'bogofy' ) );
 		}
 
+		if ( $this->conditions['min_subtotal'] < 0 ) {
+			return self::invalid( 'invalid_min_subtotal', __( 'Minimum subtotal cannot be negative.', 'bogofy' ) );
+		}
+
+		if ( $this->conditions['min_items'] < 0 ) {
+			return self::invalid( 'invalid_min_items', __( 'Minimum items cannot be negative.', 'bogofy' ) );
+		}
+
 		return true;
 	}
 
@@ -470,6 +499,63 @@ class Rule {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Check whether the rule's exclusions rule out a product.
+	 *
+	 * Excluded products never count toward the offer or receive it.
+	 *
+	 * @since 2.2.0
+	 *
+	 * @param int[] $product_ids  The product ID and, for variations, its parent ID.
+	 * @param int[] $category_ids The product's category IDs.
+	 * @param bool  $on_sale      Whether the product is on sale.
+	 *
+	 * @return bool
+	 */
+	public function excludes_product( array $product_ids, array $category_ids, $on_sale ) {
+		if ( $on_sale && $this->conditions['exclude_sale_items'] ) {
+			return true;
+		}
+
+		$product_ids  = array_map( 'absint', $product_ids );
+		$category_ids = array_map( 'absint', $category_ids );
+
+		return ! empty( array_intersect( $product_ids, $this->conditions['excluded_product_ids'] ) ) ||
+			! empty( array_intersect( $category_ids, $this->conditions['excluded_category_ids'] ) );
+	}
+
+	/**
+	 * Whether the rule excludes anything, so callers can skip product lookups.
+	 *
+	 * @since 2.2.0
+	 *
+	 * @return bool
+	 */
+	public function has_exclusions() {
+		return $this->conditions['exclude_sale_items'] ||
+			! empty( $this->conditions['excluded_product_ids'] ) ||
+			! empty( $this->conditions['excluded_category_ids'] );
+	}
+
+	/**
+	 * Fill in and type the conditions, so legacy rows with no conditions work.
+	 *
+	 * Negative minimums are kept so validate() can reject them.
+	 *
+	 * @param array $raw Conditions from the database or the request.
+	 *
+	 * @return array
+	 */
+	private static function normalize_conditions( array $raw ) {
+		return array(
+			'min_subtotal'          => isset( $raw['min_subtotal'] ) && '' !== $raw['min_subtotal'] ? round( (float) $raw['min_subtotal'], 2 ) : 0.0,
+			'min_items'             => isset( $raw['min_items'] ) && '' !== $raw['min_items'] ? (int) $raw['min_items'] : 0,
+			'excluded_product_ids'  => array_values( array_filter( array_map( 'absint', (array) ( $raw['excluded_product_ids'] ?? array() ) ) ) ),
+			'excluded_category_ids' => array_values( array_filter( array_map( 'absint', (array) ( $raw['excluded_category_ids'] ?? array() ) ) ) ),
+			'exclude_sale_items'    => ! empty( $raw['exclude_sale_items'] ) && 'false' !== $raw['exclude_sale_items'],
+		);
 	}
 
 	/**
