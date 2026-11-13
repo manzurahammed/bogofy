@@ -65,6 +65,7 @@ namespace Bogofy\Tests\Unit\Cart {
 			parent::setUp();
 			bogo_tests_setup();
 			Functions\when( 'is_wp_error' )->justReturn( false );
+			Functions\when( 'wc_get_price_decimals' )->justReturn( 2 );
 			Functions\when( 'wp_get_post_terms' )->alias(
 				static function ( $product_id ) {
 					// Product 30 sits in category 7; everything else in category 1.
@@ -156,6 +157,18 @@ namespace Bogofy\Tests\Unit\Cart {
 				)
 			);
 			$this->assertFalse( $checker->meets_cart_minimums( $cart, $rule ) );
+		}
+
+		/**
+		 * A cart that exactly meets a decimal minimum passes, despite float drift.
+		 */
+		public function test_min_subtotal_exact_decimal_threshold_passes() {
+			$checker = new EligibilityChecker();
+			$cart    = new \WC_Cart( array( 'a' => $this->line( 10, 3, 0.30 ) ) );
+
+			// 3 * 0.30 is 0.8999999999999999 as a float.
+			$this->assertTrue( $checker->meets_cart_minimums( $cart, $this->rule( array( 'min_subtotal' => 0.90 ) ) ) );
+			$this->assertFalse( $checker->meets_cart_minimums( $cart, $this->rule( array( 'min_subtotal' => 0.91 ) ) ) );
 		}
 
 		/**

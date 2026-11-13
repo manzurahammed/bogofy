@@ -39,6 +39,20 @@ interface EligibilityCheckerInterface {
 	public function meets_cart_minimums( $cart, Rule $rule );
 
 	/**
+	 * Check if the rule's exclusions rule out a product.
+	 *
+	 * @since 2.2.0
+	 *
+	 * @param int              $product_id Product or variation ID.
+	 * @param int              $parent_id  Parent product ID.
+	 * @param Rule             $rule       Rule object.
+	 * @param \WC_Product|null $product    Product object, when the caller has one.
+	 *
+	 * @return bool
+	 */
+	public function is_product_excluded( $product_id, $parent_id, Rule $rule, $product = null );
+
+	/**
 	 * Check if a product is eligible for a rule, after its exclusions.
 	 *
 	 * @param int              $product_id Product or variation ID.

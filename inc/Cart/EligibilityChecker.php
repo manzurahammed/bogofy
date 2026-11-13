@@ -84,7 +84,7 @@ class EligibilityChecker implements EligibilityCheckerInterface {
 
 			$product_id = $cart_item['variation_id'] ? $cart_item['variation_id'] : $cart_item['product_id'];
 
-			if ( $this->is_excluded( $product_id, $cart_item['product_id'], $rule, $cart_item['data'] ?? null ) ) {
+			if ( $this->is_product_excluded( $product_id, $cart_item['product_id'], $rule, $cart_item['data'] ?? null ) ) {
 				continue;
 			}
 
@@ -93,7 +93,11 @@ class EligibilityChecker implements EligibilityCheckerInterface {
 			$subtotal += $this->baseline_price( $cart, $cart_item_key, $cart_item ) * $quantity;
 		}
 
-		return $subtotal >= $min_subtotal && $items >= $min_items;
+		// Compare whole currency amounts: an unrounded float sum such as
+		// 3 x 0.30 lands just under 0.90 and would miss an exact minimum.
+		$decimals = function_exists( 'wc_get_price_decimals' ) ? absint( wc_get_price_decimals() ) : 2;
+
+		return round( $subtotal, $decimals ) >= round( $min_subtotal, $decimals ) && $items >= $min_items;
 	}
 
 	/**
@@ -111,7 +115,7 @@ class EligibilityChecker implements EligibilityCheckerInterface {
 			return false;
 		}
 
-		return ! $this->is_excluded( $product_id, $parent_id, $rule, $product );
+		return ! $this->is_product_excluded( $product_id, $parent_id, $rule, $product );
 	}
 
 	/**
@@ -142,6 +146,10 @@ class EligibilityChecker implements EligibilityCheckerInterface {
 	/**
 	 * Check if the rule's exclusions rule out a product.
 	 *
+	 * Excluded products never count toward the offer or receive it as a gift.
+	 *
+	 * @since 2.2.0
+	 *
 	 * @param int              $product_id Product or variation ID.
 	 * @param int              $parent_id  Parent product ID.
 	 * @param Rule             $rule       Rule object.
@@ -149,7 +157,7 @@ class EligibilityChecker implements EligibilityCheckerInterface {
 	 *
 	 * @return bool
 	 */
-	private function is_excluded( $product_id, $parent_id, Rule $rule, $product = null ) {
+	public function is_product_excluded( $product_id, $parent_id, Rule $rule, $product = null ) {
 		if ( ! $rule->has_exclusions() ) {
 			return false;
 		}

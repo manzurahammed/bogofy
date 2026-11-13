@@ -29,8 +29,20 @@ async function hydrateItems(endpoint, ids, fallbackLabel) {
         },
     );
   } catch {
-    return ids.map((id) => ({ id, name: `${fallbackLabel} #${id}` }));
+    return placeholderItems(ids, fallbackLabel);
   }
+}
+
+// Saved IDs with "Product #12"-style names until the real names load.
+function placeholderItems(ids, fallbackLabel) {
+  return ids.map((id) => ({ id, name: `${fallbackLabel} #${id}` }));
+}
+
+// Swap in loaded names, keeping whatever the user has selected meanwhile.
+function withNames(selected, loaded) {
+  return selected.map(
+    (item) => loaded.find((named) => named.id === item.id) || item,
+  );
 }
 
 const ruleTypes = [
@@ -130,16 +142,26 @@ export function RuleForm({
         initialData.category_ids,
         "Category",
       ).then(setSelectedCategories);
-      hydrateItems(
-        "/products/search",
-        initialData.conditions?.excluded_product_ids,
-        "Product",
-      ).then(setSelectedExcludedProducts);
-      hydrateItems(
-        "/categories/search",
-        initialData.conditions?.excluded_category_ids,
-        "Category",
-      ).then(setSelectedExcludedCategories);
+
+      // Exclusions have no "select at least one" check to block a save, so seed
+      // the saved IDs now; saving before the names load must not clear them.
+      const excludedProductIds =
+        initialData.conditions?.excluded_product_ids || [];
+      const excludedCategoryIds =
+        initialData.conditions?.excluded_category_ids || [];
+      setSelectedExcludedProducts(
+        placeholderItems(excludedProductIds, "Product"),
+      );
+      setSelectedExcludedCategories(
+        placeholderItems(excludedCategoryIds, "Category"),
+      );
+      hydrateItems("/products/search", excludedProductIds, "Product").then(
+        (items) => setSelectedExcludedProducts((prev) => withNames(prev, items)),
+      );
+      hydrateItems("/categories/search", excludedCategoryIds, "Category").then(
+        (items) =>
+          setSelectedExcludedCategories((prev) => withNames(prev, items)),
+      );
     }
   }, [initialData]);
 
