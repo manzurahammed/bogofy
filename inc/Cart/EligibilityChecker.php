@@ -274,6 +274,61 @@ class EligibilityChecker implements EligibilityCheckerInterface {
 	}
 
 	/**
+	 * Work out what the next partly-met set of a rule would unlock.
+	 *
+	 * Uses the same set math as calculate_free_quantity(): with a "buy 2" rule and
+	 * 3 eligible items, 1 more item completes the next set. Returns null when the
+	 * cart has no eligible items, sits exactly on a set boundary, or the rule's
+	 * max free quantity is already reached. For discounted rules the unlocked
+	 * quantity is limited to items that will actually be in the cart.
+	 *
+	 * @since 2.2.0
+	 *
+	 * @param array $eligible_items Eligible cart items.
+	 * @param Rule  $rule           Rule object.
+	 *
+	 * @return array{remaining:int,free_qty:int}|null
+	 */
+	public function get_next_unlock( $eligible_items, Rule $rule ) {
+		$total_quantity = 0;
+
+		foreach ( $eligible_items as $cart_item ) {
+			$total_quantity += (int) $cart_item['quantity'];
+		}
+
+		$buy_quantity = max( 1, (int) $rule->buy_quantity );
+		$into_set     = $total_quantity % $buy_quantity;
+
+		if ( 0 === $total_quantity || 0 === $into_set ) {
+			return null;
+		}
+
+		$remaining    = $buy_quantity - $into_set;
+		$current_free = $this->calculate_free_quantity( $eligible_items, $rule );
+		$next_total   = $total_quantity + $remaining;
+		$next_free    = $this->calculate_free_quantity( array( array( 'quantity' => $next_total ) ), $rule );
+
+		// Discounted rules discount the bought items themselves, so they can never
+		// discount more items than are in the cart.
+		if ( Rule::TYPE_BUY_X_GET_X_DISCOUNTED === $rule->rule_type ) {
+			$current_free = min( $current_free, $total_quantity );
+			$next_free    = min( $next_free, $next_total );
+		}
+
+		// What the next set adds, already capped by max_free_qty.
+		$free_quantity = $next_free - $current_free;
+
+		if ( $free_quantity < 1 ) {
+			return null;
+		}
+
+		return array(
+			'remaining' => $remaining,
+			'free_qty'  => $free_quantity,
+		);
+	}
+
+	/**
 	 * Check if rule is currently active (within date range).
 	 *
 	 * @param Rule $rule Rule object.

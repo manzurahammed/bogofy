@@ -1,12 +1,14 @@
 /**
  * Bogofy block cart/checkout integration.
  *
- * Two informational, non-authoritative touches driven by the server-side BOGO
+ * Three informational, non-authoritative touches driven by the server-side BOGO
  * data exposed on the Store API (`extensions.bogofy`):
  *   1. Adds `.bogo-cart-item` to free gift rows (so the stylesheet can style
  *      them). The gift note lines and the price come from WooCommerce itself.
  *   2. Renders a "You saved" row in the Order Meta slot. The amount is computed
  *      from raw minor units + currency shape sent by PHP — no injected HTML.
+ *   3. Renders "Add N more…" nudges (plain text from PHP) in the cart's Order
+ *      Meta slot.
  *
  *   3. Renders a gift picker in the same slot for rules that offer several
  *      gift products; a choice is sent through `extensionCartUpdate` and the
@@ -65,7 +67,7 @@ const formatSavings = (bogo) => {
 registerCheckoutFilters("bogofy", {
   cartItemClass: (defaultValue, extensions, args) => {
     const bogo = itemBogo(extensions, args);
-    return bogo?.is_free
+    return bogo?.is_free && bogo?.show_gift !== false
       ? [defaultValue, "bogo-cart-item"].filter(Boolean).join(" ")
       : defaultValue;
   },
@@ -80,7 +82,11 @@ registerCheckoutFilters("bogofy", {
  */
 const SavingsRow = ({ extensions }) => {
   const bogo = extensions?.bogofy;
-  if (!bogo || !(Number(bogo.savings_minor) > 0)) {
+  if (
+    !bogo ||
+    bogo.show_gift === false ||
+    !(Number(bogo.savings_minor) > 0)
+  ) {
     return null;
   }
 
@@ -197,11 +203,43 @@ const GiftPickers = ({ extensions, context }) => {
   );
 };
 
+/**
+ * Renders the "Add N more…" nudges in the cart Order Meta slot.
+ *
+ * @param {Object} props            Slot props.
+ * @param {Object} props.extensions Cart-level extension data.
+ * @param {string} props.context    Block context (cart or checkout).
+ * @return {WPElement|null} The nudge list, or null when there is nothing to nudge.
+ */
+const NudgeList = ({ extensions, context }) => {
+  const nudges = extensions?.bogofy?.nudges;
+  if (
+    context === "woocommerce/checkout" ||
+    !Array.isArray(nudges) ||
+    !nudges.length
+  ) {
+    return null;
+  }
+
+  return createElement(
+    "div",
+    { className: "bogo-nudge-list" },
+    nudges.map((message) =>
+      createElement(
+        "div",
+        { key: message, className: "bogo-nudge", role: "status" },
+        createElement("span", { className: "bogo-nudge__text" }, message),
+      ),
+    ),
+  );
+};
+
 const BogofyCartMeta = () =>
   createElement(
     ExperimentalOrderMeta,
     null,
     createElement(GiftPickers),
+    createElement(NudgeList),
     createElement(SavingsRow),
   );
 

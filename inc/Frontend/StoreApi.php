@@ -8,6 +8,7 @@
 namespace Bogofy\Frontend;
 
 use Automattic\WooCommerce\StoreApi\Exceptions\RouteException;
+use Bogofy\Admin\Settings;
 use Bogofy\Cart\CartHandler;
 
 /**
@@ -23,12 +24,21 @@ class StoreApi {
 	private $cart_handler;
 
 	/**
+	 * Cart nudges provider.
+	 *
+	 * @var CartNudges|null
+	 */
+	private $nudges;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param CartHandler|null $cart_handler Cart handler, for the gift picker.
+	 * @param CartNudges|null  $nudges       Cart nudges provider.
 	 */
-	public function __construct( ?CartHandler $cart_handler = null ) {
+	public function __construct( ?CartHandler $cart_handler = null, ?CartNudges $nudges = null ) {
 		$this->cart_handler = $cart_handler;
+		$this->nudges       = $nudges;
 	}
 
 	/**
@@ -108,7 +118,8 @@ class StoreApi {
 	 */
 	public function cart_item_data( $cart_item ) {
 		return array(
-			'is_free' => (bool) CartHandler::is_bogo_item( $cart_item ),
+			'is_free'   => (bool) CartHandler::is_bogo_item( $cart_item ),
+			'show_gift' => (bool) Settings::get( 'show_cart_gift' ),
 		);
 	}
 
@@ -119,8 +130,13 @@ class StoreApi {
 	 */
 	public function cart_item_schema() {
 		return array(
-			'is_free' => array(
+			'is_free'   => array(
 				'description' => __( 'Whether this line is a free BOGO gift.', 'bogofy' ),
+				'type'        => 'boolean',
+				'readonly'    => true,
+			),
+			'show_gift' => array(
+				'description' => __( 'Whether free gift rows should be highlighted.', 'bogofy' ),
 				'type'        => 'boolean',
 				'readonly'    => true,
 			),
@@ -149,6 +165,8 @@ class StoreApi {
 			'currency_decimal_separator'  => wc_get_price_decimal_separator(),
 			'currency_thousand_separator' => wc_get_price_thousand_separator(),
 			'gift_choices'                => $this->cart_handler ? $this->cart_handler->get_gift_choices( WC()->cart ) : array(),
+			'show_gift'                   => (bool) Settings::get( 'show_cart_gift' ),
+			'nudges'                      => $this->nudges ? $this->nudges->get_messages() : array(),
 		);
 	}
 
@@ -217,6 +235,17 @@ class StoreApi {
 						),
 					),
 				),
+			),
+			'show_gift'                   => array(
+				'description' => __( 'Whether the savings row should be shown.', 'bogofy' ),
+				'type'        => 'boolean',
+				'readonly'    => true,
+			),
+			'nudges'                      => array(
+				'description' => __( 'Plain-text "add N more" messages for partly met rules.', 'bogofy' ),
+				'type'        => 'array',
+				'items'       => array( 'type' => 'string' ),
+				'readonly'    => true,
 			),
 		);
 	}
