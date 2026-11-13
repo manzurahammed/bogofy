@@ -559,6 +559,31 @@ class Rule {
 	}
 
 	/**
+	 * The distinct gift product IDs, in the order the merchant listed them.
+	 *
+	 * @since 2.2.0
+	 *
+	 * @return int[]
+	 */
+	public function gift_product_ids() {
+		return array_values( array_unique( array_filter( array_map( 'intval', (array) $this->free_product_ids ) ) ) );
+	}
+
+	/**
+	 * Whether the shopper may choose which gift product they receive.
+	 *
+	 * Only rules that grant a specific gift product, and list more than one.
+	 *
+	 * @since 2.2.0
+	 *
+	 * @return bool
+	 */
+	public function offers_gift_choice() {
+		return in_array( $this->rule_type, array( self::TYPE_BUY_X_GET_Y, self::TYPE_BUY_CAT_GET_FREE ), true )
+			&& count( $this->gift_product_ids() ) > 1;
+	}
+
+	/**
 	 * Decode JSON string to array.
 	 *
 	 * @param string $json JSON string.

@@ -52,6 +52,18 @@ class CartHandler {
 	const BOGO_BASELINE_KEY = '_bogo_baseline';
 
 	/**
+	 * Cart item key for the gift product the shopper chose.
+	 *
+	 * Set on the gift line of rules that offer several gift products, so the
+	 * choice survives the session and cart recalculation.
+	 *
+	 * @since 2.2.0
+	 *
+	 * @var string
+	 */
+	const BOGO_GIFT_CHOICE_KEY = '_bogo_gift_choice';
+
+	/**
 	 * Rule repository.
 	 *
 	 * @var RuleRepository
@@ -155,6 +167,121 @@ class CartHandler {
 		}
 
 		$this->syncing = false;
+	}
+
+	/**
+	 * Switch the gift a rule grants to another of its gift products.
+	 *
+	 * @since 2.2.0
+	 *
+	 * @param int $rule_id    Rule ID.
+	 * @param int $product_id Chosen gift product or variation ID.
+	 *
+	 * @return bool Whether the chosen gift is now in the cart.
+	 */
+	public function switch_gift( $rule_id, $product_id ) {
+		$cart = WC()->cart;
+		$rule = $this->get_active_rule( $rule_id );
+
+		if ( ! $rule || ! $cart instanceof \WC_Cart ) {
+			return false;
+		}
+
+		// Adding the new gift fires the add-to-cart sync, which would restore the
+		// old choice before the new one is stored.
+		$this->syncing = true;
+		$switched      = $this->discount_applier->switch_gift( $cart, $rule, $product_id );
+		$this->syncing = false;
+
+		// Re-cap the gift against what the cart earns right now.
+		$this->sync_free_items();
+
+		return $switched;
+	}
+
+	/**
+	 * The gift choices on offer for the gift lines in a cart.
+	 *
+	 * @since 2.2.0
+	 *
+	 * @param \WC_Cart $cart Cart object.
+	 *
+	 * @return array[] One entry per rule: rule_id, rule_title, cart_item_key,
+	 *                 selected (product ID) and options (id + name).
+	 */
+	public function get_gift_choices( $cart ) {
+		if ( ! $cart instanceof \WC_Cart || ! Settings::is_enabled() ) {
+			return array();
+		}
+
+		$choices = array();
+
+		foreach ( $cart->get_cart() as $cart_item_key => $cart_item ) {
+			if ( ! self::is_bogo_item( $cart_item ) || empty( $cart_item[ self::BOGO_RULE_KEY ] ) ) {
+				continue;
+			}
+
+			$rule_id = (int) $cart_item[ self::BOGO_RULE_KEY ];
+			$rule    = isset( $choices[ $rule_id ] ) ? null : $this->get_active_rule( $rule_id );
+
+			if ( ! $rule || ! $rule->offers_gift_choice() ) {
+				continue;
+			}
+
+			// Offer only gifts that could replace this line right now, so a pick
+			// never comes back as an error. The current gift always stays listed.
+			$selected = self::gift_product_id( $cart_item );
+			$options  = array();
+			foreach ( $rule->gift_product_ids() as $gift_id ) {
+				$product = wc_get_product( $gift_id );
+				if ( $product && $gift_id !== $selected && $rule->has_exclusions() ) {
+					$parent_id = $product->get_parent_id() ? (int) $product->get_parent_id() : $gift_id;
+					if ( $this->eligibility_checker->is_product_excluded( $gift_id, $parent_id, $rule, $product ) ) {
+						continue;
+					}
+				}
+
+				if ( $product && ( $gift_id === $selected || $this->free_item_manager->can_supply( $cart, $gift_id, array( $cart_item_key ) ) ) ) {
+					$options[] = array(
+						'id'   => $gift_id,
+						'name' => $product->get_name(),
+					);
+				}
+			}
+
+			if ( count( $options ) > 1 ) {
+				$choices[ $rule_id ] = array(
+					'rule_id'       => $rule_id,
+					'rule_title'    => $rule->title,
+					'cart_item_key' => $cart_item_key,
+					'selected'      => $selected,
+					'options'       => $options,
+				);
+			}
+		}
+
+		return array_values( $choices );
+	}
+
+	/**
+	 * Find an active rule by ID.
+	 *
+	 * @param int $rule_id Rule ID.
+	 *
+	 * @return \Bogofy\Models\Rule|null
+	 */
+	private function get_active_rule( $rule_id ) {
+		if ( ! Settings::is_enabled() ) {
+			return null;
+		}
+
+		foreach ( $this->repository->get_active_rules() as $rule ) {
+			if ( (int) $rule->id === (int) $rule_id ) {
+				return $rule;
+			}
+		}
+
+		return null;
 	}
 
 	/**
@@ -368,6 +495,23 @@ class CartHandler {
 	 */
 	public static function is_bogo_item( $cart_item ) {
 		return isset( $cart_item[ self::BOGO_ITEM_KEY ] ) && $cart_item[ self::BOGO_ITEM_KEY ];
+	}
+
+	/**
+	 * The gift product a free line holds: the shopper's choice, else its product.
+	 *
+	 * @since 2.2.0
+	 *
+	 * @param array $cart_item Cart item data.
+	 *
+	 * @return int
+	 */
+	public static function gift_product_id( $cart_item ) {
+		if ( ! empty( $cart_item[ self::BOGO_GIFT_CHOICE_KEY ] ) ) {
+			return (int) $cart_item[ self::BOGO_GIFT_CHOICE_KEY ];
+		}
+
+		return (int) ( ! empty( $cart_item['variation_id'] ) ? $cart_item['variation_id'] : ( $cart_item['product_id'] ?? 0 ) );
 	}
 
 	/**

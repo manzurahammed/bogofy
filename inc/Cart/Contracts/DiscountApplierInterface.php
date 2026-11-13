@@ -39,4 +39,17 @@ interface DiscountApplierInterface {
 	 * @return array The updated list of claimed cart item keys.
 	 */
 	public function apply_discounted( $cart, Rule $rule, $eligible_items, array $claimed = array() );
+
+	/**
+	 * Swap a rule's gift line for another of its gift products.
+	 *
+	 * @since 2.2.0
+	 *
+	 * @param \WC_Cart $cart       Cart object.
+	 * @param Rule     $rule       Rule object.
+	 * @param int      $product_id Chosen gift product or variation ID.
+	 *
+	 * @return bool Whether the chosen gift is now in the cart.
+	 */
+	public function switch_gift( $cart, Rule $rule, $product_id );
 }

@@ -183,16 +183,129 @@ class DiscountApplier implements DiscountApplierInterface {
 			return;
 		}
 
-		$free_product_id = (int) $rule->free_product_ids[0];
+		// The shopper's chosen gift goes first; the rest, in the merchant's order,
+		// stand in when the choice can't be supplied.
+		$gift_ids = $rule->gift_product_ids();
+		$chosen   = $this->chosen_gift( $cart, $rule );
 
-		// An excluded gift is never granted, and any copy already in the cart goes.
-		if ( $this->is_gift_excluded( $free_product_id, $rule ) ) {
-			$this->free_item_manager->remove_rule_items( $cart, $rule->id );
-			return;
+		if ( in_array( $chosen, $gift_ids, true ) ) {
+			$gift_ids = array_values( array_unique( array_merge( array( $chosen ), $gift_ids ) ) );
 		}
 
-		$this->free_item_manager->add_free_item( $cart, $free_product_id, $free_quantity, $rule );
-		$this->free_item_manager->remove_rule_items_except( $cart, $rule->id, array( $free_product_id ) );
+		foreach ( $gift_ids as $gift_id ) {
+			// An excluded gift is never granted.
+			if ( $this->is_gift_excluded( $gift_id, $rule ) ) {
+				continue;
+			}
+
+			$cart_item_key = $this->free_item_manager->add_free_item( $cart, $gift_id, $free_quantity, $rule );
+
+			if ( $cart_item_key ) {
+				$this->remember_choice( $cart, $cart_item_key, $rule, $gift_id );
+				$this->free_item_manager->remove_rule_items_except( $cart, $rule->id, array( $gift_id ) );
+				return;
+			}
+		}
+
+		// No gift can be granted (all excluded or unavailable), so any copy goes.
+		$this->free_item_manager->remove_rule_items( $cart, $rule->id );
+	}
+
+	/**
+	 * Swap a rule's gift line for another of its gift products.
+	 *
+	 * The new gift takes the quantity the current gift line already holds, so a
+	 * switch never grants more than the rule has earned.
+	 *
+	 * @since 2.2.0
+	 *
+	 * @param \WC_Cart $cart       Cart object.
+	 * @param Rule     $rule       Rule object.
+	 * @param int      $product_id Chosen gift product or variation ID.
+	 *
+	 * @return bool Whether the chosen gift is now in the cart.
+	 */
+	public function switch_gift( $cart, Rule $rule, $product_id ) {
+		$product_id = (int) $product_id;
+
+		if ( ! $rule->offers_gift_choice() || ! in_array( $product_id, $rule->gift_product_ids(), true ) || $this->is_gift_excluded( $product_id, $rule ) ) {
+			return false;
+		}
+
+		$quantity  = 0;
+		$replacing = array();
+		foreach ( $cart->get_cart() as $key => $cart_item ) {
+			if ( $this->is_rule_gift( $cart_item, $rule ) ) {
+				$quantity   += (int) $cart_item['quantity'];
+				$replacing[] = $key;
+			}
+		}
+
+		// No gift line means the rule hasn't been earned yet.
+		if ( $quantity < 1 ) {
+			return false;
+		}
+
+		// The old gift's stock is freed by the swap, so it doesn't count against
+		// the new one; the old line stays if the new gift can't be added.
+		$cart_item_key = $this->free_item_manager->add_free_item( $cart, $product_id, $quantity, $rule, array(), $replacing );
+
+		if ( ! $cart_item_key ) {
+			return false;
+		}
+
+		$this->remember_choice( $cart, $cart_item_key, $rule, $product_id );
+		$this->free_item_manager->remove_rule_items_except( $cart, $rule->id, array( $product_id ) );
+
+		return true;
+	}
+
+	/**
+	 * The gift the shopper currently holds for a rule.
+	 *
+	 * @param \WC_Cart $cart Cart object.
+	 * @param Rule     $rule Rule object.
+	 *
+	 * @return int Gift product ID, or 0 when the rule has no gift line.
+	 */
+	private function chosen_gift( $cart, Rule $rule ) {
+		foreach ( $cart->get_cart() as $cart_item ) {
+			if ( $this->is_rule_gift( $cart_item, $rule ) ) {
+				return CartHandler::gift_product_id( $cart_item );
+			}
+		}
+
+		return 0;
+	}
+
+	/**
+	 * Store the chosen gift on its cart line, so it survives the session.
+	 *
+	 * @param \WC_Cart $cart          Cart object.
+	 * @param string   $cart_item_key Gift line key.
+	 * @param Rule     $rule          Rule object.
+	 * @param int      $product_id    Gift product ID.
+	 *
+	 * @return void
+	 */
+	private function remember_choice( $cart, $cart_item_key, Rule $rule, $product_id ) {
+		if ( $rule->offers_gift_choice() && isset( $cart->cart_contents[ $cart_item_key ] ) ) {
+			$cart->cart_contents[ $cart_item_key ][ CartHandler::BOGO_GIFT_CHOICE_KEY ] = (int) $product_id;
+		}
+	}
+
+	/**
+	 * Whether a cart line is a gift granted by the given rule.
+	 *
+	 * @param array $cart_item Cart item.
+	 * @param Rule  $rule      Rule object.
+	 *
+	 * @return bool
+	 */
+	private function is_rule_gift( $cart_item, Rule $rule ) {
+		return CartHandler::is_bogo_item( $cart_item )
+			&& isset( $cart_item[ CartHandler::BOGO_RULE_KEY ] )
+			&& (int) $cart_item[ CartHandler::BOGO_RULE_KEY ] === (int) $rule->id;
 	}
 
 	/**

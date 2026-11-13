@@ -25,22 +25,16 @@ class FreeItemManager implements FreeItemManagerInterface {
 	 * @param int      $quantity    Quantity to add.
 	 * @param Rule     $rule        Rule object.
 	 * @param array    $variation   Chosen attributes, for "Any" variations.
+	 * @param string[] $replacing   Gift line keys this item replaces, whose stock it may reuse.
 	 *
 	 * @return bool|string Cart item key or false on failure.
 	 */
-	public function add_free_item( $cart, $product_id, $quantity, Rule $rule, $variation = array() ) {
+	public function add_free_item( $cart, $product_id, $quantity, Rule $rule, $variation = array(), $replacing = array() ) {
 		$product_id   = (int) $product_id;
 		$product      = wc_get_product( $product_id );
 		$existing_key = $this->find_bogo_item( $cart, $product_id, (int) $rule->id );
-
-		if ( $product && $product->is_type( 'variation' ) ) {
-			$variation = array_merge( $product->get_variation_attributes(), $variation );
-		}
-
-		// An "Any" variation with no chosen value can't be added to the cart.
-		$quantity = in_array( '', $variation, true )
-			? 0
-			: $this->grantable_quantity( $cart, $product, (int) $quantity, $existing_key );
+		$variation    = $this->gift_variation( $product, $variation );
+		$quantity     = $this->supplyable_quantity( $cart, $product, (int) $quantity, $variation, array_merge( (array) $replacing, array( $existing_key ) ) );
 
 		if ( $quantity < 1 ) {
 			// A gift that can no longer be supplied must not block checkout.
@@ -237,21 +231,60 @@ class FreeItemManager implements FreeItemManagerInterface {
 	}
 
 	/**
+	 * Whether a gift product could be granted right now.
+	 *
+	 * Mirrors the checks add_free_item() makes, so a gift picker only offers
+	 * gifts that can actually be added.
+	 *
+	 * @since 2.2.0
+	 *
+	 * @param \WC_Cart $cart       Cart object.
+	 * @param int      $product_id Gift product or variation ID.
+	 * @param string[] $replacing  Gift line keys the gift would replace.
+	 *
+	 * @return bool
+	 */
+	public function can_supply( $cart, $product_id, $replacing = array() ) {
+		$product = wc_get_product( (int) $product_id );
+
+		return $this->supplyable_quantity( $cart, $product, 1, $this->gift_variation( $product, array() ), (array) $replacing ) > 0;
+	}
+
+	/**
+	 * A gift's full attribute set: the variation's own, plus any chosen values.
+	 *
+	 * @param \WC_Product|false $product   Product object.
+	 * @param array             $variation Chosen attributes, for "Any" variations.
+	 *
+	 * @return array
+	 */
+	private function gift_variation( $product, $variation ) {
+		if ( $product && $product->is_type( 'variation' ) ) {
+			return array_merge( $product->get_variation_attributes(), (array) $variation );
+		}
+
+		return (array) $variation;
+	}
+
+	/**
 	 * How many units of a gift can actually be supplied.
 	 *
 	 * Other lines drawing on the same stock are deducted, which includes sibling
 	 * variations when the parent manages stock, and so is stock held for other
-	 * customers' pending orders, which WooCommerce counts at checkout.
+	 * customers' pending orders, which WooCommerce counts at checkout. Lines in
+	 * $exclude_keys (the gift's own line, or the gift it replaces) are not.
 	 *
 	 * @param \WC_Cart          $cart         Cart object.
 	 * @param \WC_Product|false $product      Product object.
 	 * @param int               $quantity     Requested quantity.
-	 * @param string|false      $existing_key Existing gift line key.
+	 * @param array             $variation    Full attribute set of the gift.
+	 * @param array             $exclude_keys Cart line keys whose stock may be reused.
 	 *
 	 * @return int
 	 */
-	private function grantable_quantity( $cart, $product, $quantity, $existing_key ) {
-		if ( ! $product || $product->is_type( 'variable' ) || ! $product->is_purchasable() || ! $product->is_in_stock() ) {
+	private function supplyable_quantity( $cart, $product, $quantity, $variation, $exclude_keys ) {
+		// An "Any" variation with no chosen value can't be added to the cart.
+		if ( ! $product || in_array( '', $variation, true ) || $product->is_type( 'variable' ) || ! $product->is_purchasable() || ! $product->is_in_stock() ) {
 			return 0;
 		}
 
@@ -261,11 +294,17 @@ class FreeItemManager implements FreeItemManagerInterface {
 			return $quantity;
 		}
 
-		$max     -= wc_get_held_stock_quantity( $product, $this->current_order_id() );
-		$stock_id = $product->get_stock_managed_by_id();
+		$exclude_keys = array_filter(
+			$exclude_keys,
+			static function ( $key ) {
+				return false !== $key;
+			}
+		);
+		$max         -= wc_get_held_stock_quantity( $product, $this->current_order_id() );
+		$stock_id     = $product->get_stock_managed_by_id();
 
 		foreach ( $cart->get_cart() as $cart_item_key => $cart_item ) {
-			if ( $cart_item_key !== $existing_key && $cart_item['data']->get_stock_managed_by_id() === $stock_id ) {
+			if ( ! in_array( $cart_item_key, $exclude_keys, true ) && $cart_item['data']->get_stock_managed_by_id() === $stock_id ) {
 				$max -= (int) $cart_item['quantity'];
 			}
 		}
