@@ -285,12 +285,29 @@ class RuleTest extends TestCase {
 	}
 
 	/**
-	 * Test a duplicated title fits the 255-character title column.
+	 * Test a long title is shortened to fit the column and keeps the copy marker.
 	 */
-	public function test_duplicate_truncates_long_title() {
+	public function test_duplicate_truncates_long_title_and_keeps_marker() {
 		$rule        = new Rule();
 		$rule->title = str_repeat( 'a', 255 );
 
-		$this->assertSame( 255, strlen( $rule->duplicate()->title ) );
+		$title = $rule->duplicate()->title;
+
+		$this->assertSame( 255, mb_strlen( $title ) );
+		$this->assertStringEndsWith( ' (copy)', $title );
+	}
+
+	/**
+	 * Test a long non-ASCII title is cut on a character boundary.
+	 */
+	public function test_duplicate_truncates_multibyte_title_safely() {
+		$rule        = new Rule();
+		$rule->title = str_repeat( 'é', 255 );
+
+		$title = $rule->duplicate()->title;
+
+		$this->assertTrue( mb_check_encoding( $title, 'UTF-8' ) );
+		$this->assertSame( 255, mb_strlen( $title ) );
+		$this->assertStringEndsWith( ' (copy)', $title );
 	}
 }

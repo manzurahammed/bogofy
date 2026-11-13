@@ -281,10 +281,12 @@ class Rule {
 		$copy->updated_at    = '';
 
 		/* translators: %s: title of the rule being duplicated */
-		$title = sprintf( __( '%s (copy)', 'bogofy' ), $this->title );
+		$format = __( '%s (copy)', 'bogofy' );
 
-		// The title column is VARCHAR(255).
-		$copy->title = function_exists( 'mb_substr' ) ? mb_substr( $title, 0, 255 ) : substr( $title, 0, 255 );
+		// The title column is VARCHAR(255). Shorten the original rather than the
+		// result so the copy marker always survives. WordPress polyfills mb_*.
+		$room        = max( 0, 255 - mb_strlen( sprintf( $format, '' ) ) );
+		$copy->title = sprintf( $format, mb_substr( $this->title, 0, $room ) );
 
 		return $copy;
 	}
