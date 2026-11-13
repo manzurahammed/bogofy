@@ -31,12 +31,31 @@ function SumRow({ l, v, done }) {
   );
 }
 
+// Short label for the cart minimums set on the rule.
+function conditionsSummary(conditions = {}) {
+  const parts = [];
+  if (Number(conditions.min_subtotal) > 0) {
+    /* translators: %s: minimum cart subtotal */
+    parts.push(sprintf(__("min %s", "bogofy"), conditions.min_subtotal));
+  }
+  if (Number(conditions.min_items) > 0) {
+    /* translators: %s: minimum number of items */
+    parts.push(sprintf(__("%s+ items", "bogofy"), conditions.min_items));
+  }
+  if (conditions.exclude_sale_items) {
+    parts.push(__("no sale items", "bogofy"));
+  }
+  return parts.join(" · ");
+}
+
 function SummaryRail({
   formData,
   step,
   selectedBuyProducts,
   selectedFreeProducts,
 }) {
+  const conditions = conditionsSummary(formData.conditions);
+
   return (
     <div className="bogo-wizard__card">
       <div style={{ fontSize: 12.5, fontWeight: 600, marginBottom: 10 }}>
@@ -81,6 +100,11 @@ function SummaryRail({
               : __("Not set", "bogofy")
           }
           done={selectedFreeProducts.length > 0}
+        />
+        <SumRow
+          l={__("Conditions", "bogofy")}
+          v={conditions || __("None", "bogofy")}
+          done={!!conditions}
         />
       </div>
     </div>

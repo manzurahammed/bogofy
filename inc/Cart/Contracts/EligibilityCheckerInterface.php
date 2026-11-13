@@ -27,15 +27,28 @@ interface EligibilityCheckerInterface {
 	public function get_eligible_items( $cart, Rule $rule );
 
 	/**
-	 * Check if a product is eligible for a rule.
+	 * Check whether the cart reaches the rule's minimum subtotal and item count.
 	 *
-	 * @param int  $product_id Product or variation ID.
-	 * @param int  $parent_id  Parent product ID.
-	 * @param Rule $rule       Rule object.
+	 * @since 2.2.0
+	 *
+	 * @param \WC_Cart $cart Cart object.
+	 * @param Rule     $rule Rule object.
 	 *
 	 * @return bool
 	 */
-	public function is_product_eligible( $product_id, $parent_id, Rule $rule );
+	public function meets_cart_minimums( $cart, Rule $rule );
+
+	/**
+	 * Check if a product is eligible for a rule, after its exclusions.
+	 *
+	 * @param int              $product_id Product or variation ID.
+	 * @param int              $parent_id  Parent product ID.
+	 * @param Rule             $rule       Rule object.
+	 * @param \WC_Product|null $product    Product object, when the caller has one.
+	 *
+	 * @return bool
+	 */
+	public function is_product_eligible( $product_id, $parent_id, Rule $rule, $product = null );
 
 	/**
 	 * Calculate how many free items the customer is entitled to.

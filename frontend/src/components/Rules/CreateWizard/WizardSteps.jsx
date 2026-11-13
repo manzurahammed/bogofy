@@ -21,6 +21,10 @@ function WizardSteps({ wizard }) {
     setSelectedFreeProducts,
     selectedCategories,
     setSelectedCategories,
+    selectedExcludedProducts,
+    setSelectedExcludedProducts,
+    selectedExcludedCategories,
+    setSelectedExcludedCategories,
     errors,
     submitRule,
     isPending,
@@ -48,6 +52,10 @@ function WizardSteps({ wizard }) {
         <StepOptions
           formData={formData}
           setFormData={setFormData}
+          selectedExcludedProducts={selectedExcludedProducts}
+          setSelectedExcludedProducts={setSelectedExcludedProducts}
+          selectedExcludedCategories={selectedExcludedCategories}
+          setSelectedExcludedCategories={setSelectedExcludedCategories}
           errors={errors}
         />
       );
@@ -58,6 +66,8 @@ function WizardSteps({ wizard }) {
           selectedBuyProducts={selectedBuyProducts}
           selectedFreeProducts={selectedFreeProducts}
           selectedCategories={selectedCategories}
+          selectedExcludedProducts={selectedExcludedProducts}
+          selectedExcludedCategories={selectedExcludedCategories}
           onLaunch={() => submitRule("active")}
           onDraft={() => submitRule("inactive")}
           isLoading={isPending}

@@ -16,6 +16,10 @@ export function useCreateRuleWizard() {
   const [selectedBuyProducts, setSelectedBuyProducts] = useState([]);
   const [selectedFreeProducts, setSelectedFreeProducts] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState([]);
+  const [selectedExcludedProducts, setSelectedExcludedProducts] = useState([]);
+  const [selectedExcludedCategories, setSelectedExcludedCategories] = useState(
+    [],
+  );
   const [errors, setErrors] = useState({});
 
   const createRule = useCreateRule();
@@ -56,6 +60,21 @@ export function useCreateRuleWizard() {
     ) {
       errs.discount_value = __("Enter a discount between 1 and 100", "bogofy");
     }
+    const { min_subtotal: minSubtotal, min_items: minItems } =
+      formData.conditions;
+    if (step >= 3 && minSubtotal !== "" && !(Number(minSubtotal) >= 0)) {
+      errs.min_subtotal = __("Minimum subtotal cannot be negative", "bogofy");
+    }
+    if (
+      step >= 3 &&
+      minItems !== "" &&
+      !(Number.isInteger(Number(minItems)) && Number(minItems) >= 0)
+    ) {
+      errs.min_items = __(
+        "Minimum items must be a whole number, 0 or more",
+        "bogofy",
+      );
+    }
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }, [
@@ -94,6 +113,13 @@ export function useCreateRuleWizard() {
           : null,
         start_date: formData.start_date || null,
         end_date: formData.end_date || null,
+        conditions: {
+          min_subtotal: Number(formData.conditions.min_subtotal) || 0,
+          min_items: Number(formData.conditions.min_items) || 0,
+          excluded_product_ids: selectedExcludedProducts.map((p) => p.id),
+          excluded_category_ids: selectedExcludedCategories.map((c) => c.id),
+          exclude_sale_items: !!formData.conditions.exclude_sale_items,
+        },
       };
       try {
         await createRule.mutateAsync(data);
@@ -109,6 +135,8 @@ export function useCreateRuleWizard() {
       selectedBuyProducts,
       selectedFreeProducts,
       selectedCategories,
+      selectedExcludedProducts,
+      selectedExcludedCategories,
       createRule,
       success,
       error,
@@ -125,6 +153,10 @@ export function useCreateRuleWizard() {
     setSelectedFreeProducts,
     selectedCategories,
     setSelectedCategories,
+    selectedExcludedProducts,
+    setSelectedExcludedProducts,
+    selectedExcludedCategories,
+    setSelectedExcludedCategories,
     errors,
     goNext,
     goPrev,
