@@ -45,11 +45,13 @@ class FreeItemManager implements FreeItemManagerInterface {
 		if ( $quantity < 1 ) {
 			// A gift that can no longer be supplied must not block checkout.
 			if ( $existing_key ) {
-				$cart->remove_cart_item( $existing_key );
+				$this->remove_gift( $cart, $existing_key, (int) $rule->id );
 			}
 
 			return false;
 		}
+
+		$gift_id = $product_id;
 
 		// Generate unique cart item key for this BOGO item.
 		$bogo_key = $this->generate_bogo_key( $product_id, $rule->id );
@@ -93,7 +95,24 @@ class FreeItemManager implements FreeItemManagerInterface {
 		// for the paid items. A gift the store can't supply must not do that.
 		if ( ! $cart_item_key ) {
 			wc_set_notices( $notices );
+
+			return $cart_item_key;
 		}
+
+		/**
+		 * Fires after Bogofy adds a new gift line to the cart.
+		 *
+		 * Only a new line fires this. Bogofy re-syncing the quantity of an
+		 * existing gift line fires neither this nor `bogofy_gift_removed`.
+		 *
+		 * @since 2.2.0
+		 *
+		 * @param string $cart_item_key Cart item key of the gift line.
+		 * @param int    $gift_id       Gift product ID, or variation ID for a variation.
+		 * @param int    $quantity      Quantity added.
+		 * @param Rule   $rule          Rule that granted the gift.
+		 */
+		do_action( 'bogofy_gift_added', $cart_item_key, $gift_id, $quantity, $rule );
 
 		// Pricing is applied in the totals hook (apply_bogo_prices) so the BOGO
 		// baseline is captured from the natural price first.
@@ -123,7 +142,7 @@ class FreeItemManager implements FreeItemManagerInterface {
 		}
 
 		foreach ( $items_to_remove as $key ) {
-			$cart->remove_cart_item( $key );
+			$this->remove_gift( $cart, $key, (int) $rule_id );
 		}
 	}
 
@@ -154,7 +173,7 @@ class FreeItemManager implements FreeItemManagerInterface {
 		}
 
 		foreach ( $items_to_remove as $key ) {
-			$cart->remove_cart_item( $key );
+			$this->remove_gift( $cart, $key, (int) $rule_id );
 		}
 	}
 
@@ -179,13 +198,39 @@ class FreeItemManager implements FreeItemManagerInterface {
 				isset( $cart_item[ CartHandler::BOGO_RULE_KEY ] ) &&
 				! in_array( (int) $cart_item[ CartHandler::BOGO_RULE_KEY ], $active_rule_ids, true )
 			) {
-				$items_to_remove[] = $cart_item_key;
+				$items_to_remove[ $cart_item_key ] = (int) $cart_item[ CartHandler::BOGO_RULE_KEY ];
 			}
 		}
 
-		foreach ( $items_to_remove as $key ) {
-			$cart->remove_cart_item( $key );
+		foreach ( $items_to_remove as $key => $rule_id ) {
+			$this->remove_gift( $cart, $key, $rule_id );
 		}
+	}
+
+	/**
+	 * Remove a gift line from the cart.
+	 *
+	 * @param \WC_Cart $cart          Cart object.
+	 * @param string   $cart_item_key Cart item key of the gift line.
+	 * @param int      $rule_id       ID of the rule that granted the gift.
+	 *
+	 * @return void
+	 */
+	private function remove_gift( $cart, $cart_item_key, $rule_id ) {
+		$cart->remove_cart_item( $cart_item_key );
+
+		/**
+		 * Fires after Bogofy removes a gift line from the cart.
+		 *
+		 * Covers gifts the cart no longer earns, gifts that can no longer be
+		 * supplied, and gifts of rules that are vetoed, inactive, or deleted.
+		 *
+		 * @since 2.2.0
+		 *
+		 * @param string $cart_item_key Cart item key of the removed gift line.
+		 * @param int    $rule_id       ID of the rule that granted the gift.
+		 */
+		do_action( 'bogofy_gift_removed', $cart_item_key, $rule_id );
 	}
 
 	/**

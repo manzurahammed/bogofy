@@ -146,7 +146,7 @@ class CartHandler {
 		foreach ( $rules as $rule ) {
 			$eligible_items = $this->eligibility_checker->get_eligible_items( $cart, $rule );
 
-			if ( ! empty( $eligible_items ) ) {
+			if ( $this->is_rule_eligible( $cart, $rule, $eligible_items ) ) {
 				$this->discount_applier->sync( $cart, $rule, $eligible_items );
 			} else {
 				// Remove free items for this rule if no longer eligible.
@@ -240,10 +240,36 @@ class CartHandler {
 		foreach ( $discounted_rules as $rule ) {
 			$eligible_items = $this->eligibility_checker->get_eligible_items( $cart, $rule );
 
-			if ( ! empty( $eligible_items ) ) {
+			if ( $this->is_rule_eligible( $cart, $rule, $eligible_items ) ) {
 				$claimed = $this->discount_applier->apply_discounted( $cart, $rule, $eligible_items, $claimed );
 			}
 		}
+	}
+
+	/**
+	 * Whether a rule applies to the cart, after developer overrides.
+	 *
+	 * @param \WC_Cart            $cart           Cart object.
+	 * @param \Bogofy\Models\Rule $rule           Rule object.
+	 * @param array               $eligible_items Eligible cart items.
+	 *
+	 * @return bool
+	 */
+	private function is_rule_eligible( $cart, $rule, $eligible_items ) {
+		/**
+		 * Filters whether a rule applies to the cart.
+		 *
+		 * Return false to veto a rule (its gifts are removed and it discounts
+		 * nothing) or true to force it. A forced rule with no qualifying items
+		 * earns no free units unless `bogofy_free_quantity` grants some.
+		 *
+		 * @since 2.2.0
+		 *
+		 * @param bool                $eligible Whether any cart item qualifies for the rule.
+		 * @param \Bogofy\Models\Rule $rule     Rule object.
+		 * @param \WC_Cart            $cart     Cart object.
+		 */
+		return (bool) apply_filters( 'bogofy_rule_is_eligible', ! empty( $eligible_items ), $rule, $cart );
 	}
 
 	/**

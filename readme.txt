@@ -118,6 +118,21 @@ No. When the cart qualifies, the free item is added and priced at zero automatic
 
 Use the "Enable plugin" toggle on the Settings screen to switch all BOGO functionality off without deleting your rules.
 
+= Are there developer hooks? =
+
+Yes. Since 2.2.0 Bogofy provides these hooks:
+
+* `bogofy_rule_is_eligible` (filter) — `( bool $eligible, Rule $rule, WC_Cart $cart )`. Return `false` to veto a rule for the cart (its gifts are removed and it discounts nothing) or `true` to force it.
+* `bogofy_free_quantity` (filter) — `( int $qty, Rule $rule, array $eligible_items )`. Change how many free units a rule grants. Applied after the rule's maximum; negative values become 0.
+* `bogofy_gift_added` (action) — `( string $cart_item_key, int $product_id, int $quantity, Rule $rule )`. Fires when Bogofy adds a new gift line. `$product_id` is the variation ID for a variation.
+* `bogofy_gift_removed` (action) — `( string $cart_item_key, int $rule_id )`. Fires when Bogofy removes a gift line.
+
+When Bogofy only changes the quantity of a gift line already in the cart, neither action fires.
+
+Example: only apply rule 12 to logged-in customers.
+
+`add_filter( 'bogofy_rule_is_eligible', function ( $eligible, $rule ) { return 12 === (int) $rule->id ? $eligible && is_user_logged_in() : $eligible; }, 10, 2 );`
+
 == Screenshots ==
 
 1. Dashboard overview showing active rules and stats.
