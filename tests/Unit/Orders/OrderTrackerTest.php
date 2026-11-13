@@ -159,6 +159,26 @@ namespace Bogofy\Tests\Unit\Orders {
 		}
 
 		/**
+		 * persist_line_meta records the gift the shopper chose, and only then.
+		 */
+		public function test_persist_line_meta_records_chosen_gift() {
+			$chosen  = new \Bogo_Test_Order_Item( 1 );
+			$default = new \Bogo_Test_Order_Item( 1 );
+			$values  = array(
+				CartHandler::BOGO_RULE_KEY => 4,
+				'data'                     => new \Bogo_Test_Product( 25.0 ),
+				'quantity'                 => 1,
+			);
+			$tracker = new OrderTracker( new FakeRepo() );
+
+			$tracker->persist_line_meta( $chosen, 'key', $values + array( CartHandler::BOGO_GIFT_CHOICE_KEY => 40 ) );
+			$tracker->persist_line_meta( $default, 'key', $values );
+
+			$this->assertSame( 40, $chosen->get_meta( OrderTracker::GIFT_CHOICE_ITEM_META ) );
+			$this->assertSame( '', $default->get_meta( OrderTracker::GIFT_CHOICE_ITEM_META ) );
+		}
+
+		/**
 		 * persist_line_meta leaves non-BOGO line items untouched.
 		 */
 		public function test_persist_line_meta_ignores_non_bogo_item() {

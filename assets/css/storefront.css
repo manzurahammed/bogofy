@@ -147,3 +147,61 @@
   color: #059669;
   font-weight: 700;
 }
+
+/* ── Gift picker (classic cart + Cart block) ───────────── */
+.bogo-gift-picker {
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+.bogo-gift-picker__label {
+  display: block;
+  margin-bottom: 4px;
+  color: #0c6b46;
+  font-weight: 600;
+}
+
+.bogo-gift-picker__options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bogo-gift-picker__option {
+  margin: 0;
+}
+
+.bogo-gift-picker__link,
+.bogo-gift-picker__button,
+.bogo-gift-picker__option--selected {
+  display: inline-block;
+  padding: 3px 10px;
+  border: 1px solid #10b981;
+  border-radius: 999px;
+  background: transparent;
+  color: #0c6b46;
+  font: inherit;
+  line-height: 1.5;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.bogo-gift-picker__option--selected {
+  background: #10b981;
+  color: #062e22;
+  font-weight: 700;
+  cursor: default;
+}
+
+.bogo-gift-picker__button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.bogo-gift-picker__error {
+  margin: 4px 0 0;
+  color: #b91c1c;
+}
