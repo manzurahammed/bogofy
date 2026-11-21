@@ -246,16 +246,36 @@ class DiscountApplier implements DiscountApplierInterface {
 			return false;
 		}
 
-		// The old gift's stock is freed by the swap, so it doesn't count against
-		// the new one; the old line stays if the new gift can't be added.
+		// Already the gift in the cart: nothing to swap.
+		if ( 1 === count( $replacing ) && $this->chosen_gift( $cart, $rule ) === $product_id ) {
+			return true;
+		}
+
+		// The swap frees the old gift's stock, but WooCommerce's add_to_cart()
+		// counts every line drawing on the same stock, so the old line must leave
+		// the cart first. It is detached silently and put back unchanged, in the
+		// same position, if the new gift can't be added.
+		$original = $cart->cart_contents;
+		foreach ( $replacing as $key ) {
+			unset( $cart->cart_contents[ $key ] );
+		}
+
 		$cart_item_key = $this->free_item_manager->add_free_item( $cart, $product_id, $quantity, $rule, array(), $replacing );
 
 		if ( ! $cart_item_key ) {
+			$cart->cart_contents = $original;
 			return false;
 		}
 
 		$this->remember_choice( $cart, $cart_item_key, $rule, $product_id );
 		$this->free_item_manager->remove_rule_items_except( $cart, $rule->id, array( $product_id ) );
+
+		foreach ( $replacing as $key ) {
+			if ( $key !== $cart_item_key ) {
+				/** This action is documented in inc/Cart/FreeItemManager.php */
+				do_action( 'bogofy_gift_removed', $key, (int) $rule->id );
+			}
+		}
 
 		return true;
 	}

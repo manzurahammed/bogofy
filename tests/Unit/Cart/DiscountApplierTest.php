@@ -12,6 +12,7 @@ use Bogofy\Cart\Contracts\FreeItemManagerInterface;
 use Bogofy\Cart\DiscountApplier;
 use Bogofy\Cart\EligibilityChecker;
 use Bogofy\Models\Rule;
+use Brain\Monkey\Actions;
 use Brain\Monkey\Filters;
 use Brain\Monkey\Functions;
 use Mockery;
@@ -448,26 +449,76 @@ class DiscountApplierTest extends TestCase {
 	}
 
 	/**
-	 * The replaced gift's line is passed on so its stock is reused, and it stays
-	 * in the cart when the new gift can't be added.
+	 * The old gift leaves the cart before the new one is added, so WooCommerce's
+	 * stock check doesn't count both against stock they share.
 	 */
-	public function test_switch_reuses_the_replaced_gift_and_keeps_it_on_failure() {
-		$replacing = null;
-		$manager   = Mockery::mock( FreeItemManagerInterface::class );
-		$manager->shouldReceive( 'add_free_item' )->andReturnUsing(
-			function ( $cart, $product_id, $quantity, $rule, $variation, $keys ) use ( &$replacing ) {
-				$replacing = $keys;
-				return false;
+	public function test_old_gift_is_out_of_the_cart_while_the_new_gift_is_added() {
+		$old_present = null;
+		$manager     = Mockery::mock( FreeItemManagerInterface::class );
+		$manager->shouldReceive( 'add_free_item' )->once()->andReturnUsing(
+			function ( $cart, $product_id, $quantity ) use ( &$old_present ) {
+				$old_present                  = isset( $cart->cart_contents['gift_30'] );
+				$cart->cart_contents['gift_40'] = $this->gift_line( $product_id, $quantity );
+				return 'gift_40';
 			}
 		);
-		$manager->shouldNotReceive( 'remove_rule_items_except' );
+		$manager->shouldReceive( 'remove_rule_items_except' )->once();
 
 		$cart    = $this->gift_cart( array( 'gift_30' => $this->gift_line( 30, 1 ) ) );
 		$applier = new DiscountApplier( new EligibilityChecker(), $manager );
 
+		$this->assertTrue( $applier->switch_gift( $cart, $this->gift_rule( array( 30, 40 ) ), 40 ) );
+		$this->assertFalse( $old_present );
+		$this->assertSame( array( 'gift_40' ), array_keys( $cart->cart_contents ) );
+	}
+
+	/**
+	 * When the new gift can't be added, the cart is restored exactly: the old
+	 * gift line, its data, and the order of every line.
+	 */
+	public function test_failed_switch_restores_the_cart_unchanged() {
+		$manager = Mockery::mock( FreeItemManagerInterface::class );
+		$manager->shouldReceive( 'add_free_item' )->andReturn( false );
+		$manager->shouldNotReceive( 'remove_rule_items_except' );
+
+		$contents = array(
+			'a'       => $this->line( 10, 1, 15.0 ),
+			'gift_30' => $this->gift_line( 30, 2, array( CartHandler::BOGO_GIFT_CHOICE_KEY => 30 ) ),
+			'b'       => $this->line( 11, 1, 5.0 ),
+		);
+		$cart     = $this->gift_cart( $contents );
+		$applier  = new DiscountApplier( new EligibilityChecker(), $manager );
+
 		$this->assertFalse( $applier->switch_gift( $cart, $this->gift_rule( array( 30, 40 ) ), 40 ) );
-		$this->assertSame( array( 'gift_30' ), $replacing );
-		$this->assertSame( array( 'gift_30' ), array_keys( $cart->cart_contents ) );
+		$this->assertSame( $contents, $cart->cart_contents );
+	}
+
+	/**
+	 * A successful switch announces the removed gift once.
+	 */
+	public function test_switch_announces_the_removed_gift() {
+		Actions\expectDone( 'bogofy_gift_removed' )->once()->with( 'gift_30', 5 );
+
+		$rule = $this->gift_rule( array( 30, 40 ) );
+		$cart = $this->gift_cart( array( 'gift_30' => $this->gift_line( 30, 1 ) ) );
+
+		$this->assertTrue( $this->gift_applier()->switch_gift( $cart, $rule, 40 ) );
+	}
+
+	/**
+	 * Choosing the gift already in the cart changes nothing.
+	 */
+	public function test_switching_to_the_current_gift_is_a_no_op() {
+		$manager = Mockery::mock( FreeItemManagerInterface::class );
+		$manager->shouldNotReceive( 'add_free_item' );
+		$manager->shouldNotReceive( 'remove_rule_items_except' );
+
+		$contents = array( 'gift_30' => $this->gift_line( 30, 1, array( CartHandler::BOGO_GIFT_CHOICE_KEY => 30 ) ) );
+		$cart     = $this->gift_cart( $contents );
+		$applier  = new DiscountApplier( new EligibilityChecker(), $manager );
+
+		$this->assertTrue( $applier->switch_gift( $cart, $this->gift_rule( array( 30, 40 ) ), 30 ) );
+		$this->assertSame( $contents, $cart->cart_contents );
 	}
 
 	/**
