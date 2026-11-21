@@ -44,6 +44,21 @@ interface FreeItemManagerInterface {
 	public function can_supply( $cart, $product_id, $replacing = array() );
 
 	/**
+	 * How many units of a product could be granted as a gift right now.
+	 *
+	 * @since 2.2.1
+	 *
+	 * @param \WC_Cart $cart       Cart object.
+	 * @param int      $product_id Product or variation ID.
+	 * @param int      $quantity   Units wanted.
+	 * @param array    $variation  Chosen attributes, for "Any" variations.
+	 * @param string[] $replacing  Cart line keys whose stock may be reused.
+	 *
+	 * @return int Between 0 and $quantity.
+	 */
+	public function supplyable( $cart, $product_id, $quantity, $variation = array(), $replacing = array() );
+
+	/**
 	 * Remove all BOGO items for a specific rule.
 	 *
 	 * @param \WC_Cart $cart    Cart object.

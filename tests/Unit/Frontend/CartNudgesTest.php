@@ -24,6 +24,7 @@ namespace {
 
 namespace Bogofy\Tests\Unit\Frontend {
 
+	use Bogofy\Cart\CartHandler;
 	use Bogofy\Cart\Contracts\FreeItemManagerInterface;
 	use Bogofy\Cart\EligibilityChecker;
 	use Bogofy\Frontend\CartNudges;
@@ -31,6 +32,7 @@ namespace Bogofy\Tests\Unit\Frontend {
 	use Bogofy\Models\RuleRepository;
 	use Brain\Monkey\Filters;
 	use Brain\Monkey\Functions;
+	use Mockery;
 	use PHPUnit\Framework\TestCase;
 
 	/**
@@ -44,6 +46,20 @@ namespace Bogofy\Tests\Unit\Frontend {
 		 * @var int[]
 		 */
 		private $unavailable = array();
+
+		/**
+		 * Units the store can grant, by product ID. Unlisted products are unlimited.
+		 *
+		 * @var array<int,int>
+		 */
+		private $stock = array();
+
+		/**
+		 * Stock-managing product ID by product ID, for products sharing stock.
+		 *
+		 * @var array<int,int>
+		 */
+		private $stock_ids = array();
 
 		/**
 		 * Set up test fixtures.
@@ -81,6 +97,17 @@ namespace Bogofy\Tests\Unit\Frontend {
 			$free_items->method( 'can_supply' )->willReturnCallback(
 				function ( $cart, $product_id ) {
 					return ! in_array( $product_id, $this->unavailable, true );
+				}
+			);
+			$free_items->method( 'supplyable' )->willReturnCallback(
+				function ( $cart, $product_id, $quantity ) {
+					if ( in_array( $product_id, $this->unavailable, true ) ) {
+						return 0;
+					}
+
+					$stock_id = $this->stock_ids[ $product_id ] ?? $product_id;
+
+					return min( $quantity, $this->stock[ $stock_id ] ?? $quantity );
 				}
 			);
 
@@ -121,6 +148,27 @@ namespace Bogofy\Tests\Unit\Frontend {
 						'quantity'     => $quantity,
 					),
 				)
+			);
+		}
+
+		/**
+		 * A paid line of one unit with a price.
+		 *
+		 * @param int   $product_id Product ID.
+		 * @param float $price      Unit price.
+		 *
+		 * @return array
+		 */
+		private function priced_line( $product_id, $price ) {
+			$product = Mockery::mock();
+			$product->shouldReceive( 'get_price' )->andReturn( $price );
+			$product->shouldReceive( 'get_stock_managed_by_id' )->andReturn( $this->stock_ids[ $product_id ] ?? $product_id );
+
+			return array(
+				'product_id'   => $product_id,
+				'variation_id' => 0,
+				'quantity'     => 1,
+				'data'         => $product,
 			);
 		}
 
@@ -213,6 +261,122 @@ namespace Bogofy\Tests\Unit\Frontend {
 
 			$rule->free_product_ids = array( 99, 98 );
 			$this->assertCount( 1, $this->nudges( $rule )->get_messages( $this->cart( 1 ) ) );
+		}
+
+		/**
+		 * A gift rule promises no more gifts than the store can grant.
+		 */
+		public function test_gift_promise_is_capped_at_available_stock() {
+			$rule                   = $this->rule( Rule::TYPE_BUY_X_GET_Y );
+			$rule->buy_quantity     = 2;
+			$rule->free_quantity    = 2;
+			$rule->free_product_ids = array( 99 );
+
+			$this->assertSame( array( 'Add 1 more item to get 2 free!' ), $this->nudges( $rule )->get_messages( $this->cart( 1 ) ) );
+
+			$this->stock = array( 99 => 1 );
+			$this->assertSame( array( 'Add 1 more item to get 1 free!' ), $this->nudges( $rule )->get_messages( $this->cart( 1 ) ) );
+		}
+
+		/**
+		 * Gifts already held count against the stock the next set needs.
+		 */
+		public function test_held_gifts_count_against_the_next_set() {
+			$rule                   = $this->rule( Rule::TYPE_BUY_X_GET_Y );
+			$rule->id               = 4;
+			$rule->buy_quantity     = 2;
+			$rule->free_product_ids = array( 99 );
+
+			$cart                      = $this->cart( 3 );
+			$cart->cart_contents['g']  = array(
+				'product_id'               => 99,
+				'variation_id'             => 0,
+				'quantity'                 => 1,
+				CartHandler::BOGO_ITEM_KEY => true,
+				CartHandler::BOGO_RULE_KEY => 4,
+			);
+
+			// One unit in stock: the held gift uses it, so the next set can't be met.
+			$this->stock = array( 99 => 1 );
+			$this->assertSame( array(), $this->nudges( $rule )->get_messages( $cart ) );
+
+			$this->stock = array( 99 => 2 );
+			$this->assertSame( array( 'Add 1 more item to get 1 free!' ), $this->nudges( $rule )->get_messages( $cart ) );
+		}
+
+		/**
+		 * Buy X Get X needs stock for the paid units to add and the free copy.
+		 */
+		public function test_copy_reward_needs_stock_for_paid_and_free_units() {
+			// Buy 3 get 1 with 1 in the cart: 2 paid + 1 free more units are needed.
+			$this->stock = array( 10 => 2 );
+			$this->assertSame( array(), $this->nudges( $this->rule() )->get_messages( $this->cart( 1 ) ) );
+
+			$this->stock = array( 10 => 3 );
+			$this->assertSame( array( 'Add 2 more items to get 1 free!' ), $this->nudges( $this->rule() )->get_messages( $this->cart( 1 ) ) );
+		}
+
+		/**
+		 * Paid units the shopper must add are reserved from stock they share
+		 * with the gift.
+		 */
+		public function test_paid_units_sharing_gift_stock_are_reserved() {
+			$rule                   = $this->rule( Rule::TYPE_BUY_X_GET_Y );
+			$rule->buy_quantity     = 2;
+			$rule->free_quantity    = 2;
+			$rule->free_product_ids = array( 10 );
+
+			// The gift is the product in the cart; 2 more units can be supplied.
+			// Adding the 1 paid unit leaves 1 for the gift, not 2.
+			$this->stock = array( 10 => 2 );
+			$this->assertSame( array( 'Add 1 more item to get 1 free!' ), $this->nudges( $rule )->get_messages( $this->cart( 1 ) ) );
+		}
+
+		/**
+		 * Buy X Get X rewards split across products are each checked for stock.
+		 */
+		public function test_split_copy_reward_is_checked_per_product() {
+			$rule                = $this->rule();
+			$rule->free_quantity = 3;
+
+			$cart = new \WC_Cart(
+				array(
+					'a' => $this->priced_line( 10, 5.0 ),
+					'b' => $this->priced_line( 11, 9.0 ),
+				)
+			);
+
+			// Adding 1 A makes A x2, B x1, so the 3 free copies split as 2 A + 1 B.
+			$this->assertSame( array( 'Add 1 more item to get 3 free!' ), $this->nudges( $rule )->get_messages( $cart ) );
+
+			// B has no spare unit, so only the 2 A copies can be granted.
+			$this->stock = array( 11 => 0 );
+			$this->assertSame( array( 'Add 1 more item to get 2 free!' ), $this->nudges( $rule )->get_messages( $cart ) );
+		}
+
+		/**
+		 * Copies of products sharing one stock draw on a single budget.
+		 */
+		public function test_split_copies_sharing_stock_use_one_budget() {
+			$rule                = $this->rule();
+			$rule->free_quantity = 3;
+
+			// Variations 10 and 11 share parent 100's stock: 3 spare units.
+			// 1 paid unit of 10 leaves 2, so only 2 of the 3 copies fit.
+			$this->stock_ids = array(
+				10 => 100,
+				11 => 100,
+			);
+			$this->stock     = array( 100 => 3 );
+
+			$cart = new \WC_Cart(
+				array(
+					'a' => $this->priced_line( 10, 5.0 ),
+					'b' => $this->priced_line( 11, 9.0 ),
+				)
+			);
+
+			$this->assertSame( array( 'Add 1 more item to get 2 free!' ), $this->nudges( $rule )->get_messages( $cart ) );
 		}
 
 		/**

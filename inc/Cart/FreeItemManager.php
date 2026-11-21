@@ -245,9 +245,29 @@ class FreeItemManager implements FreeItemManagerInterface {
 	 * @return bool
 	 */
 	public function can_supply( $cart, $product_id, $replacing = array() ) {
+		return $this->supplyable( $cart, $product_id, 1, array(), $replacing ) > 0;
+	}
+
+	/**
+	 * How many units of a product could be granted as a gift right now.
+	 *
+	 * Uses the same stock accounting as add_free_item(), so a nudge never
+	 * promises more than the gift code will grant.
+	 *
+	 * @since 2.2.1
+	 *
+	 * @param \WC_Cart $cart       Cart object.
+	 * @param int      $product_id Product or variation ID.
+	 * @param int      $quantity   Units wanted.
+	 * @param array    $variation  Chosen attributes, for "Any" variations.
+	 * @param string[] $replacing  Cart line keys whose stock may be reused.
+	 *
+	 * @return int Between 0 and $quantity.
+	 */
+	public function supplyable( $cart, $product_id, $quantity, $variation = array(), $replacing = array() ) {
 		$product = wc_get_product( (int) $product_id );
 
-		return $this->supplyable_quantity( $cart, $product, 1, $this->gift_variation( $product, array() ), (array) $replacing ) > 0;
+		return $this->supplyable_quantity( $cart, $product, (int) $quantity, $this->gift_variation( $product, (array) $variation ), (array) $replacing );
 	}
 
 	/**
