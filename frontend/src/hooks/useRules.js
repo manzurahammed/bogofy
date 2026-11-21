@@ -88,6 +88,22 @@ export function useDeleteRule() {
 }
 
 /**
+ * Hook for duplicating a rule.
+ *
+ * @returns {Object}
+ */
+export function useDuplicateRule() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id) => rulesApi.duplicateRule(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["rules"] });
+    },
+  });
+}
+
+/**
  * Hook for updating rule status.
  *
  * @returns {Object}
@@ -109,5 +125,6 @@ export default {
   useCreateRule,
   useUpdateRule,
   useDeleteRule,
+  useDuplicateRule,
   useUpdateRuleStatus,
 };

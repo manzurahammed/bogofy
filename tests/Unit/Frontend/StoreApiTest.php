@@ -51,6 +51,7 @@ namespace {
 namespace Bogofy\Tests\Unit\Frontend {
 
 	use Bogofy\Cart\CartHandler;
+	use Bogofy\Frontend\CartNudges;
 	use Bogofy\Frontend\StoreApi;
 	use Brain\Monkey;
 	use PHPUnit\Framework\TestCase;
@@ -122,6 +123,26 @@ namespace Bogofy\Tests\Unit\Frontend {
 			$this->assertSame( '$', $data['currency_prefix'] );
 			$this->assertSame( '', $data['currency_suffix'] );
 			$this->assertArrayNotHasKey( 'savings_html', $data );
+			$this->assertSame( array(), $data['nudges'] );
+			$this->assertTrue( $data['show_gift'] );
+		}
+
+		/**
+		 * cart_data passes the nudge messages through to the block cart.
+		 */
+		public function test_cart_data_includes_nudges() {
+			Monkey\Functions\when( 'wc_get_price_decimals' )->justReturn( 2 );
+			Monkey\Functions\when( 'wc_get_price_decimal_separator' )->justReturn( '.' );
+			Monkey\Functions\when( 'wc_get_price_thousand_separator' )->justReturn( ',' );
+			Monkey\Functions\when( 'get_woocommerce_currency' )->justReturn( 'USD' );
+			Monkey\Functions\when( 'get_woocommerce_currency_symbol' )->justReturn( '$' );
+
+			$nudges = $this->createMock( CartNudges::class );
+			$nudges->method( 'get_messages' )->willReturn( array( 'Add 1 more item to get 1 free!' ) );
+
+			$data = ( new StoreApi( null, $nudges ) )->cart_data();
+
+			$this->assertSame( array( 'Add 1 more item to get 1 free!' ), $data['nudges'] );
 		}
 	}
 }

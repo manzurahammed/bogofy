@@ -52,6 +52,16 @@ export async function deleteRule(id) {
 }
 
 /**
+ * Duplicate rule as a new, inactive rule.
+ *
+ * @param {number} id - Rule ID.
+ * @returns {Promise<Object>}
+ */
+export async function duplicateRule(id) {
+  return post(`/rules/${id}/duplicate`);
+}
+
+/**
  * Toggle rule status.
  *
  * @param {number} id - Rule ID.
@@ -88,6 +98,7 @@ export default {
   createRule,
   updateRule,
   deleteRule,
+  duplicateRule,
   updateRuleStatus,
   searchProducts,
   searchCategories,

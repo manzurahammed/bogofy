@@ -7,12 +7,39 @@
 
 namespace Bogofy\Frontend;
 
+use Automattic\WooCommerce\StoreApi\Exceptions\RouteException;
+use Bogofy\Admin\Settings;
 use Bogofy\Cart\CartHandler;
 
 /**
  * Class StoreApi
  */
 class StoreApi {
+
+	/**
+	 * Cart handler.
+	 *
+	 * @var CartHandler|null
+	 */
+	private $cart_handler;
+
+	/**
+	 * Cart nudges provider.
+	 *
+	 * @var CartNudges|null
+	 */
+	private $nudges;
+
+	/**
+	 * Constructor.
+	 *
+	 * @param CartHandler|null $cart_handler Cart handler, for the gift picker.
+	 * @param CartNudges|null  $nudges       Cart nudges provider.
+	 */
+	public function __construct( ?CartHandler $cart_handler = null, ?CartNudges $nudges = null ) {
+		$this->cart_handler = $cart_handler;
+		$this->nudges       = $nudges;
+	}
 
 	/**
 	 * Register the endpoint data extensions.
@@ -45,6 +72,41 @@ class StoreApi {
 				'schema_type'     => ARRAY_A,
 			)
 		);
+
+		// The Cart block switches the gift through `extensionCartUpdate`, which the
+		// Store API protects with its own nonce.
+		if ( function_exists( 'woocommerce_store_api_register_update_callback' ) ) {
+			woocommerce_store_api_register_update_callback(
+				array(
+					'namespace' => 'bogofy',
+					'callback'  => array( $this, 'switch_gift' ),
+				)
+			);
+		}
+	}
+
+	/**
+	 * Switch the gift a rule grants, from the Cart block.
+	 *
+	 * @since 2.2.0
+	 *
+	 * @param array $data Request data: rule_id and product_id.
+	 *
+	 * @return void
+	 *
+	 * @throws RouteException When the gift can't be selected.
+	 */
+	public function switch_gift( $data ) {
+		$rule_id    = isset( $data['rule_id'] ) ? absint( $data['rule_id'] ) : 0;
+		$product_id = isset( $data['product_id'] ) ? absint( $data['product_id'] ) : 0;
+
+		if ( $this->cart_handler && $this->cart_handler->switch_gift( $rule_id, $product_id ) ) {
+			return;
+		}
+
+		if ( class_exists( RouteException::class ) ) {
+			throw new RouteException( 'bogofy_invalid_gift', esc_html__( 'That gift could not be selected.', 'bogofy' ), 400 );
+		}
 	}
 
 	/**
@@ -56,7 +118,8 @@ class StoreApi {
 	 */
 	public function cart_item_data( $cart_item ) {
 		return array(
-			'is_free' => (bool) CartHandler::is_bogo_item( $cart_item ),
+			'is_free'   => (bool) CartHandler::is_bogo_item( $cart_item ),
+			'show_gift' => (bool) Settings::get( 'show_cart_gift' ),
 		);
 	}
 
@@ -67,8 +130,13 @@ class StoreApi {
 	 */
 	public function cart_item_schema() {
 		return array(
-			'is_free' => array(
+			'is_free'   => array(
 				'description' => __( 'Whether this line is a free BOGO gift.', 'bogofy' ),
+				'type'        => 'boolean',
+				'readonly'    => true,
+			),
+			'show_gift' => array(
+				'description' => __( 'Whether free gift rows should be highlighted.', 'bogofy' ),
 				'type'        => 'boolean',
 				'readonly'    => true,
 			),
@@ -96,6 +164,9 @@ class StoreApi {
 			'currency_suffix'             => $suffix,
 			'currency_decimal_separator'  => wc_get_price_decimal_separator(),
 			'currency_thousand_separator' => wc_get_price_thousand_separator(),
+			'gift_choices'                => $this->cart_handler ? $this->cart_handler->get_gift_choices( WC()->cart ) : array(),
+			'show_gift'                   => (bool) Settings::get( 'show_cart_gift' ),
+			'nudges'                      => $this->nudges ? $this->nudges->get_messages() : array(),
 		);
 	}
 
@@ -139,6 +210,41 @@ class StoreApi {
 			'currency_thousand_separator' => array(
 				'description' => __( 'Thousand separator.', 'bogofy' ),
 				'type'        => 'string',
+				'readonly'    => true,
+			),
+			'gift_choices'                => array(
+				'description' => __( 'Gift products the shopper can choose between, per rule.', 'bogofy' ),
+				'type'        => 'array',
+				'readonly'    => true,
+				'items'       => array(
+					'type'       => 'object',
+					'properties' => array(
+						'rule_id'       => array( 'type' => 'integer' ),
+						'rule_title'    => array( 'type' => 'string' ),
+						'cart_item_key' => array( 'type' => 'string' ),
+						'selected'      => array( 'type' => 'integer' ),
+						'options'       => array(
+							'type'  => 'array',
+							'items' => array(
+								'type'       => 'object',
+								'properties' => array(
+									'id'   => array( 'type' => 'integer' ),
+									'name' => array( 'type' => 'string' ),
+								),
+							),
+						),
+					),
+				),
+			),
+			'show_gift'                   => array(
+				'description' => __( 'Whether the savings row should be shown.', 'bogofy' ),
+				'type'        => 'boolean',
+				'readonly'    => true,
+			),
+			'nudges'                      => array(
+				'description' => __( 'Plain-text "add N more" messages for partly met rules.', 'bogofy' ),
+				'type'        => 'array',
+				'items'       => array( 'type' => 'string' ),
 				'readonly'    => true,
 			),
 		);

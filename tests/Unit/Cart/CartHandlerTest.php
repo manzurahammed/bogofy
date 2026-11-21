@@ -33,7 +33,10 @@ namespace Bogofy\Tests\Unit\Cart {
 	use Bogofy\Cart\DiscountApplier;
 	use Bogofy\Cart\EligibilityChecker;
 	use Bogofy\Cart\FreeItemManager;
+	use Bogofy\Models\Rule;
 	use Bogofy\Models\RuleRepository;
+	use Brain\Monkey\Actions;
+	use Brain\Monkey\Filters;
 	use Brain\Monkey\Functions;
 	use Mockery;
 	use PHPUnit\Framework\TestCase;
@@ -163,6 +166,126 @@ namespace Bogofy\Tests\Unit\Cart {
 		}
 
 		/**
+		 * Build an active rule covering product 1.
+		 *
+		 * @param string $type Rule type.
+		 *
+		 * @return Rule
+		 */
+		private function make_rule( $type ) {
+			$rule                  = new Rule();
+			$rule->id              = 5;
+			$rule->rule_type       = $type;
+			$rule->apply_to        = Rule::APPLY_SPECIFIC_PRODUCTS;
+			$rule->buy_product_ids = array( 1 );
+			$rule->buy_quantity    = 1;
+			$rule->free_quantity   = 1;
+			$rule->discount_value  = 50;
+
+			return $rule;
+		}
+
+		/**
+		 * A vetoed rule loses the gift it had already granted.
+		 */
+		public function test_vetoed_rule_has_its_gifts_removed() {
+			Functions\when( 'get_option' )->justReturn( array( 'enabled' => true ) );
+
+			$rule                = $this->make_rule( Rule::TYPE_BUY_X_GET_X );
+			$cart                = new \WC_Cart();
+			$cart->cart_contents = array(
+				'paid' => array(
+					'product_id'   => 1,
+					'variation_id' => 0,
+					'quantity'     => 1,
+					'data'         => new \Bogo_Fake_Priced_Product( 20 ),
+				),
+				'gift' => array(
+					'product_id'               => 1,
+					'variation_id'             => 0,
+					'quantity'                 => 1,
+					CartHandler::BOGO_ITEM_KEY => true,
+					CartHandler::BOGO_RULE_KEY => 5,
+				),
+			);
+
+			Functions\when( 'WC' )->justReturn( (object) array( 'cart' => $cart ) );
+
+			Filters\expectApplied( 'bogofy_rule_is_eligible' )
+				->once()
+				->with( true, $rule, $cart )
+				->andReturn( false );
+			Actions\expectDone( 'bogofy_gift_removed' )->once()->with( 'gift', 5 );
+
+			$this->make_handler( array( $rule ) )->sync_free_items();
+
+			$this->assertArrayNotHasKey( 'gift', $cart->cart_contents );
+			$this->assertArrayHasKey( 'paid', $cart->cart_contents );
+		}
+
+		/**
+		 * A vetoed "Buy X Get X Discounted" rule leaves paid lines at full price.
+		 */
+		public function test_vetoed_discount_rule_is_not_applied() {
+			Functions\when( 'get_option' )->justReturn( array( 'enabled' => true ) );
+
+			$rule                = $this->make_rule( Rule::TYPE_BUY_X_GET_X_DISCOUNTED );
+			$product             = new \Bogo_Fake_Priced_Product( 20 );
+			$cart                = new \WC_Cart();
+			$cart->cart_contents = array(
+				'paid' => array(
+					'key'          => 'paid',
+					'product_id'   => 1,
+					'variation_id' => 0,
+					'quantity'     => 2,
+					'data'         => $product,
+				),
+			);
+
+			Filters\expectApplied( 'bogofy_rule_is_eligible' )->once()->andReturn( false );
+
+			$this->make_handler( array( $rule ) )->apply_bogo_prices( $cart );
+
+			$this->assertSame( 20.0, (float) $product->get_price() );
+			$this->assertArrayNotHasKey( CartHandler::BOGO_RULE_KEY, $cart->cart_contents['paid'] );
+		}
+
+		/**
+		 * A veto that changes without a gift sync (e.g. a coupon applied over AJAX)
+		 * still removes the gift before totals are calculated.
+		 */
+		public function test_totals_remove_gifts_of_a_vetoed_rule() {
+			Functions\when( 'get_option' )->justReturn( array( 'enabled' => true ) );
+
+			$rule                = $this->make_rule( Rule::TYPE_BUY_X_GET_X );
+			$cart                = new \WC_Cart();
+			$cart->cart_contents = array(
+				'paid' => array(
+					'product_id'   => 1,
+					'variation_id' => 0,
+					'quantity'     => 1,
+					'data'         => new \Bogo_Fake_Priced_Product( 20 ),
+				),
+				'gift' => array(
+					'product_id'               => 1,
+					'variation_id'             => 0,
+					'quantity'                 => 1,
+					'data'                     => new \Bogo_Fake_Priced_Product( 20 ),
+					CartHandler::BOGO_ITEM_KEY => true,
+					CartHandler::BOGO_RULE_KEY => 5,
+				),
+			);
+
+			Filters\expectApplied( 'bogofy_rule_is_eligible' )->once()->andReturn( false );
+			Actions\expectDone( 'bogofy_gift_removed' )->once()->with( 'gift', 5 );
+
+			$this->make_handler( array( $rule ) )->apply_bogo_prices( $cart );
+
+			$this->assertArrayNotHasKey( 'gift', $cart->cart_contents );
+			$this->assertArrayHasKey( 'paid', $cart->cart_contents );
+		}
+
+		/**
 		 * WooCommerce uses the return value of this filter to recalculate totals.
 		 */
 		public function test_on_cart_updated_returns_filter_value() {
@@ -170,6 +293,65 @@ namespace Bogofy\Tests\Unit\Cart {
 
 			$this->assertTrue( $this->make_handler()->on_cart_updated( true ) );
 			$this->assertFalse( $this->make_handler()->on_cart_updated( false ) );
+		}
+
+		/**
+		 * The picker only offers gifts that could replace the current one, and
+		 * always keeps the current gift listed.
+		 */
+		public function test_gift_choices_skip_gifts_that_cannot_be_supplied() {
+			$rule                   = new \Bogofy\Models\Rule();
+			$rule->id               = 5;
+			$rule->title            = 'Pick a gift';
+			$rule->rule_type        = \Bogofy\Models\Rule::TYPE_BUY_X_GET_Y;
+			$rule->free_product_ids = array( 30, 40, 50 );
+
+			$repository = Mockery::mock( RuleRepository::class );
+			$repository->shouldReceive( 'get_active_rules' )->andReturn( array( $rule ) );
+
+			$checks  = array();
+			$manager = Mockery::mock( \Bogofy\Cart\Contracts\FreeItemManagerInterface::class );
+			$manager->shouldReceive( 'can_supply' )->andReturnUsing(
+				function ( $cart, $product_id, $replacing ) use ( &$checks ) {
+					$checks[ $product_id ] = $replacing;
+					return 50 === $product_id;
+				}
+			);
+
+			Functions\when( 'wc_get_product' )->alias(
+				function ( $id ) {
+					return new class( $id ) {
+						private $id;
+
+						public function __construct( $id ) {
+							$this->id = $id;
+						}
+
+						public function get_name() {
+							return 'Gift ' . $this->id;
+						}
+					};
+				}
+			);
+
+			$gift = array(
+				'product_id'               => 30,
+				'variation_id'             => 0,
+				'quantity'                 => 1,
+				CartHandler::BOGO_ITEM_KEY => true,
+				CartHandler::BOGO_RULE_KEY => 5,
+			);
+			$cart                = new \WC_Cart( array( 'gift' => $gift ) );
+			$cart->cart_contents = array( 'gift' => $gift );
+
+			$checker = new EligibilityChecker();
+			$handler = new CartHandler( $repository, $checker, new DiscountApplier( $checker, $manager ), $manager );
+			$choices = $handler->get_gift_choices( $cart );
+
+			$this->assertCount( 1, $choices );
+			$this->assertSame( 30, $choices[0]['selected'] );
+			$this->assertSame( array( 30, 50 ), array_column( $choices[0]['options'], 'id' ) );
+			$this->assertSame( array( 'gift' ), $checks[40] );
 		}
 
 		/**

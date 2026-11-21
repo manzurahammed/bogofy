@@ -25,31 +25,27 @@ class FreeItemManager implements FreeItemManagerInterface {
 	 * @param int      $quantity    Quantity to add.
 	 * @param Rule     $rule        Rule object.
 	 * @param array    $variation   Chosen attributes, for "Any" variations.
+	 * @param string[] $replacing   Gift line keys this item replaces, whose stock it may reuse.
 	 *
 	 * @return bool|string Cart item key or false on failure.
 	 */
-	public function add_free_item( $cart, $product_id, $quantity, Rule $rule, $variation = array() ) {
+	public function add_free_item( $cart, $product_id, $quantity, Rule $rule, $variation = array(), $replacing = array() ) {
 		$product_id   = (int) $product_id;
 		$product      = wc_get_product( $product_id );
 		$existing_key = $this->find_bogo_item( $cart, $product_id, (int) $rule->id );
-
-		if ( $product && $product->is_type( 'variation' ) ) {
-			$variation = array_merge( $product->get_variation_attributes(), $variation );
-		}
-
-		// An "Any" variation with no chosen value can't be added to the cart.
-		$quantity = in_array( '', $variation, true )
-			? 0
-			: $this->grantable_quantity( $cart, $product, (int) $quantity, $existing_key );
+		$variation    = $this->gift_variation( $product, $variation );
+		$quantity     = $this->supplyable_quantity( $cart, $product, (int) $quantity, $variation, array_merge( (array) $replacing, array( $existing_key ) ) );
 
 		if ( $quantity < 1 ) {
 			// A gift that can no longer be supplied must not block checkout.
 			if ( $existing_key ) {
-				$cart->remove_cart_item( $existing_key );
+				$this->remove_gift( $cart, $existing_key, (int) $rule->id );
 			}
 
 			return false;
 		}
+
+		$gift_id = $product_id;
 
 		// Generate unique cart item key for this BOGO item.
 		$bogo_key = $this->generate_bogo_key( $product_id, $rule->id );
@@ -93,7 +89,24 @@ class FreeItemManager implements FreeItemManagerInterface {
 		// for the paid items. A gift the store can't supply must not do that.
 		if ( ! $cart_item_key ) {
 			wc_set_notices( $notices );
+
+			return $cart_item_key;
 		}
+
+		/**
+		 * Fires after Bogofy adds a new gift line to the cart.
+		 *
+		 * Only a new line fires this. Bogofy re-syncing the quantity of an
+		 * existing gift line fires neither this nor `bogofy_gift_removed`.
+		 *
+		 * @since 2.2.0
+		 *
+		 * @param string $cart_item_key Cart item key of the gift line.
+		 * @param int    $gift_id       Gift product ID, or variation ID for a variation.
+		 * @param int    $quantity      Quantity added.
+		 * @param Rule   $rule          Rule that granted the gift.
+		 */
+		do_action( 'bogofy_gift_added', $cart_item_key, $gift_id, $quantity, $rule );
 
 		// Pricing is applied in the totals hook (apply_bogo_prices) so the BOGO
 		// baseline is captured from the natural price first.
@@ -123,7 +136,7 @@ class FreeItemManager implements FreeItemManagerInterface {
 		}
 
 		foreach ( $items_to_remove as $key ) {
-			$cart->remove_cart_item( $key );
+			$this->remove_gift( $cart, $key, (int) $rule_id );
 		}
 	}
 
@@ -154,7 +167,7 @@ class FreeItemManager implements FreeItemManagerInterface {
 		}
 
 		foreach ( $items_to_remove as $key ) {
-			$cart->remove_cart_item( $key );
+			$this->remove_gift( $cart, $key, (int) $rule_id );
 		}
 	}
 
@@ -179,13 +192,78 @@ class FreeItemManager implements FreeItemManagerInterface {
 				isset( $cart_item[ CartHandler::BOGO_RULE_KEY ] ) &&
 				! in_array( (int) $cart_item[ CartHandler::BOGO_RULE_KEY ], $active_rule_ids, true )
 			) {
-				$items_to_remove[] = $cart_item_key;
+				$items_to_remove[ $cart_item_key ] = (int) $cart_item[ CartHandler::BOGO_RULE_KEY ];
 			}
 		}
 
-		foreach ( $items_to_remove as $key ) {
-			$cart->remove_cart_item( $key );
+		foreach ( $items_to_remove as $key => $rule_id ) {
+			$this->remove_gift( $cart, $key, $rule_id );
 		}
+	}
+
+	/**
+	 * Remove a gift line from the cart.
+	 *
+	 * @param \WC_Cart $cart          Cart object.
+	 * @param string   $cart_item_key Cart item key of the gift line.
+	 * @param int      $rule_id       ID of the rule that granted the gift.
+	 *
+	 * @return void
+	 */
+	private function remove_gift( $cart, $cart_item_key, $rule_id ) {
+		// A listener may already have removed this line; announce each removal once.
+		if ( ! $cart->remove_cart_item( $cart_item_key ) ) {
+			return;
+		}
+
+		/**
+		 * Fires after Bogofy removes a gift line from the cart.
+		 *
+		 * Covers gifts the cart no longer earns, gifts that can no longer be
+		 * supplied, and gifts of rules that are vetoed, inactive, or deleted.
+		 *
+		 * @since 2.2.0
+		 *
+		 * @param string $cart_item_key Cart item key of the removed gift line.
+		 * @param int    $rule_id       ID of the rule that granted the gift.
+		 */
+		do_action( 'bogofy_gift_removed', $cart_item_key, $rule_id );
+	}
+
+	/**
+	 * Whether a gift product could be granted right now.
+	 *
+	 * Mirrors the checks add_free_item() makes, so a gift picker only offers
+	 * gifts that can actually be added.
+	 *
+	 * @since 2.2.0
+	 *
+	 * @param \WC_Cart $cart       Cart object.
+	 * @param int      $product_id Gift product or variation ID.
+	 * @param string[] $replacing  Gift line keys the gift would replace.
+	 *
+	 * @return bool
+	 */
+	public function can_supply( $cart, $product_id, $replacing = array() ) {
+		$product = wc_get_product( (int) $product_id );
+
+		return $this->supplyable_quantity( $cart, $product, 1, $this->gift_variation( $product, array() ), (array) $replacing ) > 0;
+	}
+
+	/**
+	 * A gift's full attribute set: the variation's own, plus any chosen values.
+	 *
+	 * @param \WC_Product|false $product   Product object.
+	 * @param array             $variation Chosen attributes, for "Any" variations.
+	 *
+	 * @return array
+	 */
+	private function gift_variation( $product, $variation ) {
+		if ( $product && $product->is_type( 'variation' ) ) {
+			return array_merge( $product->get_variation_attributes(), (array) $variation );
+		}
+
+		return (array) $variation;
 	}
 
 	/**
@@ -193,17 +271,20 @@ class FreeItemManager implements FreeItemManagerInterface {
 	 *
 	 * Other lines drawing on the same stock are deducted, which includes sibling
 	 * variations when the parent manages stock, and so is stock held for other
-	 * customers' pending orders, which WooCommerce counts at checkout.
+	 * customers' pending orders, which WooCommerce counts at checkout. Lines in
+	 * $exclude_keys (the gift's own line, or the gift it replaces) are not.
 	 *
 	 * @param \WC_Cart          $cart         Cart object.
 	 * @param \WC_Product|false $product      Product object.
 	 * @param int               $quantity     Requested quantity.
-	 * @param string|false      $existing_key Existing gift line key.
+	 * @param array             $variation    Full attribute set of the gift.
+	 * @param array             $exclude_keys Cart line keys whose stock may be reused.
 	 *
 	 * @return int
 	 */
-	private function grantable_quantity( $cart, $product, $quantity, $existing_key ) {
-		if ( ! $product || $product->is_type( 'variable' ) || ! $product->is_purchasable() || ! $product->is_in_stock() ) {
+	private function supplyable_quantity( $cart, $product, $quantity, $variation, $exclude_keys ) {
+		// An "Any" variation with no chosen value can't be added to the cart.
+		if ( ! $product || in_array( '', $variation, true ) || $product->is_type( 'variable' ) || ! $product->is_purchasable() || ! $product->is_in_stock() ) {
 			return 0;
 		}
 
@@ -213,11 +294,17 @@ class FreeItemManager implements FreeItemManagerInterface {
 			return $quantity;
 		}
 
-		$max     -= wc_get_held_stock_quantity( $product, $this->current_order_id() );
-		$stock_id = $product->get_stock_managed_by_id();
+		$exclude_keys = array_filter(
+			$exclude_keys,
+			static function ( $key ) {
+				return false !== $key;
+			}
+		);
+		$max         -= wc_get_held_stock_quantity( $product, $this->current_order_id() );
+		$stock_id     = $product->get_stock_managed_by_id();
 
 		foreach ( $cart->get_cart() as $cart_item_key => $cart_item ) {
-			if ( $cart_item_key !== $existing_key && $cart_item['data']->get_stock_managed_by_id() === $stock_id ) {
+			if ( ! in_array( $cart_item_key, $exclude_keys, true ) && $cart_item['data']->get_stock_managed_by_id() === $stock_id ) {
 				$max -= (int) $cart_item['quantity'];
 			}
 		}

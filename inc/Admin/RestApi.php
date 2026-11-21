@@ -105,6 +105,18 @@ class RestApi {
 
 		register_rest_route(
 			self::NAMESPACE,
+			'/rules/(?P<id>\d+)/duplicate',
+			array(
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'duplicate_rule' ),
+					'permission_callback' => array( $this, 'check_permission' ),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NAMESPACE,
 			'/rules/bulk',
 			array(
 				array(
@@ -411,6 +423,41 @@ class RestApi {
 		}
 
 		return new WP_REST_Response( null, 204 );
+	}
+
+	/**
+	 * Duplicate a rule as a new, inactive rule.
+	 *
+	 * @since 2.2.0
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 *
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function duplicate_rule( WP_REST_Request $request ) {
+		$id = absint( $request->get_param( 'id' ) );
+
+		$existing = $this->repository->get( $id );
+		if ( ! $existing ) {
+			return new WP_Error(
+				'rule_not_found',
+				__( 'Rule not found.', 'bogofy' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		$new_id = $this->repository->create( $existing->duplicate() );
+
+		if ( false === $new_id ) {
+			return new WP_Error(
+				'duplicate_failed',
+				__( 'Failed to duplicate rule.', 'bogofy' ),
+				array( 'status' => 500 )
+			);
+		}
+
+		$created_rule = $this->repository->get( $new_id );
+		return new WP_REST_Response( $created_rule->to_array(), 201 );
 	}
 
 	/**

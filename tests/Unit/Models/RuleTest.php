@@ -250,4 +250,204 @@ class RuleTest extends TestCase {
 		$rule->rule_type = 'buy_x_get_y';
 		$this->assertEquals( 'Buy X Get Y Free', $rule->get_type_label() );
 	}
+
+	/**
+	 * Test duplicating a rule gives an inactive, unsaved copy with fresh stats.
+	 */
+	public function test_duplicate_returns_inactive_copy() {
+		$rule                   = new Rule();
+		$rule->id               = 7;
+		$rule->title            = 'Summer Sale';
+		$rule->status           = Rule::STATUS_ACTIVE;
+		$rule->buy_quantity     = 2;
+		$rule->buy_product_ids  = array( 1, 2 );
+		$rule->free_product_ids = array( 3 );
+		$rule->orders_count     = 12;
+		$rule->revenue_total    = 340.5;
+		$rule->created_at       = '2026-01-01 00:00:00';
+
+		$copy = $rule->duplicate();
+
+		$this->assertSame( 0, $copy->id );
+		$this->assertSame( 'Summer Sale (copy)', $copy->title );
+		$this->assertSame( Rule::STATUS_INACTIVE, $copy->status );
+		$this->assertSame( 0, $copy->orders_count );
+		$this->assertSame( 0.0, $copy->revenue_total );
+		$this->assertSame( '', $copy->created_at );
+		$this->assertSame( 2, $copy->buy_quantity );
+		$this->assertSame( array( 1, 2 ), $copy->buy_product_ids );
+		$this->assertSame( array( 3 ), $copy->free_product_ids );
+
+		// The original is untouched.
+		$this->assertSame( 7, $rule->id );
+		$this->assertSame( Rule::STATUS_ACTIVE, $rule->status );
+		$this->assertSame( 12, $rule->orders_count );
+	}
+
+	/**
+	 * Test a long title is shortened to fit the column and keeps the copy marker.
+	 */
+	public function test_duplicate_truncates_long_title_and_keeps_marker() {
+		$rule        = new Rule();
+		$rule->title = str_repeat( 'a', 255 );
+
+		$title = $rule->duplicate()->title;
+
+		$this->assertSame( 255, mb_strlen( $title ) );
+		$this->assertStringEndsWith( ' (copy)', $title );
+	}
+
+	/**
+	 * Test a long non-ASCII title is cut on a character boundary.
+	 */
+	public function test_duplicate_truncates_multibyte_title_safely() {
+		$rule        = new Rule();
+		$rule->title = str_repeat( 'é', 255 );
+
+		$title = $rule->duplicate()->title;
+
+		$this->assertTrue( mb_check_encoding( $title, 'UTF-8' ) );
+		$this->assertSame( 255, mb_strlen( $title ) );
+		$this->assertStringEndsWith( ' (copy)', $title );
+	}
+
+	/**
+	 * Request conditions are typed and sanitized; empty values become defaults.
+	 */
+	public function test_from_request_sanitizes_conditions() {
+		$rule = Rule::from_request(
+			array(
+				'title'      => 'Rule',
+				'conditions' => array(
+					'min_subtotal'          => '49.999',
+					'min_items'             => '3',
+					'excluded_product_ids'  => array( '12', 'abc', 0, 14 ),
+					'excluded_category_ids' => array( '7' ),
+					'exclude_sale_items'    => '1',
+				),
+			)
+		);
+
+		$this->assertSame(
+			array(
+				'min_subtotal'          => 50.0,
+				'min_items'             => 3,
+				'excluded_product_ids'  => array( 12, 14 ),
+				'excluded_category_ids' => array( 7 ),
+				'exclude_sale_items'    => true,
+			),
+			$rule->conditions
+		);
+
+		$blank = Rule::from_request(
+			array(
+				'title'      => 'Rule',
+				'conditions' => array(
+					'min_subtotal'       => '',
+					'min_items'          => '',
+					'exclude_sale_items' => false,
+				),
+			)
+		);
+
+		$this->assertSame( 0.0, $blank->conditions['min_subtotal'] );
+		$this->assertSame( 0, $blank->conditions['min_items'] );
+		$this->assertFalse( $blank->conditions['exclude_sale_items'] );
+	}
+
+	/**
+	 * Conditions round-trip through the database column and the API array.
+	 */
+	public function test_conditions_round_trip_through_db_and_to_array() {
+		$rule                               = new Rule();
+		$rule->conditions['min_subtotal']   = 25.5;
+		$rule->conditions['min_items']      = 2;
+		$rule->conditions['excluded_product_ids'] = array( 9 );
+
+		$stored = $rule->to_db_array();
+		$this->assertIsString( $stored['conditions'] );
+
+		$loaded = Rule::from_db( array( 'conditions' => $stored['conditions'] ) );
+
+		$this->assertSame( $rule->conditions, $loaded->conditions );
+		$this->assertSame( $rule->conditions, $loaded->to_array()['conditions'] );
+	}
+
+	/**
+	 * Rows saved before the conditions column existed load with no conditions.
+	 */
+	public function test_legacy_rows_without_conditions_load_defaults() {
+		foreach ( array( null, '', 'not json' ) as $value ) {
+			$rule = Rule::from_db(
+				array(
+					'id'         => 1,
+					'conditions' => $value,
+				)
+			);
+
+			$this->assertSame( 0.0, $rule->conditions['min_subtotal'] );
+			$this->assertSame( 0, $rule->conditions['min_items'] );
+			$this->assertSame( array(), $rule->conditions['excluded_product_ids'] );
+			$this->assertSame( array(), $rule->conditions['excluded_category_ids'] );
+			$this->assertFalse( $rule->conditions['exclude_sale_items'] );
+			$this->assertFalse( $rule->has_exclusions() );
+		}
+
+		$this->assertArrayHasKey( 'min_items', Rule::from_db( array( 'id' => 2 ) )->conditions );
+	}
+
+	/**
+	 * Negative minimums are rejected with a 400-style validation error.
+	 */
+	public function test_validate_rejects_negative_minimums() {
+		$rule = Rule::from_request(
+			array(
+				'title'      => 'Rule',
+				'conditions' => array( 'min_subtotal' => '-1' ),
+			)
+		);
+		$this->assertSame( 'invalid_min_subtotal', $rule->validate()->get_error_code() );
+
+		$rule = Rule::from_request(
+			array(
+				'title'      => 'Rule',
+				'conditions' => array( 'min_items' => -2 ),
+			)
+		);
+		$this->assertSame( 'invalid_min_items', $rule->validate()->get_error_code() );
+
+		$rule = Rule::from_request(
+			array(
+				'title'      => 'Rule',
+				'conditions' => array(
+					'min_subtotal' => '0',
+					'min_items'    => 0,
+				),
+			)
+		);
+		$this->assertTrue( $rule->validate() );
+	}
+
+	/**
+	 * Exclusions match by product, parent, category, or sale status.
+	 */
+	public function test_excludes_product_matches_each_exclusion() {
+		$rule = Rule::from_request(
+			array(
+				'title'      => 'Rule',
+				'conditions' => array(
+					'excluded_product_ids'  => array( 5 ),
+					'excluded_category_ids' => array( 8 ),
+				),
+			)
+		);
+
+		$this->assertTrue( $rule->excludes_product( array( 5 ), array(), false ) );
+		$this->assertTrue( $rule->excludes_product( array( 6, 5 ), array(), false ) );
+		$this->assertTrue( $rule->excludes_product( array( 6 ), array( 8 ), false ) );
+		$this->assertFalse( $rule->excludes_product( array( 6 ), array( 9 ), true ) );
+
+		$rule->conditions['exclude_sale_items'] = true;
+		$this->assertTrue( $rule->excludes_product( array( 6 ), array( 9 ), true ) );
+	}
 }

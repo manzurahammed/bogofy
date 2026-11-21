@@ -23,6 +23,8 @@ function SettingsPage() {
     show_product_page_messages: true,
     show_shop_badges: true,
     show_cart_gift: true,
+    show_cart_nudges: true,
+    cart_nudge_text: "",
     stack_with_coupons: true,
   });
 
@@ -123,7 +125,11 @@ function SettingsPage() {
             onToggle={handleToggle}
             onChange={handleChange}
           />
-          <CartMessagingSection formData={formData} onChange={handleChange} />
+          <CartMessagingSection
+            formData={formData}
+            onToggle={handleToggle}
+            onChange={handleChange}
+          />
           <DiscountBehaviorSection formData={formData} onToggle={handleToggle} />
           <SettingsPreview formData={formData} />
         </form>

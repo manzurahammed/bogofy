@@ -1,12 +1,18 @@
 /**
  * Bogofy block cart/checkout integration.
  *
- * Two informational, non-authoritative touches driven by the server-side BOGO
+ * Three informational, non-authoritative touches driven by the server-side BOGO
  * data exposed on the Store API (`extensions.bogofy`):
  *   1. Adds `.bogo-cart-item` to free gift rows (so the stylesheet can style
  *      them). The gift note lines and the price come from WooCommerce itself.
  *   2. Renders a "You saved" row in the Order Meta slot. The amount is computed
  *      from raw minor units + currency shape sent by PHP — no injected HTML.
+ *   3. Renders "Add N more…" nudges (plain text from PHP) in the cart's Order
+ *      Meta slot.
+ *
+ *   3. Renders a gift picker in the same slot for rules that offer several
+ *      gift products; a choice is sent through `extensionCartUpdate` and the
+ *      server swaps the gift line.
  *
  * Pricing/savings remain authoritative on the server: the gift item is priced
  * to zero (or discounted) by the PHP engine, so cart totals, taxes and order
@@ -15,10 +21,11 @@
 import {
   registerCheckoutFilters,
   ExperimentalOrderMeta,
+  extensionCartUpdate,
 } from "@woocommerce/blocks-checkout";
 import { registerPlugin } from "@wordpress/plugins";
-import { createElement } from "@wordpress/element";
-import { __ } from "@wordpress/i18n";
+import { createElement, Fragment, useState } from "@wordpress/element";
+import { __, sprintf } from "@wordpress/i18n";
 
 /**
  * Read the bogofy extension data for a cart item from the filter arguments.
@@ -60,7 +67,7 @@ const formatSavings = (bogo) => {
 registerCheckoutFilters("bogofy", {
   cartItemClass: (defaultValue, extensions, args) => {
     const bogo = itemBogo(extensions, args);
-    return bogo?.is_free
+    return bogo?.is_free && bogo?.show_gift !== false
       ? [defaultValue, "bogo-cart-item"].filter(Boolean).join(" ")
       : defaultValue;
   },
@@ -75,7 +82,11 @@ registerCheckoutFilters("bogofy", {
  */
 const SavingsRow = ({ extensions }) => {
   const bogo = extensions?.bogofy;
-  if (!bogo || !(Number(bogo.savings_minor) > 0)) {
+  if (
+    !bogo ||
+    bogo.show_gift === false ||
+    !(Number(bogo.savings_minor) > 0)
+  ) {
     return null;
   }
 
@@ -98,8 +109,139 @@ const SavingsRow = ({ extensions }) => {
   );
 };
 
+/**
+ * Gift picker for one rule: the chosen gift plus a button per alternative.
+ *
+ * @param {Object} props        Component props.
+ * @param {Object} props.choice One `gift_choices` entry from the server.
+ * @return {WPElement} The picker.
+ */
+const GiftPicker = ({ choice }) => {
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  const select = (productId) => {
+    setBusy(true);
+    setFailed(false);
+    extensionCartUpdate({
+      namespace: "bogofy",
+      data: { rule_id: choice.rule_id, product_id: productId },
+    })
+      .catch(() => setFailed(true))
+      .finally(() => setBusy(false));
+  };
+
+  return createElement(
+    "div",
+    { className: "bogo-gift-picker" },
+    createElement(
+      "span",
+      { className: "bogo-gift-picker__label" },
+      /* translators: %s: rule name */
+      sprintf(__("Choose your gift from %s:", "bogofy"), choice.rule_title),
+    ),
+    createElement(
+      "ul",
+      { className: "bogo-gift-picker__options" },
+      choice.options.map((option) =>
+        option.id === choice.selected
+          ? createElement(
+              "li",
+              {
+                key: option.id,
+                className:
+                  "bogo-gift-picker__option bogo-gift-picker__option--selected",
+                "aria-current": "true",
+              },
+              option.name,
+            )
+          : createElement(
+              "li",
+              { key: option.id, className: "bogo-gift-picker__option" },
+              createElement(
+                "button",
+                {
+                  type: "button",
+                  className: "bogo-gift-picker__button",
+                  disabled: busy,
+                  onClick: () => select(option.id),
+                },
+                option.name,
+              ),
+            ),
+      ),
+    ),
+    failed &&
+      createElement(
+        "p",
+        { className: "bogo-gift-picker__error", role: "alert" },
+        __("That gift could not be selected.", "bogofy"),
+      ),
+  );
+};
+
+/**
+ * Renders a gift picker per rule that offers a choice of gifts (cart only).
+ *
+ * @param {Object} props            Slot props.
+ * @param {Object} props.extensions Cart-level extension data.
+ * @param {string} props.context    Block context.
+ * @return {WPElement|null} The pickers, or null when there is nothing to choose.
+ */
+const GiftPickers = ({ extensions, context }) => {
+  const choices = extensions?.bogofy?.gift_choices;
+  if (context === "woocommerce/checkout" || !choices?.length) {
+    return null;
+  }
+
+  return createElement(
+    Fragment,
+    null,
+    choices.map((choice) =>
+      createElement(GiftPicker, { key: choice.rule_id, choice }),
+    ),
+  );
+};
+
+/**
+ * Renders the "Add N more…" nudges in the cart Order Meta slot.
+ *
+ * @param {Object} props            Slot props.
+ * @param {Object} props.extensions Cart-level extension data.
+ * @param {string} props.context    Block context (cart or checkout).
+ * @return {WPElement|null} The nudge list, or null when there is nothing to nudge.
+ */
+const NudgeList = ({ extensions, context }) => {
+  const nudges = extensions?.bogofy?.nudges;
+  if (
+    context === "woocommerce/checkout" ||
+    !Array.isArray(nudges) ||
+    !nudges.length
+  ) {
+    return null;
+  }
+
+  return createElement(
+    "div",
+    { className: "bogo-nudge-list" },
+    nudges.map((message) =>
+      createElement(
+        "div",
+        { key: message, className: "bogo-nudge", role: "status" },
+        createElement("span", { className: "bogo-nudge__text" }, message),
+      ),
+    ),
+  );
+};
+
 const BogofyCartMeta = () =>
-  createElement(ExperimentalOrderMeta, null, createElement(SavingsRow));
+  createElement(
+    ExperimentalOrderMeta,
+    null,
+    createElement(GiftPickers),
+    createElement(NudgeList),
+    createElement(SavingsRow),
+  );
 
 registerPlugin("bogofy-cart-savings", {
   render: BogofyCartMeta,

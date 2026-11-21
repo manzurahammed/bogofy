@@ -20,6 +20,9 @@ class EligibilityChecker implements EligibilityCheckerInterface {
 	/**
 	 * Get eligible cart items for a rule.
 	 *
+	 * A cart below the rule's minimum subtotal or item count has no eligible
+	 * items, so the rule grants nothing.
+	 *
 	 * @param \WC_Cart $cart Cart object.
 	 * @param Rule     $rule Rule object.
 	 *
@@ -27,6 +30,10 @@ class EligibilityChecker implements EligibilityCheckerInterface {
 	 */
 	public function get_eligible_items( $cart, Rule $rule ) {
 		$eligible_items = array();
+
+		if ( ! $this->meets_cart_minimums( $cart, $rule ) ) {
+			return $eligible_items;
+		}
 
 		foreach ( $cart->get_cart() as $cart_item_key => $cart_item ) {
 			// Skip BOGO free items.
@@ -36,7 +43,7 @@ class EligibilityChecker implements EligibilityCheckerInterface {
 
 			$product_id = $cart_item['variation_id'] ? $cart_item['variation_id'] : $cart_item['product_id'];
 
-			if ( $this->is_product_eligible( $product_id, $cart_item['product_id'], $rule ) ) {
+			if ( $this->is_product_eligible( $product_id, $cart_item['product_id'], $rule, $cart_item['data'] ?? null ) ) {
 				$eligible_items[ $cart_item_key ] = $cart_item;
 			}
 		}
@@ -45,15 +52,82 @@ class EligibilityChecker implements EligibilityCheckerInterface {
 	}
 
 	/**
-	 * Check if a product is eligible for a rule.
+	 * Check whether the cart reaches the rule's minimum subtotal and item count.
 	 *
-	 * @param int  $product_id   Product or variation ID.
-	 * @param int  $parent_id    Parent product ID.
-	 * @param Rule $rule         Rule object.
+	 * Both are measured over the paid lines the rule doesn't exclude: BOGO gift
+	 * lines and excluded products never count. The subtotal uses each line's
+	 * price before any BOGO discount (its baseline) times its quantity, so a
+	 * rule's own discount can't push the cart back under its minimum.
+	 *
+	 * @since 2.2.0
+	 *
+	 * @param \WC_Cart $cart Cart object.
+	 * @param Rule     $rule Rule object.
 	 *
 	 * @return bool
 	 */
-	public function is_product_eligible( $product_id, $parent_id, Rule $rule ) {
+	public function meets_cart_minimums( $cart, Rule $rule ) {
+		$min_subtotal = (float) $rule->conditions['min_subtotal'];
+		$min_items    = (int) $rule->conditions['min_items'];
+
+		if ( $min_subtotal <= 0 && $min_items <= 0 ) {
+			return true;
+		}
+
+		$subtotal = 0.0;
+		$items    = 0;
+
+		foreach ( $cart->get_cart() as $cart_item_key => $cart_item ) {
+			if ( CartHandler::is_bogo_item( $cart_item ) ) {
+				continue;
+			}
+
+			$product_id = $cart_item['variation_id'] ? $cart_item['variation_id'] : $cart_item['product_id'];
+
+			if ( $this->is_product_excluded( $product_id, $cart_item['product_id'], $rule, $cart_item['data'] ?? null ) ) {
+				continue;
+			}
+
+			$quantity  = (int) $cart_item['quantity'];
+			$items    += $quantity;
+			$subtotal += $this->baseline_price( $cart, $cart_item_key, $cart_item ) * $quantity;
+		}
+
+		// Compare whole currency amounts: an unrounded float sum such as
+		// 3 x 0.30 lands just under 0.90 and would miss an exact minimum.
+		$decimals = function_exists( 'wc_get_price_decimals' ) ? absint( wc_get_price_decimals() ) : 2;
+
+		return round( $subtotal, $decimals ) >= round( $min_subtotal, $decimals ) && $items >= $min_items;
+	}
+
+	/**
+	 * Check if a product is eligible for a rule.
+	 *
+	 * @param int              $product_id Product or variation ID.
+	 * @param int              $parent_id  Parent product ID.
+	 * @param Rule             $rule       Rule object.
+	 * @param \WC_Product|null $product    Product object, when the caller has one.
+	 *
+	 * @return bool
+	 */
+	public function is_product_eligible( $product_id, $parent_id, Rule $rule, $product = null ) {
+		if ( ! $this->is_targeted( $product_id, $parent_id, $rule ) ) {
+			return false;
+		}
+
+		return ! $this->is_product_excluded( $product_id, $parent_id, $rule, $product );
+	}
+
+	/**
+	 * Check if a product matches the rule's trigger target.
+	 *
+	 * @param int  $product_id Product or variation ID.
+	 * @param int  $parent_id  Parent product ID.
+	 * @param Rule $rule       Rule object.
+	 *
+	 * @return bool
+	 */
+	private function is_targeted( $product_id, $parent_id, Rule $rule ) {
 		switch ( $rule->apply_to ) {
 			case Rule::APPLY_ALL_PRODUCTS:
 				return true;
@@ -67,6 +141,61 @@ class EligibilityChecker implements EligibilityCheckerInterface {
 			default:
 				return false;
 		}
+	}
+
+	/**
+	 * Check if the rule's exclusions rule out a product.
+	 *
+	 * Excluded products never count toward the offer or receive it as a gift.
+	 *
+	 * @since 2.2.0
+	 *
+	 * @param int              $product_id Product or variation ID.
+	 * @param int              $parent_id  Parent product ID.
+	 * @param Rule             $rule       Rule object.
+	 * @param \WC_Product|null $product    Product object, when the caller has one.
+	 *
+	 * @return bool
+	 */
+	public function is_product_excluded( $product_id, $parent_id, Rule $rule, $product = null ) {
+		if ( ! $rule->has_exclusions() ) {
+			return false;
+		}
+
+		$category_ids = array();
+		if ( ! empty( $rule->conditions['excluded_category_ids'] ) ) {
+			// Variations carry no categories of their own; the parent's apply.
+			$terms        = wp_get_post_terms( $parent_id, 'product_cat', array( 'fields' => 'ids' ) );
+			$category_ids = is_wp_error( $terms ) ? array() : $terms;
+		}
+
+		$on_sale = false;
+		if ( $rule->conditions['exclude_sale_items'] ) {
+			if ( null === $product && function_exists( 'wc_get_product' ) ) {
+				$product = wc_get_product( $product_id );
+			}
+
+			$on_sale = $product && $product->is_on_sale();
+		}
+
+		return $rule->excludes_product( array( $product_id, $parent_id ), $category_ids, $on_sale );
+	}
+
+	/**
+	 * The line's price before any BOGO discount.
+	 *
+	 * @param \WC_Cart $cart          Cart object.
+	 * @param string   $cart_item_key Cart item key.
+	 * @param array    $cart_item     Cart item.
+	 *
+	 * @return float
+	 */
+	private function baseline_price( $cart, $cart_item_key, $cart_item ) {
+		if ( isset( $cart->cart_contents[ $cart_item_key ][ CartHandler::BOGO_BASELINE_KEY ] ) ) {
+			return (float) $cart->cart_contents[ $cart_item_key ][ CartHandler::BOGO_BASELINE_KEY ];
+		}
+
+		return isset( $cart_item['data'] ) ? (float) $cart_item['data']->get_price() : 0.0;
 	}
 
 	/**
@@ -116,18 +245,102 @@ class EligibilityChecker implements EligibilityCheckerInterface {
 			$total_quantity += $cart_item['quantity'];
 		}
 
-		// Calculate how many "sets" of buy_quantity are in the cart.
-		$sets = (int) floor( $total_quantity / max( 1, $rule->buy_quantity ) );
+		$free_quantity = $this->earned_free_quantity( $total_quantity, $rule );
 
-		// Calculate total free items.
+		/**
+		 * Filters how many free units a rule grants.
+		 *
+		 * Applied after the rule's maximum, so a filter may exceed it. Negative
+		 * results are treated as zero.
+		 *
+		 * @since 2.2.0
+		 *
+		 * @param int   $free_quantity  Free units earned by the cart.
+		 * @param Rule  $rule           Rule object.
+		 * @param array $eligible_items Eligible cart items, keyed by cart item key.
+		 */
+		$free_quantity = apply_filters( 'bogofy_free_quantity', $free_quantity, $rule, $eligible_items );
+
+		return max( 0, (int) $free_quantity );
+	}
+
+	/**
+	 * Free units a quantity of bought items earns under the rule's own terms.
+	 *
+	 * Counts whole sets of buy_quantity and applies max_free_qty, but not the
+	 * `bogofy_free_quantity` filter, which needs real cart items.
+	 *
+	 * @param int  $total_quantity Bought quantity.
+	 * @param Rule $rule           Rule object.
+	 *
+	 * @return int
+	 */
+	private function earned_free_quantity( $total_quantity, Rule $rule ) {
+		$sets          = (int) floor( $total_quantity / max( 1, $rule->buy_quantity ) );
 		$free_quantity = $sets * $rule->free_quantity;
 
-		// Apply max limit if set.
 		if ( null !== $rule->max_free_qty && $free_quantity > $rule->max_free_qty ) {
 			$free_quantity = $rule->max_free_qty;
 		}
 
-		return $free_quantity;
+		return (int) $free_quantity;
+	}
+
+	/**
+	 * Work out what the next partly-met set of a rule would unlock.
+	 *
+	 * Uses the same set math as calculate_free_quantity(): with a "buy 2" rule and
+	 * 3 eligible items, 1 more item completes the next set. Returns null when the
+	 * cart has no eligible items, sits exactly on a set boundary, or the rule's
+	 * max free quantity is already reached. For discounted rules the unlocked
+	 * quantity is limited to items that will actually be in the cart.
+	 *
+	 * @since 2.2.0
+	 *
+	 * @param array $eligible_items Eligible cart items.
+	 * @param Rule  $rule           Rule object.
+	 *
+	 * @return array{remaining:int,free_qty:int}|null
+	 */
+	public function get_next_unlock( $eligible_items, Rule $rule ) {
+		$total_quantity = 0;
+
+		foreach ( $eligible_items as $cart_item ) {
+			$total_quantity += (int) $cart_item['quantity'];
+		}
+
+		$buy_quantity = max( 1, (int) $rule->buy_quantity );
+		$into_set     = $total_quantity % $buy_quantity;
+
+		if ( 0 === $total_quantity || 0 === $into_set ) {
+			return null;
+		}
+
+		// The rule's own terms, unfiltered: `bogofy_free_quantity` callbacks expect
+		// real cart items, and a projected cart has none to give them.
+		$remaining    = $buy_quantity - $into_set;
+		$current_free = $this->earned_free_quantity( $total_quantity, $rule );
+		$next_total   = $total_quantity + $remaining;
+		$next_free    = $this->earned_free_quantity( $next_total, $rule );
+
+		// Discounted rules discount the bought items themselves, so they can never
+		// discount more items than are in the cart.
+		if ( Rule::TYPE_BUY_X_GET_X_DISCOUNTED === $rule->rule_type ) {
+			$current_free = min( $current_free, $total_quantity );
+			$next_free    = min( $next_free, $next_total );
+		}
+
+		// What the next set adds, already capped by max_free_qty.
+		$free_quantity = $next_free - $current_free;
+
+		if ( $free_quantity < 1 ) {
+			return null;
+		}
+
+		return array(
+			'remaining' => $remaining,
+			'free_qty'  => $free_quantity,
+		);
 	}
 
 	/**

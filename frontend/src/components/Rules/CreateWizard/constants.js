@@ -1,4 +1,5 @@
 import { __ } from "@wordpress/i18n";
+import { emptyConditions } from "../CartConditions";
 
 export const ruleTypes = [
   {
@@ -44,4 +45,5 @@ export const defaultData = {
   priority: 10,
   start_date: "",
   end_date: "",
+  conditions: emptyConditions,
 };
