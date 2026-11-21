@@ -127,16 +127,42 @@ class DiscountApplier implements DiscountApplierInterface {
 	 * @return void
 	 */
 	private function add_free_cheapest( $cart, Rule $rule, $eligible_items, $free_quantity ) {
-		// Sort items by price (cheapest first) so the cheapest products are given for free.
+		$allocation = self::free_copy_allocation( $eligible_items, $free_quantity );
+
+		foreach ( $allocation['quantities'] as $product_id => $quantity ) {
+			$this->free_item_manager->add_free_item( $cart, $product_id, $quantity, $rule, $allocation['variations'][ $product_id ] );
+		}
+
+		$this->free_item_manager->remove_rule_items_except( $cart, $rule->id, array_keys( $allocation['quantities'] ) );
+	}
+
+	/**
+	 * Split a Buy X Get X reward into free copies of the cheapest bought products.
+	 *
+	 * Each line, cheapest first, gives up to its own quantity. "Buy 1 Get 2" can
+	 * grant more than was bought, so the cheapest product takes the rest. Cart
+	 * nudges use this too, so they promise exactly what the cart will grant.
+	 *
+	 * @since 2.2.1
+	 *
+	 * @param array $eligible_items Eligible cart items.
+	 * @param int   $free_quantity  Total number of free units to grant.
+	 *
+	 * @return array{quantities:array<int,int>,variations:array<int,array>} Keyed by product or variation ID.
+	 */
+	public static function free_copy_allocation( $eligible_items, $free_quantity ) {
 		uasort(
 			$eligible_items,
-			function ( $a, $b ) {
-				return $a['data']->get_price() <=> $b['data']->get_price();
+			static function ( $a, $b ) {
+				$price_a = isset( $a['data'] ) ? $a['data']->get_price() : 0;
+				$price_b = isset( $b['data'] ) ? $b['data']->get_price() : 0;
+
+				return $price_a <=> $price_b;
 			}
 		);
 
 		$remaining  = (int) $free_quantity;
-		$allocation = array();
+		$quantities = array();
 		$variations = array();
 
 		foreach ( $eligible_items as $cart_item ) {
@@ -147,23 +173,21 @@ class DiscountApplier implements DiscountApplierInterface {
 			$product_id = (int) ( $cart_item['variation_id'] ? $cart_item['variation_id'] : $cart_item['product_id'] );
 			$free_qty   = min( (int) $cart_item['quantity'], $remaining );
 
-			$allocation[ $product_id ] = ( $allocation[ $product_id ] ?? 0 ) + $free_qty;
+			$quantities[ $product_id ] = ( $quantities[ $product_id ] ?? 0 ) + $free_qty;
 			$remaining                -= $free_qty;
 
 			// "Any" variations only know their attributes from the purchased line.
 			$variations[ $product_id ] = $variations[ $product_id ] ?? ( $cart_item['variation'] ?? array() );
 		}
 
-		// "Buy 1 Get 2" can grant more than was bought; the cheapest product takes the rest.
-		if ( $remaining > 0 && ! empty( $allocation ) ) {
-			$allocation[ array_key_first( $allocation ) ] += $remaining;
+		if ( $remaining > 0 && ! empty( $quantities ) ) {
+			$quantities[ array_key_first( $quantities ) ] += $remaining;
 		}
 
-		foreach ( $allocation as $product_id => $quantity ) {
-			$this->free_item_manager->add_free_item( $cart, $product_id, $quantity, $rule, $variations[ $product_id ] );
-		}
-
-		$this->free_item_manager->remove_rule_items_except( $cart, $rule->id, array_keys( $allocation ) );
+		return array(
+			'quantities' => $quantities,
+			'variations' => $variations,
+		);
 	}
 
 	/**

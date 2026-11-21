@@ -9,6 +9,7 @@ namespace Bogofy\Frontend;
 
 use Bogofy\Admin\Settings;
 use Bogofy\Cart\CartHandler;
+use Bogofy\Cart\DiscountApplier;
 use Bogofy\Cart\Contracts\EligibilityCheckerInterface;
 use Bogofy\Cart\Contracts\FreeItemManagerInterface;
 use Bogofy\Models\Rule;
@@ -132,11 +133,13 @@ class CartNudges {
 	 * How many of the next set's reward units the store could actually grant.
 	 *
 	 * Mirrors the gift code, so a nudge never promises more than the cart will
-	 * receive. Gift rules use the gift sync would pick: the shopper's current
+	 * receive. The shopper is assumed to add more of the cheapest qualifying
+	 * product, and those paid units are reserved from any stock they share
+	 * with the reward. Gift rules use the gift sync would pick: the current
 	 * gift first, then the rule's other gifts in order, skipping excluded ones.
-	 * Buy X Get X rewards a copy of the cheapest bought item, whose stock must
-	 * also cover the paid units the shopper is asked to add. Discounted rules
-	 * reward the bought items themselves and need no extra stock.
+	 * Buy X Get X splits its reward across the bought products exactly as
+	 * DiscountApplier does. Discounted rules reward the bought items themselves
+	 * and need no extra stock.
 	 *
 	 * @param \WC_Cart $cart           Cart object.
 	 * @param Rule     $rule           Rule object.
@@ -152,22 +155,31 @@ class CartNudges {
 			return $free_qty;
 		}
 
+		$cheapest_key = $this->cheapest_line_key( $eligible_items );
+
+		if ( null === $cheapest_key ) {
+			return 0;
+		}
+
 		$held     = $this->held_gift_lines( $cart, $rule );
 		$held_qty = (int) array_sum( $held );
 		$keys     = array_keys( $held );
+		$paid     = (int) $unlock['remaining'];
+		$paid_id  = $this->line_product_id( $eligible_items[ $cheapest_key ] );
 
 		if ( Rule::TYPE_BUY_X_GET_X === $rule->rule_type ) {
-			$line = $this->cheapest_line( $eligible_items );
+			$projected                              = $eligible_items;
+			$projected[ $cheapest_key ]['quantity'] = (int) $projected[ $cheapest_key ]['quantity'] + $paid;
+			$allocation                             = DiscountApplier::free_copy_allocation( $projected, $held_qty + $free_qty );
+			$granted                                = 0;
 
-			if ( ! $line ) {
-				return 0;
+			foreach ( $allocation['quantities'] as $product_id => $quantity ) {
+				$reserve  = $product_id === $paid_id ? $paid : 0;
+				$units    = $this->free_item_manager->supplyable( $cart, $product_id, $quantity + $reserve, $allocation['variations'][ $product_id ], $keys );
+				$granted += max( 0, $units - $reserve );
 			}
 
-			$product_id = (int) ( $line['variation_id'] ? $line['variation_id'] : $line['product_id'] );
-			$paid       = (int) $unlock['remaining'];
-			$units      = $this->free_item_manager->supplyable( $cart, $product_id, $paid + $held_qty + $free_qty, $line['variation'] ?? array(), $keys );
-
-			return max( 0, min( $free_qty, $units - $paid - $held_qty ) );
+			return max( 0, min( $free_qty, $granted - $held_qty ) );
 		}
 
 		foreach ( $this->gift_order( $cart, $rule, $held ) as $gift_id ) {
@@ -175,7 +187,8 @@ class CartNudges {
 				continue;
 			}
 
-			$units = $this->free_item_manager->supplyable( $cart, $gift_id, $held_qty + $free_qty, array(), $keys );
+			$reserve = $this->shares_stock( $gift_id, $eligible_items[ $cheapest_key ] ) ? $paid : 0;
+			$units   = $this->free_item_manager->supplyable( $cart, $gift_id, $held_qty + $free_qty + $reserve, array(), $keys ) - $reserve;
 
 			// Sync settles on the first gift it can add at all, so stop here.
 			if ( $units > 0 ) {
@@ -184,6 +197,35 @@ class CartNudges {
 		}
 
 		return 0;
+	}
+
+	/**
+	 * Whether a gift draws on the same stock as a cart line's product.
+	 *
+	 * @param int   $gift_id   Gift product or variation ID.
+	 * @param array $cart_item Cart item.
+	 *
+	 * @return bool
+	 */
+	private function shares_stock( $gift_id, $cart_item ) {
+		if ( empty( $cart_item['data'] ) ) {
+			return $this->line_product_id( $cart_item ) === (int) $gift_id;
+		}
+
+		$gift = wc_get_product( $gift_id );
+
+		return $gift && $gift->get_stock_managed_by_id() === $cart_item['data']->get_stock_managed_by_id();
+	}
+
+	/**
+	 * The product or variation ID a cart line holds.
+	 *
+	 * @param array $cart_item Cart item.
+	 *
+	 * @return int
+	 */
+	private function line_product_id( $cart_item ) {
+		return (int) ( $cart_item['variation_id'] ? $cart_item['variation_id'] : $cart_item['product_id'] );
 	}
 
 	/**
@@ -231,24 +273,26 @@ class CartNudges {
 	}
 
 	/**
-	 * The cheapest eligible line, whose product Buy X Get X gives free first.
+	 * The cheapest eligible line: the product a shopper most likely adds more of.
 	 *
 	 * @param array $eligible_items Eligible cart items.
 	 *
-	 * @return array|null
+	 * @return string|null Cart item key, or null when there are none.
 	 */
-	private function cheapest_line( $eligible_items ) {
+	private function cheapest_line_key( $eligible_items ) {
 		$cheapest = null;
+		$lowest   = null;
 
-		foreach ( $eligible_items as $cart_item ) {
+		foreach ( $eligible_items as $key => $cart_item ) {
 			$price = isset( $cart_item['data'] ) ? (float) $cart_item['data']->get_price() : 0.0;
 
-			if ( null === $cheapest || $price < $cheapest[0] ) {
-				$cheapest = array( $price, $cart_item );
+			if ( null === $lowest || $price < $lowest ) {
+				$cheapest = $key;
+				$lowest   = $price;
 			}
 		}
 
-		return $cheapest ? $cheapest[1] : null;
+		return $cheapest;
 	}
 
 	/**
