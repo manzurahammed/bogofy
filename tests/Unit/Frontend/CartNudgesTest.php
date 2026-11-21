@@ -55,6 +55,13 @@ namespace Bogofy\Tests\Unit\Frontend {
 		private $stock = array();
 
 		/**
+		 * Stock-managing product ID by product ID, for products sharing stock.
+		 *
+		 * @var array<int,int>
+		 */
+		private $stock_ids = array();
+
+		/**
 		 * Set up test fixtures.
 		 */
 		protected function setUp(): void {
@@ -98,7 +105,9 @@ namespace Bogofy\Tests\Unit\Frontend {
 						return 0;
 					}
 
-					return min( $quantity, $this->stock[ $product_id ] ?? $quantity );
+					$stock_id = $this->stock_ids[ $product_id ] ?? $product_id;
+
+					return min( $quantity, $this->stock[ $stock_id ] ?? $quantity );
 				}
 			);
 
@@ -153,6 +162,7 @@ namespace Bogofy\Tests\Unit\Frontend {
 		private function priced_line( $product_id, $price ) {
 			$product = Mockery::mock();
 			$product->shouldReceive( 'get_price' )->andReturn( $price );
+			$product->shouldReceive( 'get_stock_managed_by_id' )->andReturn( $this->stock_ids[ $product_id ] ?? $product_id );
 
 			return array(
 				'product_id'   => $product_id,
@@ -341,6 +351,31 @@ namespace Bogofy\Tests\Unit\Frontend {
 
 			// B has no spare unit, so only the 2 A copies can be granted.
 			$this->stock = array( 11 => 0 );
+			$this->assertSame( array( 'Add 1 more item to get 2 free!' ), $this->nudges( $rule )->get_messages( $cart ) );
+		}
+
+		/**
+		 * Copies of products sharing one stock draw on a single budget.
+		 */
+		public function test_split_copies_sharing_stock_use_one_budget() {
+			$rule                = $this->rule();
+			$rule->free_quantity = 3;
+
+			// Variations 10 and 11 share parent 100's stock: 3 spare units.
+			// 1 paid unit of 10 leaves 2, so only 2 of the 3 copies fit.
+			$this->stock_ids = array(
+				10 => 100,
+				11 => 100,
+			);
+			$this->stock     = array( 100 => 3 );
+
+			$cart = new \WC_Cart(
+				array(
+					'a' => $this->priced_line( 10, 5.0 ),
+					'b' => $this->priced_line( 11, 9.0 ),
+				)
+			);
+
 			$this->assertSame( array( 'Add 1 more item to get 2 free!' ), $this->nudges( $rule )->get_messages( $cart ) );
 		}
 

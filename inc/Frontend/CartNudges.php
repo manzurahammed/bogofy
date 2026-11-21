@@ -171,12 +171,20 @@ class CartNudges {
 			$projected                              = $eligible_items;
 			$projected[ $cheapest_key ]['quantity'] = (int) $projected[ $cheapest_key ]['quantity'] + $paid;
 			$allocation                             = DiscountApplier::free_copy_allocation( $projected, $held_qty + $free_qty );
+			$stock_ids                              = $this->stock_ids( $eligible_items );
 			$granted                                = 0;
 
+			// One budget per shared stock: the paid units come first, then each
+			// copy in turn, as the cart adds them one after another.
+			$claimed = array( $stock_ids[ $paid_id ] ?? $paid_id => $paid );
+
 			foreach ( $allocation['quantities'] as $product_id => $quantity ) {
-				$reserve  = $product_id === $paid_id ? $paid : 0;
-				$units    = $this->free_item_manager->supplyable( $cart, $product_id, $quantity + $reserve, $allocation['variations'][ $product_id ], $keys );
-				$granted += max( 0, $units - $reserve );
+				$stock_id             = $stock_ids[ $product_id ] ?? $product_id;
+				$before               = $claimed[ $stock_id ] ?? 0;
+				$units                = $this->free_item_manager->supplyable( $cart, $product_id, $before + $quantity, $allocation['variations'][ $product_id ], $keys );
+				$units                = max( 0, $units - $before );
+				$granted             += $units;
+				$claimed[ $stock_id ] = $before + $units;
 			}
 
 			return max( 0, min( $free_qty, $granted - $held_qty ) );
@@ -197,6 +205,24 @@ class CartNudges {
 		}
 
 		return 0;
+	}
+
+	/**
+	 * The stock each eligible line's product draws on.
+	 *
+	 * @param array $eligible_items Eligible cart items.
+	 *
+	 * @return array<int,int> Stock-managing product ID, keyed by product or variation ID.
+	 */
+	private function stock_ids( $eligible_items ) {
+		$stock_ids = array();
+
+		foreach ( $eligible_items as $cart_item ) {
+			$product_id               = $this->line_product_id( $cart_item );
+			$stock_ids[ $product_id ] = isset( $cart_item['data'] ) ? (int) $cart_item['data']->get_stock_managed_by_id() : $product_id;
+		}
+
+		return $stock_ids;
 	}
 
 	/**
