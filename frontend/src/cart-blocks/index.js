@@ -190,7 +190,12 @@ const GiftPicker = ({ choice }) => {
  */
 const GiftPickers = ({ extensions, context }) => {
   const choices = extensions?.bogofy?.gift_choices;
-  if (context === "woocommerce/checkout" || !choices?.length) {
+  // Gift details are off in Settings: hide the picker, as the classic cart does.
+  if (
+    extensions?.bogofy?.show_gift === false ||
+    context === "woocommerce/checkout" ||
+    !choices?.length
+  ) {
     return null;
   }
 
