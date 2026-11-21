@@ -4,7 +4,7 @@ Tags: woocommerce, bogo, buy one get one, free gift, discount
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.1.3
+Stable tag: 2.2.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -143,6 +143,15 @@ Example: only apply rule 12 to logged-in customers.
 
 == Changelog ==
 
+= 2.2.0 =
+* New: customers choose their free gift when a rule offers more than one. The first gift is added by default, and the choice is shown in the classic cart, the Cart block and the order.
+* New: cart nudges such as "Add 1 more item to get 1 free!" in the classic cart and the Cart block. Turn them off in Settings.
+* New: cart conditions on rules: a minimum subtotal, a minimum number of items, and excluded products, categories or sale items.
+* New: a Duplicate action on the rules list. The copy starts inactive, with its order and revenue counts reset.
+* Developer: new hooks `bogofy_rule_is_eligible`, `bogofy_free_quantity`, `bogofy_gift_added` and `bogofy_gift_removed`. See the FAQ.
+* Developer: `EligibilityCheckerInterface` gains `meets_cart_minimums()`, `is_product_excluded()` and `get_next_unlock()`, and `is_product_eligible()` gains an optional `$product` parameter. `FreeItemManagerInterface` gains `switch_gift()` and `can_supply()`, and `add_free_item()` gains an optional `$replacing` parameter. Third-party implementations must add them.
+* Database: rules gain a `conditions` column, added automatically on update. Existing rules have no conditions and work as before.
+
 = 2.1.3 =
 * Fixed: a gift can no longer block checkout when a Buy X, Get X rule uses an "Any" variation. The free copy now keeps the options the customer chose.
 * Fixed: a gift that can't be added to the cart no longer shows an error that stops checkout.
@@ -205,6 +214,9 @@ Example: only apply rule 12 to logged-in customers.
 * HPOS and Cart/Checkout Blocks compatibility.
 
 == Upgrade Notice ==
+
+= 2.2.0 =
+Adds a free-gift chooser, "add N more" cart nudges, minimum-spend and exclusion conditions on rules, and a Duplicate action for rules.
 
 = 2.1.3 =
 Fixes cases where a free gift could block checkout. Recommended for all stores.
