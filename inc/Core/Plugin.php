@@ -172,7 +172,8 @@ class Plugin {
 			function ( Container $c ) {
 				return new CartNudges(
 					$c->get( RuleRepository::class ),
-					$c->get( EligibilityChecker::class )
+					$c->get( EligibilityChecker::class ),
+					$c->get( FreeItemManager::class )
 				);
 			}
 		);

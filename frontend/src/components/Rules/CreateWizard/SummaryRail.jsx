@@ -31,8 +31,8 @@ function SumRow({ l, v, done }) {
   );
 }
 
-// Short label for the cart minimums set on the rule.
-function conditionsSummary(conditions = {}) {
+// Short label for the cart minimums and exclusions set on the rule.
+function conditionsSummary(conditions = {}, excludedCount = 0) {
   const parts = [];
   if (Number(conditions.min_subtotal) > 0) {
     /* translators: %s: minimum cart subtotal */
@@ -45,6 +45,10 @@ function conditionsSummary(conditions = {}) {
   if (conditions.exclude_sale_items) {
     parts.push(__("no sale items", "bogofy"));
   }
+  if (excludedCount > 0) {
+    /* translators: %d: number of excluded products and categories */
+    parts.push(sprintf(__("%d excluded", "bogofy"), excludedCount));
+  }
   return parts.join(" · ");
 }
 
@@ -53,8 +57,13 @@ function SummaryRail({
   step,
   selectedBuyProducts,
   selectedFreeProducts,
+  selectedExcludedProducts = [],
+  selectedExcludedCategories = [],
 }) {
-  const conditions = conditionsSummary(formData.conditions);
+  const conditions = conditionsSummary(
+    formData.conditions,
+    selectedExcludedProducts.length + selectedExcludedCategories.length,
+  );
 
   return (
     <div className="bogo-wizard__card">

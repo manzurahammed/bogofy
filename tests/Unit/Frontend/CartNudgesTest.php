@@ -24,10 +24,12 @@ namespace {
 
 namespace Bogofy\Tests\Unit\Frontend {
 
+	use Bogofy\Cart\Contracts\FreeItemManagerInterface;
 	use Bogofy\Cart\EligibilityChecker;
 	use Bogofy\Frontend\CartNudges;
 	use Bogofy\Models\Rule;
 	use Bogofy\Models\RuleRepository;
+	use Brain\Monkey\Filters;
 	use Brain\Monkey\Functions;
 	use PHPUnit\Framework\TestCase;
 
@@ -35,6 +37,13 @@ namespace Bogofy\Tests\Unit\Frontend {
 	 * Class CartNudgesTest
 	 */
 	class CartNudgesTest extends TestCase {
+
+		/**
+		 * Gift product IDs the free item manager cannot supply.
+		 *
+		 * @var int[]
+		 */
+		private $unavailable = array();
 
 		/**
 		 * Set up test fixtures.
@@ -68,7 +77,14 @@ namespace Bogofy\Tests\Unit\Frontend {
 			$repo = $this->createMock( RuleRepository::class );
 			$repo->method( 'get_active_rules' )->willReturn( $rules );
 
-			return new CartNudges( $repo, new EligibilityChecker() );
+			$free_items = $this->createMock( FreeItemManagerInterface::class );
+			$free_items->method( 'can_supply' )->willReturnCallback(
+				function ( $cart, $product_id ) {
+					return ! in_array( $product_id, $this->unavailable, true );
+				}
+			);
+
+			return new CartNudges( $repo, new EligibilityChecker(), $free_items );
 		}
 
 		/**
@@ -155,37 +171,66 @@ namespace Bogofy\Tests\Unit\Frontend {
 		}
 
 		/**
-		 * A Buy X Get Y gift that cannot be added is not advertised.
+		 * A gift rule is advertised only while one of its gifts can be supplied.
 		 */
 		public function test_no_message_when_gift_product_unavailable() {
 			$rule                   = $this->rule( Rule::TYPE_BUY_X_GET_Y );
 			$rule->free_product_ids = array( 99 );
 
-			$in_stock = true;
-			Functions\when( 'wc_get_product' )->alias(
-				function () use ( &$in_stock ) {
-					return new class( $in_stock ) {
-						private $in_stock;
-
-						public function __construct( $in_stock ) {
-							$this->in_stock = $in_stock;
-						}
-
-						public function is_purchasable() {
-							return true;
-						}
-
-						public function is_in_stock() {
-							return $this->in_stock;
-						}
-					};
-				}
-			);
-
 			$this->assertCount( 1, $this->nudges( $rule )->get_messages( $this->cart( 1 ) ) );
 
-			$in_stock = false;
+			$this->unavailable = array( 99 );
 			$this->assertSame( array(), $this->nudges( $rule )->get_messages( $this->cart( 1 ) ) );
+		}
+
+		/**
+		 * Any of the rule's gifts can back the nudge, not only the first.
+		 */
+		public function test_later_gift_backs_nudge_when_first_unavailable() {
+			foreach ( array( Rule::TYPE_BUY_X_GET_Y, Rule::TYPE_BUY_CAT_GET_FREE ) as $type ) {
+				$rule                   = $this->rule( $type );
+				$rule->free_product_ids = array( 98, 99 );
+
+				$this->unavailable = array( 98 );
+				$this->assertCount( 1, $this->nudges( $rule )->get_messages( $this->cart( 1 ) ), $type );
+
+				$this->unavailable = array( 98, 99 );
+				$this->assertSame( array(), $this->nudges( $rule )->get_messages( $this->cart( 1 ) ), $type );
+			}
+		}
+
+		/**
+		 * An excluded gift is never granted, so it is not advertised.
+		 */
+		public function test_no_message_when_only_gift_is_excluded() {
+			Functions\when( 'wc_get_product' )->justReturn( false );
+
+			$rule                                     = $this->rule( Rule::TYPE_BUY_X_GET_Y );
+			$rule->free_product_ids                   = array( 99 );
+			$rule->conditions['excluded_product_ids'] = array( 99 );
+
+			$this->assertSame( array(), $this->nudges( $rule )->get_messages( $this->cart( 1 ) ) );
+
+			$rule->free_product_ids = array( 99, 98 );
+			$this->assertCount( 1, $this->nudges( $rule )->get_messages( $this->cart( 1 ) ) );
+		}
+
+		/**
+		 * A rule vetoed by `bogofy_rule_is_eligible` is not advertised.
+		 */
+		public function test_no_message_when_rule_is_vetoed() {
+			Filters\expectApplied( 'bogofy_rule_is_eligible' )->once()->andReturn( false );
+
+			$this->assertSame( array(), $this->nudges( $this->rule() )->get_messages( $this->cart( 1 ) ) );
+		}
+
+		/**
+		 * Nudges never pass projected items through `bogofy_free_quantity`.
+		 */
+		public function test_free_quantity_filter_is_not_applied() {
+			Filters\expectApplied( 'bogofy_free_quantity' )->never();
+
+			$this->assertCount( 1, $this->nudges( $this->rule() )->get_messages( $this->cart( 2 ) ) );
 		}
 
 		/**
@@ -238,7 +283,7 @@ namespace Bogofy\Tests\Unit\Frontend {
 		 */
 		public function test_render_outputs_escaped_nudge() {
 			$nudges = $this->getMockBuilder( CartNudges::class )
-				->setConstructorArgs( array( $this->createMock( RuleRepository::class ), new EligibilityChecker() ) )
+				->setConstructorArgs( array( $this->createMock( RuleRepository::class ), new EligibilityChecker(), $this->createMock( FreeItemManagerInterface::class ) ) )
 				->onlyMethods( array( 'get_messages' ) )
 				->getMock();
 			$nudges->method( 'get_messages' )->willReturn( array( '<b>2</b> more' ) );

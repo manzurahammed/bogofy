@@ -245,16 +245,7 @@ class EligibilityChecker implements EligibilityCheckerInterface {
 			$total_quantity += $cart_item['quantity'];
 		}
 
-		// Calculate how many "sets" of buy_quantity are in the cart.
-		$sets = (int) floor( $total_quantity / max( 1, $rule->buy_quantity ) );
-
-		// Calculate total free items.
-		$free_quantity = $sets * $rule->free_quantity;
-
-		// Apply max limit if set.
-		if ( null !== $rule->max_free_qty && $free_quantity > $rule->max_free_qty ) {
-			$free_quantity = $rule->max_free_qty;
-		}
+		$free_quantity = $this->earned_free_quantity( $total_quantity, $rule );
 
 		/**
 		 * Filters how many free units a rule grants.
@@ -271,6 +262,28 @@ class EligibilityChecker implements EligibilityCheckerInterface {
 		$free_quantity = apply_filters( 'bogofy_free_quantity', $free_quantity, $rule, $eligible_items );
 
 		return max( 0, (int) $free_quantity );
+	}
+
+	/**
+	 * Free units a quantity of bought items earns under the rule's own terms.
+	 *
+	 * Counts whole sets of buy_quantity and applies max_free_qty, but not the
+	 * `bogofy_free_quantity` filter, which needs real cart items.
+	 *
+	 * @param int  $total_quantity Bought quantity.
+	 * @param Rule $rule           Rule object.
+	 *
+	 * @return int
+	 */
+	private function earned_free_quantity( $total_quantity, Rule $rule ) {
+		$sets          = (int) floor( $total_quantity / max( 1, $rule->buy_quantity ) );
+		$free_quantity = $sets * $rule->free_quantity;
+
+		if ( null !== $rule->max_free_qty && $free_quantity > $rule->max_free_qty ) {
+			$free_quantity = $rule->max_free_qty;
+		}
+
+		return (int) $free_quantity;
 	}
 
 	/**
@@ -303,10 +316,12 @@ class EligibilityChecker implements EligibilityCheckerInterface {
 			return null;
 		}
 
+		// The rule's own terms, unfiltered: `bogofy_free_quantity` callbacks expect
+		// real cart items, and a projected cart has none to give them.
 		$remaining    = $buy_quantity - $into_set;
-		$current_free = $this->calculate_free_quantity( $eligible_items, $rule );
+		$current_free = $this->earned_free_quantity( $total_quantity, $rule );
 		$next_total   = $total_quantity + $remaining;
-		$next_free    = $this->calculate_free_quantity( array( array( 'quantity' => $next_total ) ), $rule );
+		$next_free    = $this->earned_free_quantity( $next_total, $rule );
 
 		// Discounted rules discount the bought items themselves, so they can never
 		// discount more items than are in the cart.

@@ -149,7 +149,7 @@ Example: only apply rule 12 to logged-in customers.
 * New: cart conditions on rules: a minimum subtotal, a minimum number of items, and excluded products, categories or sale items.
 * New: a Duplicate action on the rules list. The copy starts inactive, with its order and revenue counts reset.
 * Developer: new hooks `bogofy_rule_is_eligible`, `bogofy_free_quantity`, `bogofy_gift_added` and `bogofy_gift_removed`. See the FAQ.
-* Developer: `EligibilityCheckerInterface` gains `meets_cart_minimums()`, `is_product_excluded()` and `get_next_unlock()`, and `is_product_eligible()` gains an optional `$product` parameter. `FreeItemManagerInterface` gains `switch_gift()` and `can_supply()`, and `add_free_item()` gains an optional `$replacing` parameter. Third-party implementations must add them.
+* Developer: `EligibilityCheckerInterface` gains `meets_cart_minimums()`, `is_product_excluded()` and `get_next_unlock()`, and `is_product_eligible()` gains an optional `$product` parameter. `DiscountApplierInterface` gains `switch_gift()`. `FreeItemManagerInterface` gains `can_supply()`, and `add_free_item()` gains an optional `$replacing` parameter. Third-party implementations must add them.
 * Database: rules gain a `conditions` column, added automatically on update. Existing rules have no conditions and work as before.
 
 = 2.1.3 =

@@ -7,6 +7,8 @@ function WizardSidebar({
   step,
   selectedBuyProducts,
   selectedFreeProducts,
+  selectedExcludedProducts,
+  selectedExcludedCategories,
 }) {
   return (
     <div className="bogo-col" style={{ gap: 16 }}>
@@ -21,6 +23,8 @@ function WizardSidebar({
         step={step}
         selectedBuyProducts={selectedBuyProducts}
         selectedFreeProducts={selectedFreeProducts}
+        selectedExcludedProducts={selectedExcludedProducts}
+        selectedExcludedCategories={selectedExcludedCategories}
       />
     </div>
   );
