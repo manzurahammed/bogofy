@@ -16,6 +16,7 @@ use Bogofy\Cart\FreeItemManager;
 use Bogofy\Frontend\ProductPage;
 use Bogofy\Frontend\Assets;
 use Bogofy\Frontend\CartDisplay;
+use Bogofy\Frontend\CartNudges;
 use Bogofy\Frontend\StoreApi;
 use Bogofy\Models\RuleRepository;
 use Bogofy\Orders\OrderTracker;
@@ -162,14 +163,25 @@ class Plugin {
 		$this->container->set(
 			CartDisplay::class,
 			function ( Container $c ) {
-				return new CartDisplay( $c->get( RuleRepository::class ) );
+				return new CartDisplay( $c->get( RuleRepository::class ), $c->get( CartHandler::class ) );
+			}
+		);
+
+		$this->container->set(
+			CartNudges::class,
+			function ( Container $c ) {
+				return new CartNudges(
+					$c->get( RuleRepository::class ),
+					$c->get( EligibilityChecker::class ),
+					$c->get( FreeItemManager::class )
+				);
 			}
 		);
 
 		$this->container->set(
 			StoreApi::class,
-			function () {
-				return new StoreApi();
+			function ( Container $c ) {
+				return new StoreApi( $c->get( CartHandler::class ), $c->get( CartNudges::class ) );
 			}
 		);
 	}
@@ -233,6 +245,14 @@ class Plugin {
 		// Gift note under free cart items (classic + block cart).
 		$cart_display = $this->container->get( CartDisplay::class );
 		$this->loader->register_filter( 'woocommerce_get_item_data', $cart_display, 'add_item_data', 10, 2 );
+
+		// Gift picker for rules with several gift products (classic cart).
+		$this->loader->register_action( 'woocommerce_after_cart_item_name', $cart_display, 'render_gift_picker', 10, 2 );
+		$this->loader->register_action( 'wp_loaded', $cart_display, 'handle_gift_switch', 20 );
+
+		// "Add N more" nudges above the classic cart (the block cart reads them from the Store API).
+		$cart_nudges = $this->container->get( CartNudges::class );
+		$this->loader->register_action( 'woocommerce_before_cart_table', $cart_nudges, 'render' );
 
 		// Product page display.
 		$product_page = $this->container->get( ProductPage::class );

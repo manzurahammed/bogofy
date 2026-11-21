@@ -30,6 +30,15 @@ class OrderTracker {
 	const BASE_ITEM_META = '_bogo_base_price';
 
 	/**
+	 * Order-item meta key holding the gift product the shopper chose.
+	 *
+	 * @since 2.2.0
+	 *
+	 * @var string
+	 */
+	const GIFT_CHOICE_ITEM_META = CartHandler::BOGO_GIFT_CHOICE_KEY;
+
+	/**
 	 * Order meta flag marking that stats have been recorded for the order.
 	 *
 	 * @var string
@@ -53,7 +62,7 @@ class OrderTracker {
 	}
 
 	/**
-	 * Stamp the owning rule and base price onto a BOGO order line item.
+	 * Stamp the owning rule, base price and chosen gift onto a BOGO order line item.
 	 *
 	 * @param \WC_Order_Item_Product $item          Order line item.
 	 * @param string                 $cart_item_key Cart item key.
@@ -74,6 +83,10 @@ class OrderTracker {
 
 		$item->add_meta_data( self::RULE_ITEM_META, (int) $values[ CartHandler::BOGO_RULE_KEY ], true );
 		$item->add_meta_data( self::BASE_ITEM_META, $base_price, true );
+
+		if ( ! empty( $values[ CartHandler::BOGO_GIFT_CHOICE_KEY ] ) ) {
+			$item->add_meta_data( self::GIFT_CHOICE_ITEM_META, (int) $values[ CartHandler::BOGO_GIFT_CHOICE_KEY ], true );
+		}
 	}
 
 	/**

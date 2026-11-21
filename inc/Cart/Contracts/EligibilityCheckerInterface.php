@@ -27,15 +27,42 @@ interface EligibilityCheckerInterface {
 	public function get_eligible_items( $cart, Rule $rule );
 
 	/**
-	 * Check if a product is eligible for a rule.
+	 * Check whether the cart reaches the rule's minimum subtotal and item count.
 	 *
-	 * @param int  $product_id Product or variation ID.
-	 * @param int  $parent_id  Parent product ID.
-	 * @param Rule $rule       Rule object.
+	 * @since 2.2.0
+	 *
+	 * @param \WC_Cart $cart Cart object.
+	 * @param Rule     $rule Rule object.
 	 *
 	 * @return bool
 	 */
-	public function is_product_eligible( $product_id, $parent_id, Rule $rule );
+	public function meets_cart_minimums( $cart, Rule $rule );
+
+	/**
+	 * Check if the rule's exclusions rule out a product.
+	 *
+	 * @since 2.2.0
+	 *
+	 * @param int              $product_id Product or variation ID.
+	 * @param int              $parent_id  Parent product ID.
+	 * @param Rule             $rule       Rule object.
+	 * @param \WC_Product|null $product    Product object, when the caller has one.
+	 *
+	 * @return bool
+	 */
+	public function is_product_excluded( $product_id, $parent_id, Rule $rule, $product = null );
+
+	/**
+	 * Check if a product is eligible for a rule, after its exclusions.
+	 *
+	 * @param int              $product_id Product or variation ID.
+	 * @param int              $parent_id  Parent product ID.
+	 * @param Rule             $rule       Rule object.
+	 * @param \WC_Product|null $product    Product object, when the caller has one.
+	 *
+	 * @return bool
+	 */
+	public function is_product_eligible( $product_id, $parent_id, Rule $rule, $product = null );
 
 	/**
 	 * Calculate how many free items the customer is entitled to.
@@ -46,6 +73,18 @@ interface EligibilityCheckerInterface {
 	 * @return int Number of free items.
 	 */
 	public function calculate_free_quantity( $eligible_items, Rule $rule );
+
+	/**
+	 * Work out what the next partly-met set of a rule would unlock.
+	 *
+	 * @since 2.2.0
+	 *
+	 * @param array $eligible_items Eligible cart items.
+	 * @param Rule  $rule           Rule object.
+	 *
+	 * @return array{remaining:int,free_qty:int}|null Null when there is nothing to nudge towards.
+	 */
+	public function get_next_unlock( $eligible_items, Rule $rule );
 
 	/**
 	 * Check if a rule is currently active (within its date range).

@@ -51,6 +51,31 @@ class SettingsTest extends TestCase {
 	}
 
 	/**
+	 * The cart-nudge toggle defaults to on, with an empty (use default) message.
+	 */
+	public function test_defaults_include_cart_nudges() {
+		$all = Settings::get_all();
+
+		$this->assertTrue( $all['show_cart_nudges'] );
+		$this->assertSame( '', $all['cart_nudge_text'] );
+	}
+
+	/**
+	 * sanitize() casts the nudge toggle and strips tags from the nudge text.
+	 */
+	public function test_sanitize_cart_nudge_settings() {
+		$out = Settings::sanitize(
+			array(
+				'show_cart_nudges' => '0',
+				'cart_nudge_text'  => '<b>Add {remaining} more</b>',
+			)
+		);
+
+		$this->assertFalse( $out['show_cart_nudges'] );
+		$this->assertSame( 'Add {remaining} more', $out['cart_nudge_text'] );
+	}
+
+	/**
 	 * sanitize() drops keys that are not known settings.
 	 */
 	public function test_sanitize_ignores_unknown_keys() {

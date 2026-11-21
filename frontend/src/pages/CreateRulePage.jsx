@@ -15,6 +15,8 @@ function CreateRulePage() {
     formData,
     selectedBuyProducts,
     selectedFreeProducts,
+    selectedExcludedProducts,
+    selectedExcludedCategories,
     errors,
     goNext,
     goPrev,
@@ -66,6 +68,8 @@ function CreateRulePage() {
           step={step}
           selectedBuyProducts={selectedBuyProducts}
           selectedFreeProducts={selectedFreeProducts}
+          selectedExcludedProducts={selectedExcludedProducts}
+          selectedExcludedCategories={selectedExcludedCategories}
         />
       </div>
     </AppShell>

@@ -33,6 +33,8 @@ class Settings {
 		'show_product_page_messages' => true,
 		'show_shop_badges'           => true,
 		'show_cart_gift'             => true,
+		'show_cart_nudges'           => true,
+		'cart_nudge_text'            => '',
 		'stack_with_coupons'         => true,
 	);
 
@@ -120,6 +122,14 @@ class Settings {
 
 		if ( isset( $settings['show_cart_gift'] ) ) {
 			$sanitized['show_cart_gift'] = (bool) $settings['show_cart_gift'];
+		}
+
+		if ( isset( $settings['show_cart_nudges'] ) ) {
+			$sanitized['show_cart_nudges'] = (bool) $settings['show_cart_nudges'];
+		}
+
+		if ( isset( $settings['cart_nudge_text'] ) ) {
+			$sanitized['cart_nudge_text'] = sanitize_text_field( $settings['cart_nudge_text'] );
 		}
 
 		if ( isset( $settings['stack_with_coupons'] ) ) {

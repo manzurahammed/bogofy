@@ -41,9 +41,9 @@ class Assets {
 		);
 
 		// Block cart/checkout integration: only where those blocks render and when
-		// the cart gift styling is enabled.
+		// the cart gift styling or the cart nudges are enabled.
 		if (
-			Settings::get( 'show_cart_gift' )
+			( Settings::get( 'show_cart_gift' ) || Settings::get( 'show_cart_nudges' ) )
 			&& function_exists( 'is_cart' )
 			&& ( is_cart() || is_checkout() )
 		) {

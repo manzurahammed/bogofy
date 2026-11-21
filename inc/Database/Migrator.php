@@ -19,7 +19,7 @@ class Migrator {
 	 *
 	 * @var string
 	 */
-	const DB_VERSION = '1.1.0';
+	const DB_VERSION = '1.2.0';
 
 	/**
 	 * Option name for storing DB version.
@@ -60,7 +60,25 @@ class Migrator {
 			self::migrate_to_1_1_0();
 		}
 
+		// Migration 1.2.0 - Add the conditions column to bogo_rules.
+		if ( version_compare( $from_version, '1.2.0', '<' ) ) {
+			self::migrate_to_1_2_0();
+		}
+
 		// Future migrations can be added here.
+	}
+
+	/**
+	 * Migration to version 1.2.0.
+	 *
+	 * Adds the `conditions` JSON column (cart minimums and exclusions) to the
+	 * rules table. Existing rows keep NULL, which Rule::from_db() reads as no
+	 * conditions, so current rules behave exactly as before.
+	 *
+	 * @return void
+	 */
+	private static function migrate_to_1_2_0() {
+		Schema::create_tables();
 	}
 
 	/**

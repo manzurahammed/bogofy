@@ -4,6 +4,13 @@ import clsx from "clsx";
 import { __ } from "@wordpress/i18n";
 import { ProductSearch } from "../Shared/ProductSearch";
 import { CategorySearch } from "../Shared/CategorySearch";
+import {
+  CartConditions,
+  emptyConditions,
+  conditionsToForm,
+  conditionsToPayload,
+  validateConditions,
+} from "./CartConditions";
 import { get } from "../../services/api";
 
 /**
@@ -22,8 +29,20 @@ async function hydrateItems(endpoint, ids, fallbackLabel) {
         },
     );
   } catch {
-    return ids.map((id) => ({ id, name: `${fallbackLabel} #${id}` }));
+    return placeholderItems(ids, fallbackLabel);
   }
+}
+
+// Saved IDs with "Product #12"-style names until the real names load.
+function placeholderItems(ids, fallbackLabel) {
+  return ids.map((id) => ({ id, name: `${fallbackLabel} #${id}` }));
+}
+
+// Swap in loaded names, keeping whatever the user has selected meanwhile.
+function withNames(selected, loaded) {
+  return selected.map(
+    (item) => loaded.find((named) => named.id === item.id) || item,
+  );
 }
 
 const ruleTypes = [
@@ -75,6 +94,7 @@ const defaultFormData = {
   priority: 10,
   start_date: "",
   end_date: "",
+  conditions: emptyConditions,
 };
 
 export function RuleForm({
@@ -87,6 +107,10 @@ export function RuleForm({
   const [selectedBuyProducts, setSelectedBuyProducts] = useState([]);
   const [selectedFreeProducts, setSelectedFreeProducts] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState([]);
+  const [selectedExcludedProducts, setSelectedExcludedProducts] = useState([]);
+  const [selectedExcludedCategories, setSelectedExcludedCategories] = useState(
+    [],
+  );
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
@@ -99,6 +123,7 @@ export function RuleForm({
           ? initialData.start_date.slice(0, 16)
           : "",
         end_date: initialData.end_date ? initialData.end_date.slice(0, 16) : "",
+        conditions: conditionsToForm(initialData.conditions),
       });
 
       // Resolve saved IDs to real product/category names.
@@ -117,6 +142,26 @@ export function RuleForm({
         initialData.category_ids,
         "Category",
       ).then(setSelectedCategories);
+
+      // Exclusions have no "select at least one" check to block a save, so seed
+      // the saved IDs now; saving before the names load must not clear them.
+      const excludedProductIds =
+        initialData.conditions?.excluded_product_ids || [];
+      const excludedCategoryIds =
+        initialData.conditions?.excluded_category_ids || [];
+      setSelectedExcludedProducts(
+        placeholderItems(excludedProductIds, "Product"),
+      );
+      setSelectedExcludedCategories(
+        placeholderItems(excludedCategoryIds, "Category"),
+      );
+      hydrateItems("/products/search", excludedProductIds, "Product").then(
+        (items) => setSelectedExcludedProducts((prev) => withNames(prev, items)),
+      );
+      hydrateItems("/categories/search", excludedCategoryIds, "Category").then(
+        (items) =>
+          setSelectedExcludedCategories((prev) => withNames(prev, items)),
+      );
     }
   }, [initialData]);
 
@@ -167,6 +212,7 @@ export function RuleForm({
     ) {
       newErrors.free_products = __("Select the free product", "bogofy");
     }
+    Object.assign(newErrors, validateConditions(formData.conditions));
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -186,6 +232,11 @@ export function RuleForm({
         : null,
       start_date: formData.start_date || null,
       end_date: formData.end_date || null,
+      conditions: conditionsToPayload(
+        formData.conditions,
+        selectedExcludedProducts,
+        selectedExcludedCategories,
+      ),
     };
 
     onSubmit(data);
@@ -442,6 +493,30 @@ export function RuleForm({
             )}
           </div>
         )}
+      </div>
+
+      {/* Cart Conditions */}
+      <div className="bogo-card bogo-p-6">
+        <h3 className="bogo-text-lg bogo-font-semibold bogo-text-gray-900 bogo-mb-4">
+          {__("Cart Conditions (Optional)", "bogofy")}
+        </h3>
+        <p className="bogo-text-sm bogo-text-gray-500">
+          {__(
+            "Only apply the offer to carts that meet these conditions. Excluded products never count toward the offer or receive it.",
+            "bogofy",
+          )}
+        </p>
+        <CartConditions
+          conditions={formData.conditions}
+          onChange={(conditions) =>
+            setFormData((prev) => ({ ...prev, conditions }))
+          }
+          selectedExcludedProducts={selectedExcludedProducts}
+          setSelectedExcludedProducts={setSelectedExcludedProducts}
+          selectedExcludedCategories={selectedExcludedCategories}
+          setSelectedExcludedCategories={setSelectedExcludedCategories}
+          errors={errors}
+        />
       </div>
 
       {/* Scheduling */}

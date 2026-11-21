@@ -24,10 +24,24 @@ interface FreeItemManagerInterface {
 	 * @param int      $quantity   Quantity to add.
 	 * @param Rule     $rule       Rule object.
 	 * @param array    $variation   Chosen attributes, for "Any" variations.
+	 * @param string[] $replacing   Gift line keys this item replaces, whose stock it may reuse.
 	 *
 	 * @return bool|string Cart item key or false on failure.
 	 */
-	public function add_free_item( $cart, $product_id, $quantity, Rule $rule, $variation = array() );
+	public function add_free_item( $cart, $product_id, $quantity, Rule $rule, $variation = array(), $replacing = array() );
+
+	/**
+	 * Whether a gift product could be granted right now.
+	 *
+	 * @since 2.2.0
+	 *
+	 * @param \WC_Cart $cart       Cart object.
+	 * @param int      $product_id Gift product or variation ID.
+	 * @param string[] $replacing  Gift line keys the gift would replace.
+	 *
+	 * @return bool
+	 */
+	public function can_supply( $cart, $product_id, $replacing = array() );
 
 	/**
 	 * Remove all BOGO items for a specific rule.
