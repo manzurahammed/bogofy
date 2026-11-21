@@ -24,6 +24,7 @@ namespace {
 
 namespace Bogofy\Tests\Unit\Frontend {
 
+	use Bogofy\Cart\CartHandler;
 	use Bogofy\Cart\Contracts\FreeItemManagerInterface;
 	use Bogofy\Cart\EligibilityChecker;
 	use Bogofy\Frontend\CartNudges;
@@ -44,6 +45,13 @@ namespace Bogofy\Tests\Unit\Frontend {
 		 * @var int[]
 		 */
 		private $unavailable = array();
+
+		/**
+		 * Units the store can grant, by product ID. Unlisted products are unlimited.
+		 *
+		 * @var array<int,int>
+		 */
+		private $stock = array();
 
 		/**
 		 * Set up test fixtures.
@@ -81,6 +89,15 @@ namespace Bogofy\Tests\Unit\Frontend {
 			$free_items->method( 'can_supply' )->willReturnCallback(
 				function ( $cart, $product_id ) {
 					return ! in_array( $product_id, $this->unavailable, true );
+				}
+			);
+			$free_items->method( 'supplyable' )->willReturnCallback(
+				function ( $cart, $product_id, $quantity ) {
+					if ( in_array( $product_id, $this->unavailable, true ) ) {
+						return 0;
+					}
+
+					return min( $quantity, $this->stock[ $product_id ] ?? $quantity );
 				}
 			);
 
@@ -213,6 +230,59 @@ namespace Bogofy\Tests\Unit\Frontend {
 
 			$rule->free_product_ids = array( 99, 98 );
 			$this->assertCount( 1, $this->nudges( $rule )->get_messages( $this->cart( 1 ) ) );
+		}
+
+		/**
+		 * A gift rule promises no more gifts than the store can grant.
+		 */
+		public function test_gift_promise_is_capped_at_available_stock() {
+			$rule                   = $this->rule( Rule::TYPE_BUY_X_GET_Y );
+			$rule->buy_quantity     = 2;
+			$rule->free_quantity    = 2;
+			$rule->free_product_ids = array( 99 );
+
+			$this->assertSame( array( 'Add 1 more item to get 2 free!' ), $this->nudges( $rule )->get_messages( $this->cart( 1 ) ) );
+
+			$this->stock = array( 99 => 1 );
+			$this->assertSame( array( 'Add 1 more item to get 1 free!' ), $this->nudges( $rule )->get_messages( $this->cart( 1 ) ) );
+		}
+
+		/**
+		 * Gifts already held count against the stock the next set needs.
+		 */
+		public function test_held_gifts_count_against_the_next_set() {
+			$rule                   = $this->rule( Rule::TYPE_BUY_X_GET_Y );
+			$rule->id               = 4;
+			$rule->buy_quantity     = 2;
+			$rule->free_product_ids = array( 99 );
+
+			$cart                      = $this->cart( 3 );
+			$cart->cart_contents['g']  = array(
+				'product_id'               => 99,
+				'variation_id'             => 0,
+				'quantity'                 => 1,
+				CartHandler::BOGO_ITEM_KEY => true,
+				CartHandler::BOGO_RULE_KEY => 4,
+			);
+
+			// One unit in stock: the held gift uses it, so the next set can't be met.
+			$this->stock = array( 99 => 1 );
+			$this->assertSame( array(), $this->nudges( $rule )->get_messages( $cart ) );
+
+			$this->stock = array( 99 => 2 );
+			$this->assertSame( array( 'Add 1 more item to get 1 free!' ), $this->nudges( $rule )->get_messages( $cart ) );
+		}
+
+		/**
+		 * Buy X Get X needs stock for the paid units to add and the free copy.
+		 */
+		public function test_copy_reward_needs_stock_for_paid_and_free_units() {
+			// Buy 3 get 1 with 1 in the cart: 2 paid + 1 free more units are needed.
+			$this->stock = array( 10 => 2 );
+			$this->assertSame( array(), $this->nudges( $this->rule() )->get_messages( $this->cart( 1 ) ) );
+
+			$this->stock = array( 10 => 3 );
+			$this->assertSame( array( 'Add 2 more items to get 1 free!' ), $this->nudges( $this->rule() )->get_messages( $this->cart( 1 ) ) );
 		}
 
 		/**

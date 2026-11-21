@@ -8,6 +8,7 @@
 namespace Bogofy\Frontend;
 
 use Bogofy\Admin\Settings;
+use Bogofy\Cart\CartHandler;
 use Bogofy\Cart\Contracts\EligibilityCheckerInterface;
 use Bogofy\Cart\Contracts\FreeItemManagerInterface;
 use Bogofy\Models\Rule;
@@ -116,10 +117,11 @@ class CartNudges {
 				$claimed = array_merge( $claimed, $keys );
 			}
 
-			$unlock = $this->eligibility_checker->get_next_unlock( $eligible_items, $rule );
+			$unlock   = $this->eligibility_checker->get_next_unlock( $eligible_items, $rule );
+			$free_qty = $unlock ? $this->deliverable_reward( $cart, $rule, $eligible_items, $unlock ) : 0;
 
-			if ( $unlock && $this->can_supply_reward( $cart, $rule ) ) {
-				$messages[] = $this->format_message( $rule, $unlock['remaining'], $unlock['free_qty'] );
+			if ( $free_qty > 0 ) {
+				$messages[] = $this->format_message( $rule, $unlock['remaining'], $free_qty );
 			}
 		}
 
@@ -127,28 +129,126 @@ class CartNudges {
 	}
 
 	/**
-	 * Whether any of a rule's gift products could be added to the cart.
+	 * How many of the next set's reward units the store could actually grant.
 	 *
-	 * Mirrors the gift code: excluded gifts are skipped and the rest are tried
-	 * in turn. Rules that reward the bought items themselves always can.
+	 * Mirrors the gift code, so a nudge never promises more than the cart will
+	 * receive. Gift rules use the gift sync would pick: the shopper's current
+	 * gift first, then the rule's other gifts in order, skipping excluded ones.
+	 * Buy X Get X rewards a copy of the cheapest bought item, whose stock must
+	 * also cover the paid units the shopper is asked to add. Discounted rules
+	 * reward the bought items themselves and need no extra stock.
+	 *
+	 * @param \WC_Cart $cart           Cart object.
+	 * @param Rule     $rule           Rule object.
+	 * @param array    $eligible_items Eligible cart items.
+	 * @param array    $unlock         Result of get_next_unlock().
+	 *
+	 * @return int Reward units to advertise; 0 for no nudge.
+	 */
+	private function deliverable_reward( $cart, Rule $rule, $eligible_items, $unlock ) {
+		$free_qty = (int) $unlock['free_qty'];
+
+		if ( Rule::TYPE_BUY_X_GET_X_DISCOUNTED === $rule->rule_type ) {
+			return $free_qty;
+		}
+
+		$held     = $this->held_gift_lines( $cart, $rule );
+		$held_qty = (int) array_sum( $held );
+		$keys     = array_keys( $held );
+
+		if ( Rule::TYPE_BUY_X_GET_X === $rule->rule_type ) {
+			$line = $this->cheapest_line( $eligible_items );
+
+			if ( ! $line ) {
+				return 0;
+			}
+
+			$product_id = (int) ( $line['variation_id'] ? $line['variation_id'] : $line['product_id'] );
+			$paid       = (int) $unlock['remaining'];
+			$units      = $this->free_item_manager->supplyable( $cart, $product_id, $paid + $held_qty + $free_qty, $line['variation'] ?? array(), $keys );
+
+			return max( 0, min( $free_qty, $units - $paid - $held_qty ) );
+		}
+
+		foreach ( $this->gift_order( $cart, $rule, $held ) as $gift_id ) {
+			if ( $this->is_gift_excluded( $gift_id, $rule ) ) {
+				continue;
+			}
+
+			$units = $this->free_item_manager->supplyable( $cart, $gift_id, $held_qty + $free_qty, array(), $keys );
+
+			// Sync settles on the first gift it can add at all, so stop here.
+			if ( $units > 0 ) {
+				return max( 0, min( $free_qty, $units - $held_qty ) );
+			}
+		}
+
+		return 0;
+	}
+
+	/**
+	 * The rule's gift lines already in the cart.
 	 *
 	 * @param \WC_Cart $cart Cart object.
 	 * @param Rule     $rule Rule object.
 	 *
-	 * @return bool
+	 * @return array<string,int> Quantity keyed by cart item key.
 	 */
-	private function can_supply_reward( $cart, Rule $rule ) {
-		if ( ! in_array( $rule->rule_type, array( Rule::TYPE_BUY_X_GET_Y, Rule::TYPE_BUY_CAT_GET_FREE ), true ) ) {
-			return true;
-		}
+	private function held_gift_lines( $cart, Rule $rule ) {
+		$held = array();
 
-		foreach ( $rule->gift_product_ids() as $gift_id ) {
-			if ( ! $this->is_gift_excluded( $gift_id, $rule ) && $this->free_item_manager->can_supply( $cart, $gift_id ) ) {
-				return true;
+		foreach ( $cart->get_cart() as $key => $cart_item ) {
+			if ( CartHandler::is_bogo_item( $cart_item ) && (int) ( $cart_item[ CartHandler::BOGO_RULE_KEY ] ?? 0 ) === (int) $rule->id ) {
+				$held[ $key ] = (int) $cart_item['quantity'];
 			}
 		}
 
-		return false;
+		return $held;
+	}
+
+	/**
+	 * Gift products in the order sync tries them: the current gift, then the rest.
+	 *
+	 * @param \WC_Cart $cart Cart object.
+	 * @param Rule     $rule Rule object.
+	 * @param array    $held The rule's gift lines in the cart.
+	 *
+	 * @return int[]
+	 */
+	private function gift_order( $cart, Rule $rule, $held ) {
+		$gift_ids = $rule->gift_product_ids();
+		$contents = $cart->get_cart();
+
+		foreach ( array_keys( $held ) as $key ) {
+			$current = CartHandler::gift_product_id( $contents[ $key ] );
+
+			if ( in_array( $current, $gift_ids, true ) ) {
+				return array_values( array_unique( array_merge( array( $current ), $gift_ids ) ) );
+			}
+		}
+
+		return $gift_ids;
+	}
+
+	/**
+	 * The cheapest eligible line, whose product Buy X Get X gives free first.
+	 *
+	 * @param array $eligible_items Eligible cart items.
+	 *
+	 * @return array|null
+	 */
+	private function cheapest_line( $eligible_items ) {
+		$cheapest = null;
+
+		foreach ( $eligible_items as $cart_item ) {
+			$price = isset( $cart_item['data'] ) ? (float) $cart_item['data']->get_price() : 0.0;
+
+			if ( null === $cheapest || $price < $cheapest[0] ) {
+				$cheapest = array( $price, $cart_item );
+			}
+		}
+
+		return $cheapest ? $cheapest[1] : null;
 	}
 
 	/**
